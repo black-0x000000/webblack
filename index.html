@@ -1,0 +1,968 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hệ thống quản lý tài khoản</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+  /* ===== LOGIN SCREEN ===== */
+  #loginScreen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f1117 0%, #1a1f2e 100%);
+  }
+  .login-box {
+    background: #1e2332; border: 1px solid #2d3548;
+    border-radius: 12px; padding: 40px 48px; width: 360px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .login-box h2 { text-align: center; margin-bottom: 28px; font-size: 1.4rem; color: #a0aec0; letter-spacing: 1px; }
+  .login-box label { display: block; font-size: 0.85rem; color: #718096; margin-bottom: 6px; }
+  .login-box input {
+    width: 100%; padding: 10px 14px; border: 1px solid #2d3548;
+    border-radius: 8px; background: #151922; color: #e2e8f0;
+    font-size: 0.95rem; margin-bottom: 18px; outline: none;
+    transition: border 0.2s;
+  }
+  .login-box input:focus { border-color: #4f6ef7; }
+  .btn-ok {
+    width: 100%; padding: 11px; background: #4f6ef7; color: #fff;
+    border: none; border-radius: 8px; font-size: 1rem; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-ok:hover { background: #3a56d4; }
+  #loginError { color: #fc8181; font-size: 0.85rem; margin-top: 12px; text-align: center; min-height: 18px; }
+
+  /* ===== TOP BAR ===== */
+  #topBar {
+    display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: #1e2332; border-bottom: 1px solid #2d3548;
+    height: 52px; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+  }
+  #topBar.show { display: flex; }
+  #timerDisplay { font-size: 1rem; font-weight: 700; color: #68d391; letter-spacing: 1px; }
+  #topBar .title { font-size: 1rem; color: #a0aec0; }
+  .btn-logout {
+    padding: 7px 18px; background: #2d3548; border: 1px solid #4a5568;
+    color: #e2e8f0; border-radius: 7px; cursor: pointer; font-size: 0.9rem;
+    transition: background 0.2s;
+  }
+  .btn-logout:hover { background: #e53e3e; border-color: #e53e3e; }
+
+  /* ===== MAIN CONTENT ===== */
+  #mainContent { display: none; padding-top: 60px; }
+  #mainContent.show { display: block; }
+
+  /* ===== USER PAGE ===== */
+  #userPage {
+    display: flex; align-items: center; justify-content: center;
+    min-height: calc(100vh - 52px); background: #fff; color: #555;
+  }
+  #userPage .updating { font-size: 1.4rem; color: #888; }
+
+  /* ===== ADMIN PAGE ===== */
+  #adminPage { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+  /* Admin header với 2 nút chính */
+  .admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #2d3548;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .admin-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .admin-header-left .greeting {
+    font-size: 1.1rem;
+    color: #a0aec0;
+  }
+  .admin-header-left .greeting strong {
+    color: #e2e8f0;
+  }
+
+  .admin-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn-nav {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-web {
+    background: #4f6ef7;
+    color: #fff;
+  }
+  .btn-web:hover {
+    background: #3a56d4;
+    transform: translateY(-1px);
+  }
+  .btn-web.active {
+    background: #2d3748;
+    color: #a0aec0;
+  }
+  .btn-web.active:hover {
+    background: #4a5568;
+    color: #e2e8f0;
+  }
+
+  .btn-settings {
+    background: #2d3548;
+    color: #a0aec0;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid #4a5568;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-settings:hover {
+    background: #4a5568;
+    color: #e2e8f0;
+    border-color: #718096;
+  }
+  .btn-settings.active {
+    background: #4f6ef7;
+    border-color: #4f6ef7;
+    color: #fff;
+  }
+
+  /* ===== WEB VIEW ===== */
+  #webView {
+    display: none;
+    background: #1e2332;
+    border: 1px solid #2d3548;
+    border-radius: 12px;
+    padding: 32px;
+    min-height: 400px;
+  }
+  #webView.show {
+    display: block;
+  }
+
+  .web-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: #4a5568;
+  }
+  .web-placeholder .icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+  }
+  .web-placeholder h3 {
+    color: #718096;
+    margin-bottom: 8px;
+  }
+  .web-placeholder p {
+    color: #4a5568;
+  }
+
+  /* ===== SETTINGS VIEW ===== */
+  #settingsView {
+    display: none;
+  }
+  #settingsView.show {
+    display: block;
+  }
+
+  .settings-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 10px 22px;
+    background: #1e2332;
+    border: 1px solid #2d3548;
+    color: #a0aec0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+  .tab-btn.active, .tab-btn:hover {
+    background: #4f6ef7;
+    border-color: #4f6ef7;
+    color: #fff;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* === Panel: Quản lý tài khoản === */
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #2d3548; }
+  .sub-title { font-size: 0.95rem; color: #a0aec0; margin: 18px 0 10px; font-weight: 600; }
+
+  .my-account-card {
+    background: #1e2332;
+    border: 1px solid #2d3548;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 8px;
+  }
+  .my-account-card .info-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .badge.admin { background: #553c9a; color: #d6bcfa; }
+  .badge.user { background: #2c5282; color: #90cdf4; }
+
+  .user-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+  }
+  .user-table th, .user-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid #2d3548;
+    font-size: 0.9rem;
+  }
+  .user-table th {
+    background: #151922;
+    color: #718096;
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+  }
+  .user-table tr:hover td {
+    background: #1e2332;
+  }
+  .time-cell { font-variant-numeric: tabular-nums; }
+
+  .btn-sm {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .btn-edit { background: #2d3748; color: #a0aec0; }
+  .btn-edit:hover { background: #4a5568; }
+  .btn-del { background: #742a2a; color: #fc8181; }
+  .btn-del:hover { background: #9b2c2c; }
+
+  /* === Panel: Tạo tài khoản === */
+  .create-form { max-width: 380px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #718096;
+    margin-bottom: 6px;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #2d3548;
+    border-radius: 8px;
+    background: #151922;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: #4f6ef7;
+  }
+  .btn-create {
+    padding: 10px 24px;
+    background: #48bb78;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-create:hover { background: #38a169; }
+  .form-msg { font-size: 0.85rem; margin-top: 10px; min-height: 18px; }
+  .form-msg.ok { color: #68d391; }
+  .form-msg.err { color: #fc8181; }
+
+  /* === Panel: Thời gian === */
+  .time-panel-form {
+    background: #1e2332;
+    border: 1px solid #2d3548;
+    border-radius: 10px;
+    padding: 24px;
+    max-width: 600px;
+  }
+  .time-inputs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    align-items: flex-end;
+  }
+  .time-inputs .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .time-inputs label {
+    font-size: 0.8rem;
+    color: #718096;
+  }
+  .time-inputs input, .time-inputs select {
+    width: 100px;
+    padding: 9px 12px;
+    border: 1px solid #2d3548;
+    border-radius: 8px;
+    background: #151922;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    outline: none;
+    text-align: center;
+  }
+  .time-inputs select {
+    width: 180px;
+    text-align: left;
+  }
+  .time-inputs input:focus, .time-inputs select:focus {
+    border-color: #4f6ef7;
+  }
+  .btn-nap {
+    padding: 10px 24px;
+    background: #4f6ef7;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 4px;
+  }
+  .btn-nap:hover { background: #3a56d4; }
+
+  .time-log { margin-top: 20px; }
+  .time-log-title { font-size: 0.85rem; color: #718096; margin-bottom: 8px; }
+  .log-entry {
+    font-size: 0.82rem;
+    color: #a0aec0;
+    padding: 5px 0;
+    border-bottom: 1px solid #2d3548;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #1e2332;
+    border: 1px solid #2d3548;
+    border-radius: 12px;
+    padding: 28px 32px;
+    width: 360px;
+  }
+  .modal-box h3 { margin-bottom: 18px; font-size: 1.05rem; color: #e2e8f0; }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+  }
+  .btn-cancel {
+    padding: 9px 20px;
+    background: #2d3548;
+    color: #a0aec0;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .btn-save {
+    padding: 9px 20px;
+    background: #4f6ef7;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .btn-confirm-del {
+    padding: 9px 20px;
+    background: #e53e3e;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  /* Timer danger */
+  .timer-danger { color: #fc8181 !important; animation: blink 1s infinite; }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+  .empty-msg { color: #4a5568; font-size: 0.9rem; padding: 16px 0; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .admin-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .admin-header-left {
+      justify-content: center;
+    }
+    .admin-actions {
+      justify-content: center;
+    }
+    .btn-nav {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+    }
+    .time-inputs .field input,
+    .time-inputs .field select {
+      width: 70px;
+    }
+    .time-inputs .field select {
+      width: 140px;
+    }
+    .login-box {
+      padding: 24px 20px;
+      width: 92%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h2>🔐 Đăng nhập</h2>
+    <label>Tên đăng nhập</label>
+    <input type="text" id="loginUser" placeholder="Nhập tên đăng nhập" autocomplete="off">
+    <label>Mật khẩu</label>
+    <input type="password" id="loginPass" placeholder="Nhập mật khẩu">
+    <button class="btn-ok" onclick="doLogin()">OK</button>
+    <div id="loginError"></div>
+  </div>
+</div>
+
+<!-- ===== TOP BAR ===== -->
+<div id="topBar">
+  <div id="timerDisplay"></div>
+  <div class="title" id="topBarTitle"></div>
+  <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div id="mainContent">
+
+  <!-- USER PAGE -->
+  <div id="userPage" style="display:none;">
+    <div class="updating">🔧 Web đang cập nhật...</div>
+  </div>
+
+  <!-- ADMIN PAGE -->
+  <div id="adminPage" style="display:none;">
+
+    <!-- Admin Header -->
+    <div class="admin-header">
+      <div class="admin-header-left">
+        <span class="greeting">👋 Xin chào, <strong id="adminName">Admin</strong></span>
+      </div>
+      <div class="admin-actions">
+        <button class="btn-nav btn-web active" id="btnWeb" onclick="switchView('web')">📱 Xem Web</button>
+        <button class="btn-settings" id="btnSettings" onclick="switchView('settings')" title="Quản lý hệ thống">
+          ⚙️
+        </button>
+      </div>
+    </div>
+
+    <!-- WEB VIEW -->
+    <div id="webView" class="show">
+      <div class="web-placeholder">
+        <div class="icon">🌐</div>
+        <h3>Trang web đang được phát triển</h3>
+        <p>Nội dung sẽ sớm được cập nhật...</p>
+      </div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div id="settingsView">
+      <div class="settings-tabs">
+        <button class="tab-btn active" onclick="switchTab('tabManage')">👥 Quản lý tài khoản</button>
+        <button class="tab-btn" onclick="switchTab('tabCreate')">➕ Tạo tài khoản mới</button>
+        <button class="tab-btn" onclick="switchTab('tabTime')">⏱ Thời gian</button>
+      </div>
+
+      <!-- Tab 1: Quản lý -->
+      <div class="tab-panel active" id="tabManage">
+        <div class="section-title">Quản lý tài khoản</div>
+
+        <div class="sub-title">Tài khoản của bạn</div>
+        <div id="myAccountCard" class="my-account-card"></div>
+
+        <div class="sub-title">Tài khoản người dùng bạn quản lý</div>
+        <table class="user-table" id="userListTable">
+          <thead>
+            <tr>
+              <th>Tên đăng nhập</th>
+              <th>Loại</th>
+              <th>Thời gian còn lại</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="userListBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Tab 2: Tạo tài khoản -->
+      <div class="tab-panel" id="tabCreate">
+        <div class="section-title">Tạo tài khoản mới</div>
+        <div class="create-form">
+          <div class="form-group">
+            <label>Loại tài khoản</label>
+            <select id="newRole">
+              <option value="user">Tài khoản người dùng</option>
+              <option value="admin">Tài khoản admin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tên đăng nhập</label>
+            <input type="text" id="newUsername" placeholder="Nhập tên đăng nhập" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="newPassword" placeholder="Nhập mật khẩu">
+          </div>
+          <button class="btn-create" onclick="createAccount()">Tạo tài khoản</button>
+          <div class="form-msg" id="createMsg"></div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Thời gian -->
+      <div class="tab-panel" id="tabTime">
+        <div class="section-title">Nạp thời gian cho người dùng</div>
+        <div class="time-panel-form">
+          <div class="time-inputs">
+            <div class="field">
+              <label>Giờ</label>
+              <input type="number" id="addHour" min="0" value="0" placeholder="0">
+            </div>
+            <div class="field">
+              <label>Phút</label>
+              <input type="number" id="addMin" min="0" value="0" placeholder="0">
+            </div>
+            <div class="field">
+              <label>Giây</label>
+              <input type="number" id="addSec" min="0" value="0" placeholder="0">
+            </div>
+            <div class="field">
+              <label>Tài khoản người dùng</label>
+              <select id="addTarget"></select>
+            </div>
+          </div>
+          <button class="btn-nap" onclick="addTime()">Nạp</button>
+          <div class="form-msg" id="timeMsg"></div>
+          <div class="time-log" id="timeLog">
+            <div class="time-log-title">Lịch sử nạp gần đây:</div>
+            <div id="timeLogEntries"><div class="empty-msg">Chưa có lịch sử nạp.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /adminPage -->
+</div><!-- /mainContent -->
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <h3>✏️ Chỉnh sửa tài khoản</h3>
+    <input type="hidden" id="editTarget">
+    <div class="form-group">
+      <label>Tên đăng nhập mới</label>
+      <input type="text" id="editUsername">
+    </div>
+    <div class="form-group">
+      <label>Mật khẩu mới (để trống = giữ nguyên)</label>
+      <input type="password" id="editPassword" placeholder="Không thay đổi nếu để trống">
+    </div>
+    <div class="form-msg" id="editMsg"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('editModal')">Hủy</button>
+      <button class="btn-save" onclick="saveEdit()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <h3>🗑️ Xác nhận xóa</h3>
+    <p style="color:#a0aec0; font-size:0.95rem;">Bạn có chắc muốn xóa tài khoản <strong id="deleteTargetName" style="color:#fc8181;"></strong>?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('deleteModal')">Hủy</button>
+      <button class="btn-confirm-del" onclick="confirmDelete()">Xóa</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA STORE =====
+let data = JSON.parse(localStorage.getItem('sysData') || 'null');
+if (!data) {
+  data = {
+    accounts: {
+      'admin': { password: 'admin123', role: 'admin', timeLeft: 0, createdBy: null }
+    },
+    timeLog: []
+  };
+  saveData();
+}
+
+function saveData() {
+  localStorage.setItem('sysData', JSON.stringify(data));
+}
+
+// ===== SESSION =====
+let currentUser = null;
+let countdownInterval = null;
+
+// ===== VIEW STATE =====
+let currentView = 'web'; // 'web' or 'settings'
+
+// ===== LOGIN =====
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const err = document.getElementById('loginError');
+  err.textContent = '';
+
+  if (!data.accounts[u]) { err.textContent = '❌ Tài khoản không tồn tại.'; return; }
+  const acc = data.accounts[u];
+  if (acc.password !== p) { err.textContent = '❌ Mật khẩu không đúng.'; return; }
+
+  if (acc.role === 'user') {
+    if (acc.timeLeft <= 0) {
+      err.textContent = '⚠️ Tài khoản số dư không đủ. Vui lòng liên hệ admin để nạp thêm thời gian.';
+      return;
+    }
+  }
+
+  currentUser = u;
+  showApp(acc.role);
+}
+
+function showApp(role) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('topBar').classList.add('show');
+  document.getElementById('mainContent').classList.add('show');
+  document.getElementById('topBarTitle').textContent = `👤 ${currentUser}`;
+
+  if (role === 'admin') {
+    document.getElementById('adminPage').style.display = 'block';
+    document.getElementById('userPage').style.display = 'none';
+    document.getElementById('timerDisplay').textContent = '';
+    document.getElementById('adminName').textContent = currentUser;
+    currentView = 'web';
+    switchView('web');
+    renderAdminPanel();
+  } else {
+    document.getElementById('userPage').style.display = 'flex';
+    document.getElementById('adminPage').style.display = 'none';
+    startCountdown();
+  }
+}
+
+// ===== SWITCH VIEW =====
+function switchView(view) {
+  currentView = view;
+  const webView = document.getElementById('webView');
+  const settingsView = document.getElementById('settingsView');
+  const btnWeb = document.getElementById('btnWeb');
+  const btnSettings = document.getElementById('btnSettings');
+
+  if (view === 'web') {
+    webView.classList.add('show');
+    settingsView.classList.remove('show');
+    btnWeb.classList.add('active');
+    btnSettings.classList.remove('active');
+  } else {
+    webView.classList.remove('show');
+    settingsView.classList.add('show');
+    btnWeb.classList.remove('active');
+    btnSettings.classList.add('active');
+    renderAdminPanel();
+    renderTimeTargets();
+    renderTimeLog();
+  }
+}
+
+// ===== LOGOUT =====
+function doLogout() {
+  stopCountdown();
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('topBar').classList.remove('show');
+  document.getElementById('mainContent').classList.remove('show');
+  document.getElementById('adminPage').style.display = 'none';
+  document.getElementById('userPage').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').textContent = '';
+}
+
+// ===== COUNTDOWN =====
+function startCountdown() {
+  stopCountdown();
+  updateTimerDisplay();
+  countdownInterval = setInterval(() => {
+    const acc = data.accounts[currentUser];
+    if (!acc || acc.timeLeft <= 0) {
+      stopCountdown();
+      doLogout();
+      document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập. Vui lòng liên hệ admin.';
+      return;
+    }
+    acc.timeLeft--;
+    saveData();
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function stopCountdown() {
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+}
+
+function updateTimerDisplay() {
+  const acc = data.accounts[currentUser];
+  if (!acc) return;
+  const t = acc.timeLeft;
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  const str = `⏱ ${pad(h)}:${pad(m)}:${pad(s)}`;
+  const el = document.getElementById('timerDisplay');
+  el.textContent = str;
+  el.className = t <= 60 ? 'timer-danger' : '';
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+// ===== ADMIN PANEL =====
+function renderAdminPanel() {
+  renderMyAccount();
+  renderUserList();
+  renderTimeTargets();
+}
+
+function renderMyAccount() {
+  const acc = data.accounts[currentUser];
+  document.getElementById('myAccountCard').innerHTML = `
+    <div class="info-row">
+      <strong>${currentUser}</strong>
+      <span class="badge admin">Admin</span>
+    </div>
+    <div style="font-size:0.85rem; color:#718096;">Tài khoản quản trị viên — toàn quyền quản lý hệ thống</div>
+  `;
+}
+
+function renderUserList() {
+  const tbody = document.getElementById('userListBody');
+  const others = Object.keys(data.accounts).filter(u => u !== currentUser);
+  if (others.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = others.map(u => {
+    const acc = data.accounts[u];
+    const t = acc.timeLeft || 0;
+    const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
+    const timeStr = acc.role === 'user' ? `${pad(h)}:${pad(m)}:${pad(s)}` : `—`;
+    const badge = acc.role === 'admin'
+      ? `<span class="badge admin">Admin</span>`
+      : `<span class="badge user">User</span>`;
+    return `<tr>
+      <td>${u}</td>
+      <td>${badge}</td>
+      <td class="time-cell">${timeStr}</td>
+      <td>
+        <button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>
+        <button class="btn-sm btn-del" onclick="openDelete('${u}')" style="margin-left:6px;">Xóa</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderTimeTargets() {
+  const sel = document.getElementById('addTarget');
+  const users = Object.keys(data.accounts).filter(u => data.accounts[u].role === 'user');
+  sel.innerHTML = users.length
+    ? users.map(u => `<option value="${u}">${u}</option>`).join('')
+    : `<option value="">-- Không có user nào --</option>`;
+}
+
+// ===== TABS =====
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.settings-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'tabManage') renderAdminPanel();
+  if (id === 'tabTime') { renderTimeTargets(); renderTimeLog(); }
+}
+
+// ===== CREATE ACCOUNT =====
+function createAccount() {
+  const role = document.getElementById('newRole').value;
+  const uname = document.getElementById('newUsername').value.trim();
+  const pass = document.getElementById('newPassword').value;
+  const msg = document.getElementById('createMsg');
+
+  if (!uname) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập tên đăng nhập.'; return; }
+  if (!pass) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập mật khẩu.'; return; }
+  if (data.accounts[uname]) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập đã tồn tại.'; return; }
+
+  data.accounts[uname] = { password: pass, role, timeLeft: 0, createdBy: currentUser };
+  saveData();
+  msg.className='form-msg ok'; msg.textContent=`✅ Tạo tài khoản "${uname}" (${role}) thành công!`;
+  document.getElementById('newUsername').value = '';
+  document.getElementById('newPassword').value = '';
+  renderUserList();
+  renderTimeTargets();
+}
+
+// ===== ADD TIME =====
+function addTime() {
+  const h = parseInt(document.getElementById('addHour').value)||0;
+  const m = parseInt(document.getElementById('addMin').value)||0;
+  const s = parseInt(document.getElementById('addSec').value)||0;
+  const target = document.getElementById('addTarget').value;
+  const msg = document.getElementById('timeMsg');
+
+  if (!target) { msg.className='form-msg err'; msg.textContent='Không có tài khoản người dùng nào.'; return; }
+  const total = h*3600 + m*60 + s;
+  if (total <= 0) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập thời gian hợp lệ.'; return; }
+
+  data.accounts[target].timeLeft = (data.accounts[target].timeLeft||0) + total;
+  const now = new Date().toLocaleString('vi-VN');
+  data.timeLog.unshift({ time: now, by: currentUser, target, added: total });
+  if (data.timeLog.length > 50) data.timeLog.pop();
+  saveData();
+
+  msg.className='form-msg ok';
+  msg.textContent=`✅ Đã nạp ${pad(h)}:${pad(m)}:${pad(s)} cho "${target}".`;
+  document.getElementById('addHour').value=0;
+  document.getElementById('addMin').value=0;
+  document.getElementById('addSec').value=0;
+  renderTimeLog();
+  renderUserList();
+}
+
+function renderTimeLog() {
+  const container = document.getElementById('timeLogEntries');
+  if (!data.timeLog.length) { container.innerHTML='<div class="empty-msg">Chưa có lịch sử nạp.</div>'; return; }
+  container.innerHTML = data.timeLog.slice(0,10).map(l => {
+    const h=Math.floor(l.added/3600), m=Math.floor((l.added%3600)/60), s=l.added%60;
+    return `<div class="log-entry">[${l.time}] <strong>${l.by}</strong> → <strong>${l.target}</strong>: +${pad(h)}:${pad(m)}:${pad(s)}</div>`;
+  }).join('');
+}
+
+// ===== EDIT MODAL =====
+function openEdit(u) {
+  document.getElementById('editTarget').value = u;
+  document.getElementById('editUsername').value = u;
+  document.getElementById('editPassword').value = '';
+  document.getElementById('editMsg').textContent = '';
+  document.getElementById('editModal').classList.add('show');
+}
+
+function saveEdit() {
+  const oldName = document.getElementById('editTarget').value;
+  const newName = document.getElementById('editUsername').value.trim();
+  const newPass = document.getElementById('editPassword').value;
+  const msg = document.getElementById('editMsg');
+
+  if (!newName) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập không được trống.'; return; }
+  if (newName !== oldName && data.accounts[newName]) { msg.className='form-msg err'; msg.textContent='Tên đã tồn tại.'; return; }
+
+  const acc = {...data.accounts[oldName]};
+  if (newPass) acc.password = newPass;
+  if (newName !== oldName) {
+    delete data.accounts[oldName];
+    data.accounts[newName] = acc;
+  } else {
+    data.accounts[oldName] = acc;
+  }
+  saveData();
+  closeModal('editModal');
+  renderUserList();
+}
+
+// ===== DELETE MODAL =====
+let deleteTarget = null;
+function openDelete(u) {
+  deleteTarget = u;
+  document.getElementById('deleteTargetName').textContent = u;
+  document.getElementById('deleteModal').classList.add('show');
+}
+function confirmDelete() {
+  if (deleteTarget) {
+    delete data.accounts[deleteTarget];
+    saveData();
+    deleteTarget = null;
+  }
+  closeModal('deleteModal');
+  renderUserList();
+  renderTimeTargets();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+</script>
+</body>
+</html>

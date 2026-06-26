@@ -875,45 +875,53 @@ function doLogout() {
   db.ref('systemLog').off();
 }
 
-// ===== COUNTDOWN =====
+// ===== COUNTDOWN (FIXED - KHÔNG BỊ DELAY) =====
 function startCountdown() {
   stopCountdown();
-  updateTimerDisplay();
-  countdownInterval = setInterval(() => {
-    const userRef = db.ref('accounts/' + currentUser);
-    userRef.once('value').then(snapshot => {
-      const acc = snapshot.val();
-      if (!acc || acc.timeLeft <= 0) {
+  
+  const userRef = db.ref('accounts/' + currentUser);
+  userRef.once('value').then(snapshot => {
+    const acc = snapshot.val();
+    if (!acc || acc.timeLeft <= 0) {
+      doLogout();
+      document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
+      return;
+    }
+    
+    let timeLeft = acc.timeLeft;
+    updateTimerDisplay(timeLeft);
+    
+    countdownInterval = setInterval(() => {
+      timeLeft--;
+      if (timeLeft <= 0) {
         stopCountdown();
+        userRef.update({ timeLeft: 0 });
         doLogout();
         document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
         return;
       }
-      const newTime = acc.timeLeft - 1;
-      userRef.update({ timeLeft: newTime });
-      updateTimerDisplay();
-    });
-  }, 1000);
+      
+      userRef.update({ timeLeft: timeLeft });
+      updateTimerDisplay(timeLeft);
+    }, 1000);
+  });
 }
 
 function stopCountdown() {
   if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
 }
 
-function updateTimerDisplay() {
-  const userRef = db.ref('accounts/' + currentUser);
-  userRef.once('value').then(snapshot => {
-    const acc = snapshot.val();
-    if (!acc) return;
-    const t = acc.timeLeft || 0;
-    const h = Math.floor(t / 3600);
-    const m = Math.floor((t % 3600) / 60);
-    const s = t % 60;
-    const str = '⏱ ' + pad(h) + ':' + pad(m) + ':' + pad(s);
-    const el = document.getElementById('timerDisplay');
+function updateTimerDisplay(timeLeft) {
+  const t = timeLeft || 0;
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  const str = '⏱ ' + pad(h) + ':' + pad(m) + ':' + pad(s);
+  const el = document.getElementById('timerDisplay');
+  if (el) {
     el.textContent = str;
     el.className = t <= 60 ? 'timer-danger' : '';
-  });
+  }
 }
 
 function pad(n) { return String(n).padStart(2, '0'); }

@@ -94,6 +94,62 @@
   .btn-settings:hover { background: #4a5568; color: #e2e8f0; border-color: #718096; }
   .btn-settings.active { background: #4f6ef7; border-color: #4f6ef7; color: #fff; }
 
+  /* ===== WEB TABS ===== */
+  .web-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid #2d3548;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+
+  .web-tab-btn {
+    padding: 12px 28px;
+    background: transparent;
+    border: none;
+    color: #718096;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .web-tab-btn:hover {
+    color: #e2e8f0;
+    background: #1e2332;
+  }
+
+  .web-tab-btn.active {
+    color: #4f6ef7;
+    background: #1e2332;
+  }
+
+  .web-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #4f6ef7;
+  }
+
+  .web-tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .web-tab-content.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   /* ===== WEB VIEW ===== */
   #webView { display: none; }
   #webView.show { display: block; }
@@ -441,6 +497,7 @@
     .log-item .log-time { font-size: 0.7rem; }
     .bt-controls { gap: 8px; padding: 8px 12px; }
     .pixel-cell { width: 10px; height: 10px; }
+    .web-tab-btn { padding: 10px 16px; font-size: 0.9rem; }
   }
 </style>
 </head>
@@ -485,12 +542,32 @@
 
     <!-- WEB VIEW -->
     <div id="webView" class="show">
-      <div style="padding: 10px 0 14px; color: #fc8181; font-size: 0.95rem; font-weight: 700;">🔄 Website sẽ tiếp tục cập nhật</div>
-      <div style="padding: 8px 0 4px; color: #718096; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🧰 Tools</div>
-      <div class="web-tools-grid">
-        <div class="tool-card" onclick="openBitmapTool()">
-          <div class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
-          <div class="tool-name">Tools chuyển bitmap</div>
+      <!-- Tab Navigation -->
+      <div class="web-tabs">
+        <button class="web-tab-btn active" onclick="switchWebTab('tools')">🛠️ TOOLS</button>
+        <button class="web-tab-btn" onclick="switchWebTab('game')">🎮 GAME</button>
+      </div>
+
+      <!-- TOOLS TAB -->
+      <div id="webTabTools" class="web-tab-content active">
+        <div style="padding: 10px 0 14px; color: #fc8181; font-size: 0.95rem; font-weight: 700;">🔄 Website sẽ tiếp tục cập nhật</div>
+        <div style="padding: 8px 0 4px; color: #718096; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🧰 Tools</div>
+        <div class="web-tools-grid">
+          <div class="tool-card" onclick="openBitmapTool()">
+            <div class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+            <div class="tool-name">Tools chuyển bitmap</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAME TAB -->
+      <div id="webTabGame" class="web-tab-content">
+        <div style="display: flex; align-items: center; justify-content: center; min-height: 400px;">
+          <div style="text-align: center; color: #718096;">
+            <div style="font-size: 4rem; margin-bottom: 16px;">🎮</div>
+            <div style="font-size: 1.2rem; font-weight: 600; color: #a0aec0;">Web đang cập nhật</div>
+            <div style="font-size: 0.9rem; margin-top: 8px; color: #4a5568;">Vui lòng quay lại sau!</div>
+          </div>
         </div>
       </div>
     </div>
@@ -914,6 +991,23 @@ function switchView(view) {
   }
 }
 
+// ===== SWITCH WEB TAB =====
+function switchWebTab(tab) {
+  // Update buttons
+  document.querySelectorAll('.web-tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.web-tab-content').forEach(content => content.classList.remove('active'));
+  
+  // Highlight clicked tab
+  const buttons = document.querySelectorAll('.web-tab-btn');
+  if (tab === 'tools') {
+    buttons[0].classList.add('active');
+    document.getElementById('webTabTools').classList.add('active');
+  } else if (tab === 'game') {
+    buttons[1].classList.add('active');
+    document.getElementById('webTabGame').classList.add('active');
+  }
+}
+
 // ===== TABS =====
 function switchTab(id, event) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1324,13 +1418,19 @@ function clearPixels() {
 }
 
 function resetBitmap() {
-  btWidth = 0;
-  btHeight = 0;
-  document.getElementById('btWidth').value = 0;
-  document.getElementById('btHeight').value = 0;
+  btWidth = 8;
+  btHeight = 8;
+  document.getElementById('btWidth').value = 8;
+  document.getElementById('btHeight').value = 8;
   btPixels = [];
-  document.getElementById('pixelGrid').innerHTML = '';
-  document.getElementById('btHexOutput').textContent = '—';
+  for (let row = 0; row < btHeight; row++) {
+    btPixels[row] = [];
+    for (let col = 0; col < btWidth; col++) {
+      btPixels[row][col] = 0;
+    }
+  }
+  renderPixelGrid();
+  updateHexOutput();
 }
 
 function updateHexOutput() {

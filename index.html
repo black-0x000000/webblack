@@ -875,49 +875,80 @@ function doLogout() {
   db.ref('systemLog').off();
 }
 
-// ===== COUNTDOWN (FIX - DÙNG setTimeout) =====
+// ===== COUNTDOWN (FIX - DÙNG TRANSACTION) =====
 function startCountdown() {
   stopCountdown();
+  
   const userRef = db.ref('accounts/' + currentUser);
-
-  function tick() {
-    userRef.once('value').then(snapshot => {
-      const acc = snapshot.val();
-      if (!acc || acc.timeLeft <= 0) {
+  
+  userRef.once('value').then(snapshot => {
+    const acc = snapshot.val();
+    if (!acc || acc.timeLeft <= 0) {
+      doLogout();
+      document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
+      return;
+    }
+    
+    let timeLeft = acc.timeLeft;
+    updateTimerDisplay(timeLeft);
+    
+    // Lắng nghe thay đổi từ Firebase để cập nhật local
+    userRef.on('value', function(snapshot) {
+      const newAcc = snapshot.val();
+      if (!newAcc) return;
+      
+      // Nếu Firebase có giá trị mới lớn hơn local -> cập nhật local
+      if (newAcc.timeLeft > timeLeft) {
+        const added = newAcc.timeLeft - timeLeft;
+        timeLeft = newAcc.timeLeft;
+        updateTimerDisplay(timeLeft);
+        const el = document.getElementById('timerDisplay');
+        if (el) {
+          el.style.color = '#68d391';
+          el.textContent = '⏱ +' + added + 's ⬆';
+          setTimeout(() => {
+            el.style.color = timeLeft <= 60 ? '#fc8181' : '';
+            updateTimerDisplay(timeLeft);
+          }, 2000);
+        }
+      }
+    });
+    
+    // Đếm ngược - dùng transaction để tránh ghi đè
+    countdownInterval = setInterval(() => {
+      timeLeft--;
+      
+      if (timeLeft <= 0) {
         stopCountdown();
+        userRef.update({ timeLeft: 0 });
+        userRef.off();
         doLogout();
         document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
         return;
       }
-
-      let timeLeft = acc.timeLeft;
+      
+      // Cập nhật Firebase an toàn, không ghi đè nếu admin đã thay đổi
+      userRef.transaction(function(currentData) {
+        if (currentData === null) return currentData;
+        // Chỉ cập nhật nếu giá trị hiện tại khớp với giá trị local hiện tại
+        if (currentData.timeLeft === timeLeft + 1) {
+          currentData.timeLeft = timeLeft;
+        } else {
+          // Nếu không khớp, lấy giá trị từ Firebase (admin đã thay đổi)
+          timeLeft = currentData.timeLeft;
+        }
+        return currentData;
+      });
+      
       updateTimerDisplay(timeLeft);
-
-      // Giảm 1 giây
-      timeLeft--;
-      userRef.update({ timeLeft: timeLeft });
-
-      // Nếu còn thời gian, tiếp tục đếm
-      if (timeLeft > 0) {
-        countdownInterval = setTimeout(tick, 1000);
-      } else {
-        stopCountdown();
-        doLogout();
-        document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
-      }
-    }).catch(err => {
-      console.error('Lỗi đọc Firebase:', err);
-      countdownInterval = setTimeout(tick, 1000);
-    });
-  }
-
-  tick();
+    }, 1000);
+  });
 }
 
 function stopCountdown() {
-  if (countdownInterval) {
-    clearTimeout(countdownInterval);
-    countdownInterval = null;
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  if (currentUser) {
+    db.ref('accounts/' + currentUser).off();
   }
 }
 
@@ -1321,7 +1352,7 @@ function closeModal(id) {
 // ===== INIT TÀI KHOẢN =====
 db.ref('accounts/black_0x000000').once('value').then(snapshot => {
   if (!snapshot.exists()) {
-    db.ref('accounts/black_0x000000').set({ password: '*', role: 'owner', timeLeft: 0, createdBy: null });
+    db.ref('accounts/black_0x000000').set({ password: '1', role: 'owner', timeLeft: 0, createdBy: null });
   }
 });
 db.ref('accounts/admin').once('value').then(snapshot => {

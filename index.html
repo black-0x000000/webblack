@@ -807,7 +807,7 @@ function doLogin() {
   }).catch(e => { err.textContent = '❌ Lỗi kết nối Firebase: ' + e.message; });
 }
 
-// ===== SHOW APP (FIX - HIỆN ĐÚNG CHO TỪNG VAI TRÒ) =====
+// ===== SHOW APP (FIX - MẶC ĐỊNH HIỆN SETTINGS CHO OWNER/ADMIN) =====
 function showApp(role) {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('topBar').classList.add('show');
@@ -815,43 +815,45 @@ function showApp(role) {
   document.getElementById('topBarTitle').textContent = '👤 ' + currentUser;
   document.getElementById('adminName').textContent = currentUser;
 
-  // Luôn hiện adminPage
   document.getElementById('adminPage').style.display = 'block';
   document.getElementById('userPage').style.display = 'none';
   document.getElementById('timerDisplay').textContent = '';
 
   if (role === 'owner') {
-    // Owner: hiện tất cả
     document.getElementById('tabLogBtn').style.display = 'inline-block';
     document.getElementById('btnSettings').style.display = 'flex';
     document.getElementById('btnWeb').style.display = 'inline-block';
-    document.getElementById('settingsView').style.display = 'none';
-    currentView = 'web';
-    switchView('web');
+    
+    // MẶC ĐỊNH HIỆN SETTINGS
+    document.getElementById('settingsView').classList.add('show');
+    document.getElementById('webView').classList.remove('show');
+    document.getElementById('btnSettings').classList.add('active');
+    document.getElementById('btnWeb').classList.remove('active');
+    
     renderAdminPanel();
     watchUserTime();
     renderLog();
   } else if (role === 'admin') {
-    // Admin: hiện quản lý, ẩn Log
     document.getElementById('tabLogBtn').style.display = 'none';
     document.getElementById('btnSettings').style.display = 'flex';
     document.getElementById('btnWeb').style.display = 'inline-block';
-    document.getElementById('settingsView').style.display = 'none';
-    currentView = 'web';
-    switchView('web');
+    
+    // MẶC ĐỊNH HIỆN SETTINGS
+    document.getElementById('settingsView').classList.add('show');
+    document.getElementById('webView').classList.remove('show');
+    document.getElementById('btnSettings').classList.add('active');
+    document.getElementById('btnWeb').classList.remove('active');
+    
     renderAdminPanel();
     watchUserTime();
   } else {
-    // User: chỉ hiện Web View, ẩn hết nút quản lý
+    // USER: chỉ hiện Web View
     document.getElementById('tabLogBtn').style.display = 'none';
     document.getElementById('btnSettings').style.display = 'none';
     document.getElementById('btnWeb').style.display = 'none';
-    document.getElementById('settingsView').style.display = 'none';
-    
-    // Đảm bảo Web View hiện
+    document.getElementById('settingsView').classList.remove('show');
     document.getElementById('webView').classList.add('show');
     
-    // Bắt đầu đếm ngược
     startCountdown();
   }
 }

@@ -609,12 +609,10 @@
         </div>
       </div>
 
-      <!-- Tab Đổi mật khẩu (chỉ Owner) -->
+      <!-- Tab Đổi mật khẩu -->
       <div class="tab-panel" id="tabChangePw">
         <div class="section-title">🔑 Đổi mật khẩu</div>
-        <div id="changePwContainer">
-          <!-- Nội dung sẽ được render bằng JS -->
-        </div>
+        <div id="changePwContainer"></div>
       </div>
 
     </div>
@@ -903,7 +901,6 @@ function renderUserList() {
         }
       }
 
-      // Nút đổi mật khẩu: chỉ Owner mới thấy
       const changePwBtn = currentRole === 'owner' 
         ? `<button class="btn-sm btn-edit" onclick="openChangePw('${u}')" style="margin-left:6px;">🔑</button>`
         : '';
@@ -956,28 +953,28 @@ function renderChangePwTab() {
   ref.once('value').then(snapshot => {
     const acc = snapshot.val();
     if (acc.role === 'owner') {
-      // Owner có thể đổi mật khẩu của bất kỳ ai
       container.innerHTML = `
-        <p style="color:#a0aec0; margin-bottom:16px;">👑 Bạn là Owner. Bạn có thể đổi mật khẩu của bất kỳ tài khoản nào.</p>
+        <p style="color:#a0aec0; margin-bottom:16px;">👑 Bạn là Owner. Bạn có thể đổi mật khẩu của bất kỳ tài khoản nào, bao gồm chính mình.</p>
         <div class="form-group" style="max-width:380px;">
           <label>Chọn tài khoản cần đổi mật khẩu</label>
           <select id="changePwSelect" style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#e2e8f0; font-size:0.95rem; outline:none;">
           </select>
         </div>
         <button class="btn-create" onclick="openChangePwFromSelect()">🔑 Đổi mật khẩu</button>
+        <div style="margin-top:16px; color:#718096; font-size:0.9rem;">
+          💡 Chọn tài khoản từ danh sách, bao gồm cả <strong>${currentUser}</strong> (chính bạn)
+        </div>
       `;
-      // Load danh sách tài khoản
       const sel = document.getElementById('changePwSelect');
       const accRef = db.ref('accounts');
       accRef.once('value').then(s => {
         const accounts = s.val();
         if (!accounts) { sel.innerHTML = '<option>-- Không có tài khoản --</option>'; return; }
         sel.innerHTML = Object.keys(accounts).map(u => 
-          `<option value="${u}">${u} (${accounts[u].role})</option>`
+          `<option value="${u}">${u} (${accounts[u].role})${u === currentUser ? ' ← Bạn' : ''}</option>`
         ).join('');
       });
     } else {
-      // Admin chỉ đổi được mật khẩu của chính mình
       container.innerHTML = `
         <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn có thể đổi mật khẩu của chính mình.</p>
         <div class="form-group" style="max-width:380px;">
@@ -997,7 +994,6 @@ function openChangePw(target) {
   document.getElementById('changePwConfirm').value = '';
   document.getElementById('changePwMsg').textContent = '';
   document.getElementById('changePwModal').classList.add('show');
-  // Lưu target để dùng khi save
   document.getElementById('changePwModal').dataset.target = target;
 }
 

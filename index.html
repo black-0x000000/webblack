@@ -44,7 +44,7 @@
     padding: 0 20px;
   }
   #topBar.show { display: flex; }
-  #timerDisplay { font-size: 1rem; font-weight: 700; color: #68d391; letter-spacing: 1px; }
+  #timerDisplay { font-size: 1rem; font-weight: 700; color: #68d391; letter-spacing: 1px; transition: color 0.3s; }
   #topBar .title { font-size: 1rem; color: #a0aec0; }
   .btn-logout {
     padding: 7px 18px; background: #2d3548; border: 1px solid #4a5568;
@@ -875,11 +875,12 @@ function doLogout() {
   db.ref('systemLog').off();
 }
 
-// ===== COUNTDOWN (FIXED - KHÔNG BỊ DELAY) =====
+// ===== COUNTDOWN (FIX - LẮNG NGHE THAY ĐỔI TỪ ADMIN) =====
 function startCountdown() {
   stopCountdown();
   
   const userRef = db.ref('accounts/' + currentUser);
+  
   userRef.once('value').then(snapshot => {
     const acc = snapshot.val();
     if (!acc || acc.timeLeft <= 0) {
@@ -891,11 +892,34 @@ function startCountdown() {
     let timeLeft = acc.timeLeft;
     updateTimerDisplay(timeLeft);
     
+    // LẮNG NGHE THAY ĐỔI TỪ FIREBASE (khi admin nạp thêm)
+    userRef.on('value', function(snapshot) {
+      const newAcc = snapshot.val();
+      if (!newAcc) return;
+      
+      // Nếu thời gian mới lớn hơn thời gian hiện tại -> cập nhật
+      if (newAcc.timeLeft > timeLeft) {
+        timeLeft = newAcc.timeLeft;
+        updateTimerDisplay(timeLeft);
+        // Hiển thị thông báo cho user biết đã được nạp thêm
+        const el = document.getElementById('timerDisplay');
+        if (el) {
+          el.style.color = '#68d391';
+          setTimeout(() => {
+            el.style.color = timeLeft <= 60 ? '#fc8181' : '';
+          }, 2000);
+        }
+      }
+    });
+    
+    // Bắt đầu đếm ngược
     countdownInterval = setInterval(() => {
       timeLeft--;
+      
       if (timeLeft <= 0) {
         stopCountdown();
         userRef.update({ timeLeft: 0 });
+        userRef.off();
         doLogout();
         document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
         return;
@@ -909,6 +933,10 @@ function startCountdown() {
 
 function stopCountdown() {
   if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  // Tắt listener khi logout
+  if (currentUser) {
+    db.ref('accounts/' + currentUser).off();
+  }
 }
 
 function updateTimerDisplay(timeLeft) {
@@ -920,7 +948,11 @@ function updateTimerDisplay(timeLeft) {
   const el = document.getElementById('timerDisplay');
   if (el) {
     el.textContent = str;
-    el.className = t <= 60 ? 'timer-danger' : '';
+    if (t <= 60) {
+      el.className = 'timer-danger';
+    } else {
+      el.className = '';
+    }
   }
 }
 

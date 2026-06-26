@@ -273,6 +273,23 @@
   .btn-del { background: #742a2a; color: #fc8181; }
   .btn-del:hover { background: #9b2c2c; }
 
+  .btn-change-pw {
+    background: #2d3748;
+    color: #a0aec0;
+    border: 1px solid #4a5568;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-change-pw:hover {
+    background: #4f6ef7;
+    border-color: #4f6ef7;
+    color: #fff;
+  }
+
   .create-form { max-width: 380px; }
   .form-group { margin-bottom: 16px; }
   .form-group label {
@@ -518,6 +535,7 @@
         <button class="tab-btn active" onclick="switchTab('tabManage')">👥 Quản lý tài khoản</button>
         <button class="tab-btn" onclick="switchTab('tabCreate')">➕ Tạo tài khoản mới</button>
         <button class="tab-btn" onclick="switchTab('tabTime')">⏱ Thời gian</button>
+        <button class="tab-btn" onclick="switchTab('tabChangePw')">🔑 Đổi mật khẩu</button>
       </div>
 
       <div class="tab-panel active" id="tabManage">
@@ -590,6 +608,15 @@
           </div>
         </div>
       </div>
+
+      <!-- Tab Đổi mật khẩu (chỉ Owner) -->
+      <div class="tab-panel" id="tabChangePw">
+        <div class="section-title">🔑 Đổi mật khẩu</div>
+        <div id="changePwContainer">
+          <!-- Nội dung sẽ được render bằng JS -->
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -624,6 +651,26 @@
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('deleteModal')">Hủy</button>
       <button class="btn-confirm-del" onclick="confirmDelete()">Xóa</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="changePwModal">
+  <div class="modal-box">
+    <h3>🔑 Đổi mật khẩu cho <span id="changePwTarget" style="color:#4f6ef7;"></span></h3>
+    <div class="form-group">
+      <label>Mật khẩu mới</label>
+      <input type="password" id="changePwNew" placeholder="Nhập mật khẩu mới">
+    </div>
+    <div class="form-group">
+      <label>Xác nhận mật khẩu mới</label>
+      <input type="password" id="changePwConfirm" placeholder="Nhập lại mật khẩu mới">
+    </div>
+    <div class="form-msg" id="changePwMsg"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('changePwModal')">Hủy</button>
+      <button class="btn-save" onclick="saveChangePw()">Đổi mật khẩu</button>
     </div>
   </div>
 </div>
@@ -779,6 +826,7 @@ function switchView(view) {
     renderAdminPanel();
     renderTimeTargets();
     renderTimeLog();
+    renderChangePwTab();
   }
 }
 
@@ -790,6 +838,7 @@ function switchTab(id) {
   event.currentTarget.classList.add('active');
   if (id === 'tabManage') renderAdminPanel();
   if (id === 'tabTime') { renderTimeTargets(); renderTimeLog(); }
+  if (id === 'tabChangePw') renderChangePwTab();
 }
 
 // ===== ADMIN PANEL =====
@@ -825,7 +874,6 @@ function renderUserList() {
     const accounts = snapshot.val();
     if (!accounts) { tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào.</td></tr>`; return; }
     
-    // Lấy role của current user
     const currentRole = accounts[currentUser]?.role || 'admin';
     
     const others = Object.keys(accounts).filter(u => u !== currentUser);
@@ -845,17 +893,20 @@ function renderUserList() {
       else if (acc.role === 'admin') badge = `<span class="badge admin">Admin</span>`;
       else badge = `<span class="badge user">User</span>`;
 
-      // Kiểm tra xem có được xóa không
       let canDelete = true;
       let deleteDisabled = '';
       
-      // Không cho xóa Owner (trừ khi current user cũng là Owner)
       if (acc.role === 'owner') {
         if (currentRole !== 'owner') {
           canDelete = false;
           deleteDisabled = ' style="opacity:0.5;cursor:not-allowed;" disabled';
         }
       }
+
+      // Nút đổi mật khẩu: chỉ Owner mới thấy
+      const changePwBtn = currentRole === 'owner' 
+        ? `<button class="btn-sm btn-edit" onclick="openChangePw('${u}')" style="margin-left:6px;">🔑</button>`
+        : '';
 
       return `<tr>
         <td>${u}</td>
@@ -864,6 +915,7 @@ function renderUserList() {
         <td>
           <button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>
           <button class="btn-sm btn-del" onclick="${canDelete ? `openDelete('${u}')` : 'alert(\\\'❌ Bạn không có quyền xóa Owner!\\\')'}"${deleteDisabled}>Xóa</button>
+          ${changePwBtn}
         </td>
       </tr>`;
     }).join('');
@@ -894,6 +946,84 @@ function renderTimeLog() {
       const h = Math.floor(l.added/3600), m = Math.floor((l.added%3600)/60), s = l.added%60;
       return `<div class="log-entry">[${l.time}] <strong>${l.by}</strong> → <strong>${l.target}</strong>: +${pad(h)}:${pad(m)}:${pad(s)}</div>`;
     }).join('');
+  });
+}
+
+// ===== RENDER CHANGE PASSWORD TAB =====
+function renderChangePwTab() {
+  const container = document.getElementById('changePwContainer');
+  const ref = db.ref('accounts/' + currentUser);
+  ref.once('value').then(snapshot => {
+    const acc = snapshot.val();
+    if (acc.role === 'owner') {
+      // Owner có thể đổi mật khẩu của bất kỳ ai
+      container.innerHTML = `
+        <p style="color:#a0aec0; margin-bottom:16px;">👑 Bạn là Owner. Bạn có thể đổi mật khẩu của bất kỳ tài khoản nào.</p>
+        <div class="form-group" style="max-width:380px;">
+          <label>Chọn tài khoản cần đổi mật khẩu</label>
+          <select id="changePwSelect" style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#e2e8f0; font-size:0.95rem; outline:none;">
+          </select>
+        </div>
+        <button class="btn-create" onclick="openChangePwFromSelect()">🔑 Đổi mật khẩu</button>
+      `;
+      // Load danh sách tài khoản
+      const sel = document.getElementById('changePwSelect');
+      const accRef = db.ref('accounts');
+      accRef.once('value').then(s => {
+        const accounts = s.val();
+        if (!accounts) { sel.innerHTML = '<option>-- Không có tài khoản --</option>'; return; }
+        sel.innerHTML = Object.keys(accounts).map(u => 
+          `<option value="${u}">${u} (${accounts[u].role})</option>`
+        ).join('');
+      });
+    } else {
+      // Admin chỉ đổi được mật khẩu của chính mình
+      container.innerHTML = `
+        <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn có thể đổi mật khẩu của chính mình.</p>
+        <div class="form-group" style="max-width:380px;">
+          <label>Tài khoản</label>
+          <input type="text" value="${currentUser}" disabled style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#718096; font-size:0.95rem; outline:none;">
+        </div>
+        <button class="btn-create" onclick="openChangePw('${currentUser}')">🔑 Đổi mật khẩu</button>
+      `;
+    }
+  });
+}
+
+// ===== OPEN CHANGE PASSWORD MODAL =====
+function openChangePw(target) {
+  document.getElementById('changePwTarget').textContent = target;
+  document.getElementById('changePwNew').value = '';
+  document.getElementById('changePwConfirm').value = '';
+  document.getElementById('changePwMsg').textContent = '';
+  document.getElementById('changePwModal').classList.add('show');
+  // Lưu target để dùng khi save
+  document.getElementById('changePwModal').dataset.target = target;
+}
+
+function openChangePwFromSelect() {
+  const sel = document.getElementById('changePwSelect');
+  if (!sel.value) { alert('Vui lòng chọn tài khoản.'); return; }
+  openChangePw(sel.value);
+}
+
+function saveChangePw() {
+  const target = document.getElementById('changePwModal').dataset.target;
+  const newPw = document.getElementById('changePwNew').value;
+  const confirmPw = document.getElementById('changePwConfirm').value;
+  const msg = document.getElementById('changePwMsg');
+
+  if (!newPw) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập mật khẩu mới.'; return; }
+  if (newPw.length < 3) { msg.className='form-msg err'; msg.textContent='Mật khẩu phải có ít nhất 3 ký tự.'; return; }
+  if (newPw !== confirmPw) { msg.className='form-msg err'; msg.textContent='Mật khẩu xác nhận không khớp.'; return; }
+
+  const ref = db.ref('accounts/' + target);
+  ref.once('value').then(snapshot => {
+    const acc = snapshot.val();
+    if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
+    ref.update({ password: newPw });
+    msg.className='form-msg ok'; msg.textContent='✅ Đổi mật khẩu thành công!';
+    setTimeout(() => closeModal('changePwModal'), 1500);
   });
 }
 
@@ -1006,17 +1136,14 @@ function openDelete(u) {
 }
 function confirmDelete() {
   if (deleteTarget) {
-    // Kiểm tra xem target có phải là Owner không
     const ref = db.ref('accounts/' + deleteTarget);
     ref.once('value').then(snapshot => {
       const acc = snapshot.val();
       if (acc && acc.role === 'owner') {
-        // Kiểm tra current user có phải Owner không
         const currentRef = db.ref('accounts/' + currentUser);
         currentRef.once('value').then(s => {
           const currentAcc = s.val();
           if (currentAcc && currentAcc.role === 'owner') {
-            // Owner được xóa Owner
             ref.remove();
             deleteTarget = null;
             closeModal('deleteModal');
@@ -1029,7 +1156,6 @@ function confirmDelete() {
           }
         });
       } else {
-        // Xóa bình thường
         ref.remove();
         deleteTarget = null;
         closeModal('deleteModal');
@@ -1045,7 +1171,6 @@ function closeModal(id) {
 }
 
 // ===== INIT TÀI KHOẢN =====
-// Tạo Owner nếu chưa có
 db.ref('accounts/black_0x000000').once('value').then(snapshot => {
   if (!snapshot.exists()) {
     db.ref('accounts/black_0x000000').set({
@@ -1057,7 +1182,6 @@ db.ref('accounts/black_0x000000').once('value').then(snapshot => {
   }
 });
 
-// Tạo Admin nếu chưa có
 db.ref('accounts/admin').once('value').then(snapshot => {
   if (!snapshot.exists()) {
     db.ref('accounts/admin').set({

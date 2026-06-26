@@ -875,7 +875,7 @@ function doLogout() {
   db.ref('systemLog').off();
 }
 
-// ===== COUNTDOWN (FIX - LẮNG NGHE THAY ĐỔI TỪ ADMIN) =====
+// ===== COUNTDOWN (FIX - DÙNG TRANSACTION) =====
 function startCountdown() {
   stopCountdown();
   
@@ -892,27 +892,29 @@ function startCountdown() {
     let timeLeft = acc.timeLeft;
     updateTimerDisplay(timeLeft);
     
-    // LẮNG NGHE THAY ĐỔI TỪ FIREBASE (khi admin nạp thêm)
+    // Lắng nghe thay đổi từ Firebase và cập nhật local
     userRef.on('value', function(snapshot) {
       const newAcc = snapshot.val();
       if (!newAcc) return;
       
-      // Nếu thời gian mới lớn hơn thời gian hiện tại -> cập nhật
+      // Nếu thời gian mới lớn hơn thời gian hiện tại -> cập nhật local
       if (newAcc.timeLeft > timeLeft) {
+        const added = newAcc.timeLeft - timeLeft;
         timeLeft = newAcc.timeLeft;
         updateTimerDisplay(timeLeft);
-        // Hiển thị thông báo cho user biết đã được nạp thêm
         const el = document.getElementById('timerDisplay');
         if (el) {
           el.style.color = '#68d391';
+          el.textContent = '⏱ +' + formatTime(added) + ' ⬆';
           setTimeout(() => {
             el.style.color = timeLeft <= 60 ? '#fc8181' : '';
+            updateTimerDisplay(timeLeft);
           }, 2000);
         }
       }
     });
     
-    // Bắt đầu đếm ngược
+    // Đếm ngược - dùng transaction để tránh ghi đè
     countdownInterval = setInterval(() => {
       timeLeft--;
       
@@ -925,15 +927,34 @@ function startCountdown() {
         return;
       }
       
-      userRef.update({ timeLeft: timeLeft });
+      // Dùng transaction để cập nhật an toàn
+      userRef.transaction(function(currentData) {
+        if (currentData === null) return currentData;
+        // Chỉ giảm nếu giá trị hiện tại vẫn bằng timeLeft + 1 (không bị ai sửa)
+        if (currentData.timeLeft === timeLeft + 1) {
+          currentData.timeLeft = timeLeft;
+        }
+        return currentData;
+      });
+      
       updateTimerDisplay(timeLeft);
     }, 1000);
   });
 }
 
+function formatTime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  let result = '';
+  if (h > 0) result += h + 'h ';
+  if (m > 0 || h > 0) result += m + 'm ';
+  result += s + 's';
+  return result;
+}
+
 function stopCountdown() {
   if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-  // Tắt listener khi logout
   if (currentUser) {
     db.ref('accounts/' + currentUser).off();
   }

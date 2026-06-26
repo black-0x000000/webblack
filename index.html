@@ -585,10 +585,12 @@
 
 <!-- MAIN CONTENT -->
 <div id="mainContent">
+  <!-- User Page (cũ, không dùng nữa) -->
   <div id="userPage" style="display:none;">
     <div class="updating">🔧 Web đang cập nhật...</div>
   </div>
 
+  <!-- Admin Page (dùng chung cho Owner, Admin, User) -->
   <div id="adminPage" style="display:none;">
     <div class="admin-header">
       <div class="admin-header-left">
@@ -807,32 +809,51 @@ function doLogin() {
   }).catch(e => { err.textContent = '❌ Lỗi kết nối Firebase: ' + e.message; });
 }
 
+// ===== SHOW APP (FIX - ĐỒNG BỘ UI CHO USER) =====
 function showApp(role) {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('topBar').classList.add('show');
   document.getElementById('mainContent').classList.add('show');
   document.getElementById('topBarTitle').textContent = '👤 ' + currentUser;
+  document.getElementById('adminName').textContent = currentUser;
 
-  if (role === 'owner' || role === 'admin') {
-    document.getElementById('adminPage').style.display = 'block';
-    document.getElementById('userPage').style.display = 'none';
-    document.getElementById('timerDisplay').textContent = '';
-    document.getElementById('adminName').textContent = currentUser;
+  // Luôn hiện adminPage (dùng chung cho Owner, Admin, User)
+  document.getElementById('adminPage').style.display = 'block';
+  document.getElementById('userPage').style.display = 'none';
+  document.getElementById('timerDisplay').textContent = '';
 
-    if (role === 'owner') {
-      document.getElementById('tabLogBtn').style.display = 'inline-block';
-    } else {
-      document.getElementById('tabLogBtn').style.display = 'none';
-    }
-
+  if (role === 'owner') {
+    // Owner: thấy tất cả
+    document.getElementById('tabLogBtn').style.display = 'inline-block';
+    document.getElementById('btnSettings').style.display = 'flex';
+    document.getElementById('btnWeb').style.display = 'inline-block';
+    document.getElementById('settingsView').style.display = 'none';
     currentView = 'web';
     switchView('web');
     renderAdminPanel();
     watchUserTime();
-    if (role === 'owner') renderLog();
+    renderLog();
+  } else if (role === 'admin') {
+    // Admin: thấy hết trừ Log
+    document.getElementById('tabLogBtn').style.display = 'none';
+    document.getElementById('btnSettings').style.display = 'flex';
+    document.getElementById('btnWeb').style.display = 'inline-block';
+    document.getElementById('settingsView').style.display = 'none';
+    currentView = 'web';
+    switchView('web');
+    renderAdminPanel();
+    watchUserTime();
   } else {
-    document.getElementById('userPage').style.display = 'flex';
-    document.getElementById('adminPage').style.display = 'none';
+    // USER: chỉ thấy Web View, ẩn hết settings
+    document.getElementById('tabLogBtn').style.display = 'none';
+    document.getElementById('btnSettings').style.display = 'none';
+    document.getElementById('btnWeb').style.display = 'none';
+    document.getElementById('settingsView').style.display = 'none';
+    
+    // Hiện Web View
+    document.getElementById('webView').classList.add('show');
+    
+    // Bắt đầu đếm ngược cho User
     startCountdown();
   }
 }
@@ -1018,10 +1039,17 @@ function renderMyAccount() {
   const ref = db.ref('accounts/' + currentUser);
   ref.once('value').then(snapshot => {
     const acc = snapshot.val();
-    const roleBadge = acc.role === 'owner' ? '<span class="badge owner">👑 Owner</span>' : '<span class="badge admin">Admin</span>';
+    let roleBadge = '';
+    if (acc.role === 'owner') roleBadge = '<span class="badge owner">👑 Owner</span>';
+    else if (acc.role === 'admin') roleBadge = '<span class="badge admin">Admin</span>';
+    else roleBadge = '<span class="badge user">User</span>';
+    
     document.getElementById('myAccountCard').innerHTML = `
       <div class="info-row"><strong>${currentUser}</strong>${roleBadge}</div>
-      <div style="font-size:0.85rem; color:#718096;">${acc.role === 'owner' ? '👑 Chủ sở hữu hệ thống — toàn quyền' : 'Quản trị viên hệ thống'}</div>
+      <div style="font-size:0.85rem; color:#718096;">
+        ${acc.role === 'owner' ? '👑 Chủ sở hữu hệ thống — toàn quyền' : 
+          acc.role === 'admin' ? 'Quản trị viên hệ thống' : 'Người dùng hệ thống'}
+      </div>
     `;
   });
 }
@@ -1134,7 +1162,7 @@ function renderChangePwTab() {
         if (!accounts) { sel.innerHTML = '<option>-- Không có tài khoản --</option>'; return; }
         sel.innerHTML = Object.keys(accounts).map(u => `<option value="${u}">${u} (${accounts[u].role})${u === currentUser ? ' ← Bạn' : ''}</option>`).join('');
       });
-    } else {
+    } else if (acc.role === 'admin') {
       container.innerHTML = `
         <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn chỉ có thể đổi mật khẩu của chính mình. <strong style="color:#fc8181;">Không được đổi mật khẩu của Admin khác!</strong></p>
         <div class="form-group" style="max-width:380px;">
@@ -1143,6 +1171,11 @@ function renderChangePwTab() {
         </div>
         <button class="btn-create" onclick="openChangePw('${currentUser}')">🔑 Đổi mật khẩu của tôi</button>
         <div style="margin-top:16px; color:#fc8181; font-size:0.9rem;">⛔ Bạn KHÔNG được đổi mật khẩu của Admin khác. Chỉ Owner mới có quyền đó.</div>
+      `;
+    } else {
+      container.innerHTML = `
+        <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn là người dùng. <strong style="color:#fc8181;">Không có quyền đổi mật khẩu!</strong></p>
+        <p style="color:#718096; font-size:0.9rem;">Vui lòng liên hệ Admin để được hỗ trợ.</p>
       `;
     }
   });
@@ -1253,6 +1286,10 @@ function openEdit(u) {
         showError('Bạn không có quyền sửa tài khoản Owner!');
         return;
       }
+      if (currentAcc.role === 'user') {
+        showError('Bạn không có quyền sửa tài khoản!');
+        return;
+      }
       document.getElementById('editTarget').value = u;
       document.getElementById('editUsername').value = u;
       document.getElementById('editPassword').value = '';
@@ -1282,6 +1319,10 @@ function saveEdit() {
       }
       if (currentAcc.role === 'admin' && acc.role === 'owner') {
         msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa Owner!';
+        return;
+      }
+      if (currentAcc.role === 'user') {
+        msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa tài khoản!';
         return;
       }
 
@@ -1322,6 +1363,10 @@ function confirmDelete() {
       const currentAcc = s.val();
       if (!currentAcc) return;
 
+      if (currentAcc.role === 'user') {
+        showError('Bạn không có quyền xóa tài khoản!');
+        deleteTarget = null; closeModal('deleteModal'); return;
+      }
       if (currentAcc.role === 'admin' && acc.role === 'admin') {
         showError('Admin không được xóa tài khoản Admin khác!');
         deleteTarget = null; closeModal('deleteModal'); return;

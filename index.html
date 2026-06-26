@@ -273,23 +273,6 @@
   .btn-del { background: #742a2a; color: #fc8181; }
   .btn-del:hover { background: #9b2c2c; }
 
-  .btn-change-pw {
-    background: #2d3748;
-    color: #a0aec0;
-    border: 1px solid #4a5568;
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.82rem;
-    font-weight: 600;
-    transition: all 0.2s;
-  }
-  .btn-change-pw:hover {
-    background: #4f6ef7;
-    border-color: #4f6ef7;
-    color: #fff;
-  }
-
   .create-form { max-width: 380px; }
   .form-group { margin-bottom: 16px; }
   .form-group label {
@@ -865,7 +848,7 @@ function renderMyAccount() {
   });
 }
 
-// ===== RENDER USER LIST (CÓ PHÂN QUYỀN) =====
+// ===== RENDER USER LIST =====
 function renderUserList() {
   const tbody = document.getElementById('userListBody');
   const ref = db.ref('accounts');
@@ -893,25 +876,22 @@ function renderUserList() {
       else badge = `<span class="badge user">User</span>`;
 
       // ===== QUYỀN XÓA =====
-      let canDelete = true;
-      let deleteDisabled = '';
-      if (acc.role === 'owner') {
-        if (currentRole !== 'owner') {
-          canDelete = false;
-          deleteDisabled = ' style="opacity:0.5;cursor:not-allowed;" disabled';
-        }
+      let deleteButton = '';
+      if (currentRole === 'owner') {
+        deleteButton = `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`;
+      } else if (currentRole === 'admin' && acc.role === 'user') {
+        deleteButton = `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`;
+      } else {
+        deleteButton = `<button class="btn-sm btn-del" onclick="alert('❌ Bạn không có quyền xóa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Xóa</button>`;
       }
 
-      // ===== QUYỀN SỬA (edit) - Admin chỉ sửa được USER =====
+      // ===== QUYỀN SỬA =====
       let editButton = '';
       if (currentRole === 'owner') {
-        // Owner sửa được tất cả
         editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
       } else if (currentRole === 'admin' && acc.role === 'user') {
-        // Admin chỉ sửa được USER
         editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
       } else {
-        // Admin không sửa được Admin khác hoặc Owner
         editButton = `<button class="btn-sm btn-edit" onclick="alert('❌ Bạn không có quyền sửa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Sửa</button>`;
       }
 
@@ -926,7 +906,7 @@ function renderUserList() {
         <td class="time-cell">${timeStr}</td>
         <td>
           ${editButton}
-          <button class="btn-sm btn-del" onclick="${canDelete ? `openDelete('${u}')` : 'alert(\\\'❌ Bạn không có quyền xóa!\\\')'}"${deleteDisabled}>Xóa</button>
+          ${deleteButton}
           ${changePwBtn}
         </td>
       </tr>`;
@@ -968,7 +948,6 @@ function renderChangePwTab() {
   ref.once('value').then(snapshot => {
     const acc = snapshot.val();
     if (acc.role === 'owner') {
-      // Owner: đổi được tất cả
       container.innerHTML = `
         <p style="color:#a0aec0; margin-bottom:16px;">👑 Bạn là Owner. Bạn có thể đổi mật khẩu của bất kỳ tài khoản nào, bao gồm chính mình.</p>
         <div class="form-group" style="max-width:380px;">
@@ -991,7 +970,6 @@ function renderChangePwTab() {
         ).join('');
       });
     } else if (acc.role === 'admin') {
-      // Admin: CHỈ đổi được mật khẩu của CHÍNH MÌNH
       container.innerHTML = `
         <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn chỉ có thể đổi mật khẩu của chính mình. <strong style="color:#fc8181;">Không được đổi mật khẩu của Admin khác!</strong></p>
         <div class="form-group" style="max-width:380px;">
@@ -1100,7 +1078,7 @@ function addTime() {
   });
 }
 
-// ===== EDIT MODAL (CÓ KIỂM TRA QUYỀN) =====
+// ===== EDIT MODAL =====
 function openEdit(u) {
   const ref = db.ref('accounts/' + currentUser);
   ref.once('value').then(snapshot => {
@@ -1193,29 +1171,43 @@ function confirmDelete() {
     const ref = db.ref('accounts/' + deleteTarget);
     ref.once('value').then(snapshot => {
       const acc = snapshot.val();
-      if (acc && acc.role === 'owner') {
-        const currentRef = db.ref('accounts/' + currentUser);
-        currentRef.once('value').then(s => {
-          const currentAcc = s.val();
-          if (currentAcc && currentAcc.role === 'owner') {
-            ref.remove();
-            deleteTarget = null;
-            closeModal('deleteModal');
-            renderUserList();
-            renderTimeTargets();
-          } else {
-            alert('❌ Chỉ Owner mới được xóa tài khoản Owner!');
-            deleteTarget = null;
-            closeModal('deleteModal');
-          }
-        });
-      } else {
+      if (!acc) { deleteTarget = null; closeModal('deleteModal'); return; }
+      
+      const currentRef = db.ref('accounts/' + currentUser);
+      currentRef.once('value').then(s => {
+        const currentAcc = s.val();
+        if (!currentAcc) return;
+        
+        // Admin không được xóa Admin khác
+        if (currentAcc.role === 'admin' && acc.role === 'admin') {
+          alert('❌ Admin không được xóa tài khoản Admin khác!');
+          deleteTarget = null;
+          closeModal('deleteModal');
+          return;
+        }
+        
+        // Admin không được xóa Owner
+        if (currentAcc.role === 'admin' && acc.role === 'owner') {
+          alert('❌ Admin không được xóa tài khoản Owner!');
+          deleteTarget = null;
+          closeModal('deleteModal');
+          return;
+        }
+        
+        // Owner không được xóa chính mình
+        if (currentAcc.role === 'owner' && deleteTarget === currentUser) {
+          alert('❌ Bạn không thể xóa chính mình!');
+          deleteTarget = null;
+          closeModal('deleteModal');
+          return;
+        }
+
         ref.remove();
         deleteTarget = null;
         closeModal('deleteModal');
         renderUserList();
         renderTimeTargets();
-      }
+      });
     });
   }
 }

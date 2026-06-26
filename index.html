@@ -431,7 +431,6 @@
 
   .empty-msg { color: #4a5568; font-size: 0.9rem; padding: 16px 0; }
 
-  /* Error Modal */
   #errorModal .modal-box {
     text-align: center;
   }
@@ -460,6 +459,72 @@
     background: #3a56d4;
   }
 
+  .log-container {
+    background: #1e2332;
+    border: 1px solid #2d3548;
+    border-radius: 10px;
+    padding: 16px 20px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  .log-container::-webkit-scrollbar {
+    width: 6px;
+  }
+  .log-container::-webkit-scrollbar-track {
+    background: #151922;
+    border-radius: 4px;
+  }
+  .log-container::-webkit-scrollbar-thumb {
+    background: #4f6ef7;
+    border-radius: 4px;
+  }
+  .log-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid #2d3548;
+    gap: 16px;
+  }
+  .log-item:last-child {
+    border-bottom: none;
+  }
+  .log-item .log-content {
+    color: #e2e8f0;
+    font-size: 0.92rem;
+  }
+  .log-item .log-content .highlight {
+    color: #4f6ef7;
+    font-weight: 600;
+  }
+  .log-item .log-content .danger {
+    color: #fc8181;
+    font-weight: 600;
+  }
+  .log-item .log-content .success {
+    color: #68d391;
+    font-weight: 600;
+  }
+  .log-item .log-time {
+    color: #718096;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .log-item .log-badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-right: 8px;
+  }
+  .log-badge.create { background: #2c5282; color: #90cdf4; }
+  .log-badge.delete { background: #742a2a; color: #fc8181; }
+  .log-badge.edit { background: #553c9a; color: #d6bcfa; }
+  .log-badge.time { background: #2d3748; color: #68d391; }
+  .log-badge.pw { background: #9b2c2c; color: #fc8181; }
+  .log-badge.login { background: #2d3748; color: #a0aec0; }
+
   @media (max-width: 640px) {
     .admin-header {
       flex-direction: column;
@@ -486,12 +551,19 @@
       padding: 24px 20px;
       width: 92%;
     }
+    .log-item {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .log-item .log-time {
+      font-size: 0.7rem;
+    }
   }
 </style>
 </head>
 <body>
 
-<!-- ===== LOGIN SCREEN ===== -->
+<!-- LOGIN SCREEN -->
 <div id="loginScreen">
   <div class="login-box">
     <h2>🔐 Đăng nhập</h2>
@@ -504,33 +576,27 @@
   </div>
 </div>
 
-<!-- ===== TOP BAR ===== -->
+<!-- TOP BAR -->
 <div id="topBar">
   <div id="timerDisplay"></div>
   <div class="title" id="topBarTitle"></div>
   <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
 </div>
 
-<!-- ===== MAIN CONTENT ===== -->
+<!-- MAIN CONTENT -->
 <div id="mainContent">
-
-  <!-- USER PAGE -->
   <div id="userPage" style="display:none;">
     <div class="updating">🔧 Web đang cập nhật...</div>
   </div>
 
-  <!-- ADMIN PAGE -->
   <div id="adminPage" style="display:none;">
-
     <div class="admin-header">
       <div class="admin-header-left">
         <span class="greeting">👋 Xin chào, <strong id="adminName">Admin</strong></span>
       </div>
       <div class="admin-actions">
         <button class="btn-nav btn-web active" id="btnWeb" onclick="switchView('web')">📱 Xem Web</button>
-        <button class="btn-settings" id="btnSettings" onclick="switchView('settings')" title="Quản lý hệ thống">
-          ⚙️
-        </button>
+        <button class="btn-settings" id="btnSettings" onclick="switchView('settings')" title="Quản lý hệ thống">⚙️</button>
       </div>
     </div>
 
@@ -548,6 +614,7 @@
         <button class="tab-btn" onclick="switchTab('tabCreate')">➕ Tạo tài khoản mới</button>
         <button class="tab-btn" onclick="switchTab('tabTime')">⏱ Thời gian</button>
         <button class="tab-btn" onclick="switchTab('tabChangePw')">🔑 Đổi mật khẩu</button>
+        <button class="tab-btn" id="tabLogBtn" onclick="switchTab('tabLog')" style="display:none;">📋 Log</button>
       </div>
 
       <div class="tab-panel active" id="tabManage">
@@ -557,12 +624,7 @@
         <div class="sub-title">Tài khoản người dùng bạn quản lý</div>
         <table class="user-table" id="userListTable">
           <thead>
-            <tr>
-              <th>Tên đăng nhập</th>
-              <th>Loại</th>
-              <th>Thời gian còn lại</th>
-              <th>Thao tác</th>
-            </tr>
+            <tr><th>Tên đăng nhập</th><th>Loại</th><th>Thời gian còn lại</th><th>Thao tác</th></tr>
           </thead>
           <tbody id="userListBody"></tbody>
         </table>
@@ -595,56 +657,42 @@
         <div class="section-title">Nạp thời gian cho người dùng</div>
         <div class="time-panel-form">
           <div class="time-inputs">
-            <div class="field">
-              <label>Giờ</label>
-              <input type="number" id="addHour" min="0" value="0" placeholder="0">
-            </div>
-            <div class="field">
-              <label>Phút</label>
-              <input type="number" id="addMin" min="0" value="0" placeholder="0">
-            </div>
-            <div class="field">
-              <label>Giây</label>
-              <input type="number" id="addSec" min="0" value="0" placeholder="0">
-            </div>
-            <div class="field">
-              <label>Tài khoản người dùng</label>
-              <select id="addTarget"></select>
-            </div>
+            <div class="field"><label>Giờ</label><input type="number" id="addHour" min="0" value="0"></div>
+            <div class="field"><label>Phút</label><input type="number" id="addMin" min="0" value="0"></div>
+            <div class="field"><label>Giây</label><input type="number" id="addSec" min="0" value="0"></div>
+            <div class="field"><label>Tài khoản</label><select id="addTarget"></select></div>
           </div>
           <button class="btn-nap" onclick="addTime()">Nạp</button>
           <div class="form-msg" id="timeMsg"></div>
-          <div class="time-log" id="timeLog">
+          <div class="time-log">
             <div class="time-log-title">Lịch sử nạp gần đây:</div>
             <div id="timeLogEntries"><div class="empty-msg">Chưa có lịch sử nạp.</div></div>
           </div>
         </div>
       </div>
 
-      <!-- Tab Đổi mật khẩu -->
       <div class="tab-panel" id="tabChangePw">
         <div class="section-title">🔑 Đổi mật khẩu</div>
         <div id="changePwContainer"></div>
       </div>
 
+      <div class="tab-panel" id="tabLog">
+        <div class="section-title">📋 Nhật ký hệ thống</div>
+        <div id="logContainer" class="log-container">
+          <div id="logEntries"><div class="empty-msg">Chưa có hoạt động nào.</div></div>
+        </div>
+      </div>
     </div>
-
   </div>
 </div>
 
-<!-- Edit Modal -->
+<!-- MODALS -->
 <div class="modal-overlay" id="editModal">
   <div class="modal-box">
     <h3>✏️ Chỉnh sửa tài khoản</h3>
     <input type="hidden" id="editTarget">
-    <div class="form-group">
-      <label>Tên đăng nhập mới</label>
-      <input type="text" id="editUsername">
-    </div>
-    <div class="form-group">
-      <label>Mật khẩu mới (để trống = giữ nguyên)</label>
-      <input type="password" id="editPassword" placeholder="Không thay đổi nếu để trống">
-    </div>
+    <div class="form-group"><label>Tên đăng nhập mới</label><input type="text" id="editUsername"></div>
+    <div class="form-group"><label>Mật khẩu mới (để trống = giữ nguyên)</label><input type="password" id="editPassword" placeholder="Không thay đổi nếu để trống"></div>
     <div class="form-msg" id="editMsg"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('editModal')">Hủy</button>
@@ -653,7 +701,6 @@
   </div>
 </div>
 
-<!-- Delete Modal -->
 <div class="modal-overlay" id="deleteModal">
   <div class="modal-box">
     <h3>🗑️ Xác nhận xóa</h3>
@@ -665,18 +712,11 @@
   </div>
 </div>
 
-<!-- Change Password Modal -->
 <div class="modal-overlay" id="changePwModal">
   <div class="modal-box">
     <h3>🔑 Đổi mật khẩu cho <span id="changePwTarget" style="color:#4f6ef7;"></span></h3>
-    <div class="form-group">
-      <label>Mật khẩu mới</label>
-      <input type="password" id="changePwNew" placeholder="Nhập mật khẩu mới">
-    </div>
-    <div class="form-group">
-      <label>Xác nhận mật khẩu mới</label>
-      <input type="password" id="changePwConfirm" placeholder="Nhập lại mật khẩu mới">
-    </div>
+    <div class="form-group"><label>Mật khẩu mới</label><input type="password" id="changePwNew" placeholder="Nhập mật khẩu mới"></div>
+    <div class="form-group"><label>Xác nhận mật khẩu mới</label><input type="password" id="changePwConfirm" placeholder="Nhập lại mật khẩu mới"></div>
     <div class="form-msg" id="changePwMsg"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('changePwModal')">Hủy</button>
@@ -685,7 +725,6 @@
   </div>
 </div>
 
-<!-- Error Modal -->
 <div class="modal-overlay" id="errorModal">
   <div class="modal-box">
     <div class="error-icon">⛔</div>
@@ -709,7 +748,6 @@ const firebaseConfig = {
   appId: "1:14861249612:web:60b00f93d22d11dc6f18e9",
   measurementId: "G-WN5Y283KWR"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -722,10 +760,26 @@ let currentView = 'web';
 document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
-// ===== SHOW ERROR =====
 function showError(message) {
   document.getElementById('errorMessage').textContent = message;
   document.getElementById('errorModal').classList.add('show');
+}
+
+// ===== LOG FUNCTION =====
+function writeLog(action, detail) {
+  const now = new Date();
+  const timeStr = now.toLocaleString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  const logRef = db.ref('systemLog').push();
+  logRef.set({
+    action: action,
+    detail: detail,
+    by: currentUser,
+    time: timeStr,
+    timestamp: now.getTime()
+  });
 }
 
 // ===== LOGIN =====
@@ -734,7 +788,6 @@ function doLogin() {
   const p = document.getElementById('loginPass').value;
   const err = document.getElementById('loginError');
   err.textContent = '';
-
   if (!u || !p) { err.textContent = '❌ Vui lòng nhập đầy đủ.'; return; }
 
   const userRef = db.ref('accounts/' + u);
@@ -742,17 +795,16 @@ function doLogin() {
     const acc = snapshot.val();
     if (!acc) { err.textContent = '❌ Tài khoản không tồn tại.'; return; }
     if (acc.password !== p) { err.textContent = '❌ Mật khẩu không đúng.'; return; }
-
     if (acc.role === 'user' && acc.timeLeft <= 0) {
       err.textContent = '⚠️ Tài khoản hết thời gian. Liên hệ admin.';
       return;
     }
-
     currentUser = u;
+    if (acc.role === 'admin' || acc.role === 'owner') {
+      writeLog('login', u + ' đã đăng nhập');
+    }
     showApp(acc.role);
-  }).catch(e => {
-    err.textContent = '❌ Lỗi kết nối Firebase: ' + e.message;
-  });
+  }).catch(e => { err.textContent = '❌ Lỗi kết nối Firebase: ' + e.message; });
 }
 
 function showApp(role) {
@@ -766,15 +818,45 @@ function showApp(role) {
     document.getElementById('userPage').style.display = 'none';
     document.getElementById('timerDisplay').textContent = '';
     document.getElementById('adminName').textContent = currentUser;
+
+    if (role === 'owner') {
+      document.getElementById('tabLogBtn').style.display = 'inline-block';
+    } else {
+      document.getElementById('tabLogBtn').style.display = 'none';
+    }
+
     currentView = 'web';
     switchView('web');
     renderAdminPanel();
-    watchUserTime(); // Lắng nghe real-time thời gian user
+    watchUserTime();
+    if (role === 'owner') renderLog();
   } else {
     document.getElementById('userPage').style.display = 'flex';
     document.getElementById('adminPage').style.display = 'none';
     startCountdown();
   }
+}
+
+// ===== RENDER LOG =====
+function renderLog() {
+  const container = document.getElementById('logEntries');
+  const ref = db.ref('systemLog');
+  ref.orderByChild('timestamp').limitToLast(100).on('value', function(snapshot) {
+    const logs = snapshot.val();
+    if (!logs) { container.innerHTML = '<div class="empty-msg">Chưa có hoạt động nào.</div>'; return; }
+    const entries = Object.values(logs).reverse();
+    container.innerHTML = entries.map(l => {
+      const badgeMap = {
+        'create': 'create', 'delete': 'delete', 'edit': 'edit',
+        'time': 'time', 'password': 'pw', 'login': 'login'
+      };
+      const badge = badgeMap[l.action] || 'create';
+      return `<div class="log-item">
+        <span class="log-content"><span class="log-badge ${badge}">${l.action.toUpperCase()}</span> ${l.detail}</span>
+        <span class="log-time">${l.time}</span>
+      </div>`;
+    }).join('');
+  });
 }
 
 // ===== LOGOUT =====
@@ -789,9 +871,8 @@ function doLogout() {
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginError').textContent = '';
-  
-  // Hủy lắng nghe real-time
   db.ref('accounts').off();
+  db.ref('systemLog').off();
 }
 
 // ===== COUNTDOWN =====
@@ -884,119 +965,72 @@ function renderMyAccount() {
   const ref = db.ref('accounts/' + currentUser);
   ref.once('value').then(snapshot => {
     const acc = snapshot.val();
-    const roleBadge = acc.role === 'owner' 
-      ? '<span class="badge owner">👑 Owner</span>' 
-      : '<span class="badge admin">Admin</span>';
+    const roleBadge = acc.role === 'owner' ? '<span class="badge owner">👑 Owner</span>' : '<span class="badge admin">Admin</span>';
     document.getElementById('myAccountCard').innerHTML = `
-      <div class="info-row">
-        <strong>${currentUser}</strong>
-        ${roleBadge}
-      </div>
-      <div style="font-size:0.85rem; color:#718096;">
-        ${acc.role === 'owner' ? '👑 Chủ sở hữu hệ thống — toàn quyền' : 'Quản trị viên hệ thống'}
-      </div>
+      <div class="info-row"><strong>${currentUser}</strong>${roleBadge}</div>
+      <div style="font-size:0.85rem; color:#718096;">${acc.role === 'owner' ? '👑 Chủ sở hữu hệ thống — toàn quyền' : 'Quản trị viên hệ thống'}</div>
     `;
   });
 }
 
-// ===== RENDER USER LIST (REAL-TIME) =====
+// ===== RENDER USER LIST =====
 function renderUserList() {
   const tbody = document.getElementById('userListBody');
   const ref = db.ref('accounts');
-  
-  // Dùng on() để lắng nghe real-time
   ref.on('value', function(snapshot) {
     const accounts = snapshot.val();
-    if (!accounts) { 
-      tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào.</td></tr>`; 
-      return; 
-    }
-    
+    if (!accounts) { tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào.</td></tr>`; return; }
     const currentRole = accounts[currentUser]?.role || 'admin';
     const others = Object.keys(accounts).filter(u => u !== currentUser);
-    
-    if (others.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`;
-      return;
-    }
+    if (others.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`; return; }
 
     tbody.innerHTML = others.map(u => {
       const acc = accounts[u];
       const t = acc.timeLeft || 0;
       const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
-      const timeStr = acc.role === 'user' ? `${pad(h)}:${pad(m)}:${pad(s)}` : '—';
-      
+      const timeStr = acc.role === 'user' ? pad(h)+':'+pad(m)+':'+pad(s) : '—';
       let badge = '';
       if (acc.role === 'owner') badge = `<span class="badge owner">👑 Owner</span>`;
       else if (acc.role === 'admin') badge = `<span class="badge admin">Admin</span>`;
       else badge = `<span class="badge user">User</span>`;
 
-      // ===== QUYỀN XÓA =====
       let deleteButton = '';
-      if (currentRole === 'owner') {
-        deleteButton = `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`;
-      } else if (currentRole === 'admin' && acc.role === 'user') {
-        deleteButton = `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`;
-      } else {
-        deleteButton = `<button class="btn-sm btn-del" onclick="showError('Bạn không có quyền xóa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Xóa</button>`;
-      }
+      if (currentRole === 'owner') deleteButton = `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`;
+      else if (currentRole === 'admin' && acc.role === 'user') deleteButton = `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`;
+      else deleteButton = `<button class="btn-sm btn-del" onclick="showError('Bạn không có quyền xóa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Xóa</button>`;
 
-      // ===== QUYỀN SỬA =====
       let editButton = '';
-      if (currentRole === 'owner') {
-        editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
-      } else if (currentRole === 'admin' && acc.role === 'user') {
-        editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
-      } else {
-        editButton = `<button class="btn-sm btn-edit" onclick="showError('Bạn không có quyền sửa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Sửa</button>`;
-      }
+      if (currentRole === 'owner') editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
+      else if (currentRole === 'admin' && acc.role === 'user') editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
+      else editButton = `<button class="btn-sm btn-edit" onclick="showError('Bạn không có quyền sửa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Sửa</button>`;
 
-      // Nút đổi mật khẩu (chỉ Owner)
-      const changePwBtn = currentRole === 'owner' 
-        ? `<button class="btn-sm btn-edit" onclick="openChangePw('${u}')" style="margin-left:6px;">🔑</button>`
-        : '';
-
-      // Màu đỏ nếu thời gian <= 60 giây
+      const changePwBtn = currentRole === 'owner' ? `<button class="btn-sm btn-edit" onclick="openChangePw('${u}')" style="margin-left:6px;">🔑</button>` : '';
       const timeColor = (acc.role === 'user' && t <= 60) ? 'color:#fc8181;' : '';
 
       return `<tr>
-        <td>${u}</td>
-        <td>${badge}</td>
+        <td>${u}</td><td>${badge}</td>
         <td class="time-cell" id="time-${u}" style="${timeColor}">${timeStr}</td>
-        <td>
-          ${editButton}
-          ${deleteButton}
-          ${changePwBtn}
-        </td>
+        <td>${editButton} ${deleteButton} ${changePwBtn}</td>
       </tr>`;
     }).join('');
   });
 }
 
-// ===== WATCH USER TIME REAL-TIME =====
 function watchUserTime() {
   const ref = db.ref('accounts');
   ref.on('value', function(snapshot) {
     const accounts = snapshot.val();
-    if (!accounts) return;
-    
-    const currentRole = accounts[currentUser]?.role || 'admin';
+    if (!accounts || !currentUser) return;
     const others = Object.keys(accounts).filter(u => u !== currentUser);
-    
     others.forEach(u => {
       const acc = accounts[u];
       if (acc.role === 'user') {
         const t = acc.timeLeft || 0;
         const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
-        const timeStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
-        const el = document.getElementById(`time-${u}`);
+        const el = document.getElementById('time-'+u);
         if (el) {
-          el.textContent = timeStr;
-          if (t <= 60) {
-            el.style.color = '#fc8181';
-          } else {
-            el.style.color = '';
-          }
+          el.textContent = pad(h)+':'+pad(m)+':'+pad(s);
+          el.style.color = t <= 60 ? '#fc8181' : '';
         }
       }
     });
@@ -1005,21 +1039,17 @@ function watchUserTime() {
 
 function renderTimeTargets() {
   const sel = document.getElementById('addTarget');
-  const ref = db.ref('accounts');
-  ref.once('value').then(snapshot => {
+  db.ref('accounts').once('value').then(snapshot => {
     const accounts = snapshot.val();
-    if (!accounts) { sel.innerHTML = `<option value="">-- Không có user nào --</option>`; return; }
+    if (!accounts) { sel.innerHTML = '<option value="">-- Không có user --</option>'; return; }
     const users = Object.keys(accounts).filter(u => accounts[u].role === 'user');
-    sel.innerHTML = users.length
-      ? users.map(u => `<option value="${u}">${u}</option>`).join('')
-      : `<option value="">-- Không có user nào --</option>`;
+    sel.innerHTML = users.length ? users.map(u => `<option value="${u}">${u}</option>`).join('') : '<option value="">-- Không có user --</option>';
   });
 }
 
 function renderTimeLog() {
   const container = document.getElementById('timeLogEntries');
-  const ref = db.ref('timeLog');
-  ref.orderByKey().limitToLast(10).once('value').then(snapshot => {
+  db.ref('timeLog').orderByKey().limitToLast(10).once('value').then(snapshot => {
     const logs = snapshot.val();
     if (!logs) { container.innerHTML = '<div class="empty-msg">Chưa có lịch sử nạp.</div>'; return; }
     const entries = Object.values(logs).reverse();
@@ -1033,32 +1063,25 @@ function renderTimeLog() {
 // ===== RENDER CHANGE PASSWORD TAB =====
 function renderChangePwTab() {
   const container = document.getElementById('changePwContainer');
-  const ref = db.ref('accounts/' + currentUser);
-  ref.once('value').then(snapshot => {
+  db.ref('accounts/' + currentUser).once('value').then(snapshot => {
     const acc = snapshot.val();
     if (acc.role === 'owner') {
       container.innerHTML = `
         <p style="color:#a0aec0; margin-bottom:16px;">👑 Bạn là Owner. Bạn có thể đổi mật khẩu của bất kỳ tài khoản nào, bao gồm chính mình.</p>
         <div class="form-group" style="max-width:380px;">
           <label>Chọn tài khoản cần đổi mật khẩu</label>
-          <select id="changePwSelect" style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#e2e8f0; font-size:0.95rem; outline:none;">
-          </select>
+          <select id="changePwSelect" style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#e2e8f0; font-size:0.95rem; outline:none;"></select>
         </div>
         <button class="btn-create" onclick="openChangePwFromSelect()">🔑 Đổi mật khẩu</button>
-        <div style="margin-top:16px; color:#718096; font-size:0.9rem;">
-          💡 Chọn tài khoản từ danh sách, bao gồm cả <strong>${currentUser}</strong> (chính bạn)
-        </div>
+        <div style="margin-top:16px; color:#718096; font-size:0.9rem;">💡 Chọn tài khoản từ danh sách, bao gồm cả <strong>${currentUser}</strong> (chính bạn)</div>
       `;
       const sel = document.getElementById('changePwSelect');
-      const accRef = db.ref('accounts');
-      accRef.once('value').then(s => {
+      db.ref('accounts').once('value').then(s => {
         const accounts = s.val();
         if (!accounts) { sel.innerHTML = '<option>-- Không có tài khoản --</option>'; return; }
-        sel.innerHTML = Object.keys(accounts).map(u => 
-          `<option value="${u}">${u} (${accounts[u].role})${u === currentUser ? ' ← Bạn' : ''}</option>`
-        ).join('');
+        sel.innerHTML = Object.keys(accounts).map(u => `<option value="${u}">${u} (${accounts[u].role})${u === currentUser ? ' ← Bạn' : ''}</option>`).join('');
       });
-    } else if (acc.role === 'admin') {
+    } else {
       container.innerHTML = `
         <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn chỉ có thể đổi mật khẩu của chính mình. <strong style="color:#fc8181;">Không được đổi mật khẩu của Admin khác!</strong></p>
         <div class="form-group" style="max-width:380px;">
@@ -1066,15 +1089,12 @@ function renderChangePwTab() {
           <input type="text" value="${currentUser} (chính bạn)" disabled style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#718096; font-size:0.95rem; outline:none;">
         </div>
         <button class="btn-create" onclick="openChangePw('${currentUser}')">🔑 Đổi mật khẩu của tôi</button>
-        <div style="margin-top:16px; color:#fc8181; font-size:0.9rem;">
-          ⛔ Bạn KHÔNG được đổi mật khẩu của Admin khác. Chỉ Owner mới có quyền đó.
-        </div>
+        <div style="margin-top:16px; color:#fc8181; font-size:0.9rem;">⛔ Bạn KHÔNG được đổi mật khẩu của Admin khác. Chỉ Owner mới có quyền đó.</div>
       `;
     }
   });
 }
 
-// ===== OPEN CHANGE PASSWORD MODAL =====
 function openChangePw(target) {
   document.getElementById('changePwTarget').textContent = target;
   document.getElementById('changePwNew').value = '';
@@ -1086,10 +1106,7 @@ function openChangePw(target) {
 
 function openChangePwFromSelect() {
   const sel = document.getElementById('changePwSelect');
-  if (!sel.value) { 
-    showError('Vui lòng chọn tài khoản cần đổi mật khẩu.');
-    return; 
-  }
+  if (!sel.value) { showError('Vui lòng chọn tài khoản cần đổi mật khẩu.'); return; }
   openChangePw(sel.value);
 }
 
@@ -1098,16 +1115,15 @@ function saveChangePw() {
   const newPw = document.getElementById('changePwNew').value;
   const confirmPw = document.getElementById('changePwConfirm').value;
   const msg = document.getElementById('changePwMsg');
-
   if (!newPw) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập mật khẩu mới.'; return; }
   if (newPw.length < 3) { msg.className='form-msg err'; msg.textContent='Mật khẩu phải có ít nhất 3 ký tự.'; return; }
   if (newPw !== confirmPw) { msg.className='form-msg err'; msg.textContent='Mật khẩu xác nhận không khớp.'; return; }
 
-  const ref = db.ref('accounts/' + target);
-  ref.once('value').then(snapshot => {
+  db.ref('accounts/' + target).once('value').then(snapshot => {
     const acc = snapshot.val();
     if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
-    ref.update({ password: newPw });
+    db.ref('accounts/' + target).update({ password: newPw });
+    writeLog('password', currentUser + ' đã đổi mật khẩu của ' + target);
     msg.className='form-msg ok'; msg.textContent='✅ Đổi mật khẩu thành công!';
     setTimeout(() => closeModal('changePwModal'), 1500);
   });
@@ -1119,16 +1135,13 @@ function createAccount() {
   const uname = document.getElementById('newUsername').value.trim();
   const pass = document.getElementById('newPassword').value;
   const msg = document.getElementById('createMsg');
-
   if (!uname) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập tên đăng nhập.'; return; }
   if (!pass) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập mật khẩu.'; return; }
 
-  const ref = db.ref('accounts/' + uname);
-  ref.once('value').then(snapshot => {
-    if (snapshot.exists()) {
-      msg.className='form-msg err'; msg.textContent='Tên đăng nhập đã tồn tại.'; return;
-    }
-    ref.set({ password: pass, role: role, timeLeft: 0, createdBy: currentUser });
+  db.ref('accounts/' + uname).once('value').then(snapshot => {
+    if (snapshot.exists()) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập đã tồn tại.'; return; }
+    db.ref('accounts/' + uname).set({ password: pass, role: role, timeLeft: 0, createdBy: currentUser });
+    writeLog('create', currentUser + ' đã tạo tài khoản ' + uname + ' (vai trò: ' + role + ')');
     msg.className='form-msg ok'; msg.textContent='✅ Tạo tài khoản "' + uname + '" (' + role + ') thành công!';
     document.getElementById('newUsername').value = '';
     document.getElementById('newPassword').value = '';
@@ -1144,24 +1157,25 @@ function addTime() {
   const s = parseInt(document.getElementById('addSec').value)||0;
   const target = document.getElementById('addTarget').value;
   const msg = document.getElementById('timeMsg');
-
-  if (!target) { msg.className='form-msg err'; msg.textContent='Không có tài khoản người dùng nào.'; return; }
+  if (!target) { msg.className='form-msg err'; msg.textContent='Không có tài khoản người dùng.'; return; }
   const total = h*3600 + m*60 + s;
   if (total <= 0) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập thời gian hợp lệ.'; return; }
 
-  const ref = db.ref('accounts/' + target);
-  ref.once('value').then(snapshot => {
+  db.ref('accounts/' + target).once('value').then(snapshot => {
     const acc = snapshot.val();
     if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
     const newTime = (acc.timeLeft || 0) + total;
-    ref.update({ timeLeft: newTime });
+    db.ref('accounts/' + target).update({ timeLeft: newTime });
 
     const now = new Date().toLocaleString('vi-VN');
     const logRef = db.ref('timeLog').push();
     logRef.set({ time: now, by: currentUser, target: target, added: total });
 
+    const hh = pad(h), mm = pad(m), ss = pad(s);
+    writeLog('time', currentUser + ' đã nạp +' + hh + ':' + mm + ':' + ss + ' cho ' + target);
+
     msg.className='form-msg ok';
-    msg.textContent = '✅ Đã nạp ' + pad(h) + ':' + pad(m) + ':' + pad(s) + ' cho "' + target + '".';
+    msg.textContent = '✅ Đã nạp ' + hh + ':' + mm + ':' + ss + ' cho "' + target + '".';
     document.getElementById('addHour').value=0;
     document.getElementById('addMin').value=0;
     document.getElementById('addSec').value=0;
@@ -1172,16 +1186,12 @@ function addTime() {
 
 // ===== EDIT MODAL =====
 function openEdit(u) {
-  const ref = db.ref('accounts/' + currentUser);
-  ref.once('value').then(snapshot => {
+  db.ref('accounts/' + currentUser).once('value').then(snapshot => {
     const currentAcc = snapshot.val();
     if (!currentAcc) return;
-    
-    const targetRef = db.ref('accounts/' + u);
-    targetRef.once('value').then(s => {
+    db.ref('accounts/' + u).once('value').then(s => {
       const targetAcc = s.val();
       if (!targetAcc) return;
-      
       if (currentAcc.role === 'admin' && targetAcc.role === 'admin') {
         showError('Bạn không có quyền sửa tài khoản Admin khác!');
         return;
@@ -1190,7 +1200,6 @@ function openEdit(u) {
         showError('Bạn không có quyền sửa tài khoản Owner!');
         return;
       }
-      
       document.getElementById('editTarget').value = u;
       document.getElementById('editUsername').value = u;
       document.getElementById('editPassword').value = '';
@@ -1205,16 +1214,12 @@ function saveEdit() {
   const newName = document.getElementById('editUsername').value.trim();
   const newPass = document.getElementById('editPassword').value;
   const msg = document.getElementById('editMsg');
-
   if (!newName) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập không được trống.'; return; }
 
-  const currentRef = db.ref('accounts/' + currentUser);
-  currentRef.once('value').then(cSnapshot => {
+  db.ref('accounts/' + currentUser).once('value').then(cSnapshot => {
     const currentAcc = cSnapshot.val();
     if (!currentAcc) return;
-    
-    const oldRef = db.ref('accounts/' + oldName);
-    oldRef.once('value').then(snapshot => {
+    db.ref('accounts/' + oldName).once('value').then(snapshot => {
       const acc = snapshot.val();
       if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
 
@@ -1228,20 +1233,19 @@ function saveEdit() {
       }
 
       if (newName !== oldName) {
-        const newRef = db.ref('accounts/' + newName);
-        newRef.once('value').then(s => {
-          if (s.exists()) {
-            msg.className='form-msg err'; msg.textContent='Tên đã tồn tại.'; return;
-          }
+        db.ref('accounts/' + newName).once('value').then(s => {
+          if (s.exists()) { msg.className='form-msg err'; msg.textContent='Tên đã tồn tại.'; return; }
           if (newPass) acc.password = newPass;
-          newRef.set(acc);
-          oldRef.remove();
+          db.ref('accounts/' + newName).set(acc);
+          db.ref('accounts/' + oldName).remove();
+          writeLog('edit', currentUser + ' đã đổi tên ' + oldName + ' → ' + newName);
           closeModal('editModal');
           renderUserList();
         });
       } else {
         if (newPass) acc.password = newPass;
-        oldRef.update({ password: acc.password });
+        db.ref('accounts/' + oldName).update({ password: acc.password });
+        if (newPass) writeLog('password', currentUser + ' đã đổi mật khẩu của ' + oldName);
         closeModal('editModal');
         renderUserList();
       }
@@ -1257,46 +1261,35 @@ function openDelete(u) {
   document.getElementById('deleteModal').classList.add('show');
 }
 function confirmDelete() {
-  if (deleteTarget) {
-    const ref = db.ref('accounts/' + deleteTarget);
-    ref.once('value').then(snapshot => {
-      const acc = snapshot.val();
-      if (!acc) { deleteTarget = null; closeModal('deleteModal'); return; }
-      
-      const currentRef = db.ref('accounts/' + currentUser);
-      currentRef.once('value').then(s => {
-        const currentAcc = s.val();
-        if (!currentAcc) return;
-        
-        if (currentAcc.role === 'admin' && acc.role === 'admin') {
-          showError('Admin không được xóa tài khoản Admin khác!');
-          deleteTarget = null;
-          closeModal('deleteModal');
-          return;
-        }
-        
-        if (currentAcc.role === 'admin' && acc.role === 'owner') {
-          showError('Admin không được xóa tài khoản Owner!');
-          deleteTarget = null;
-          closeModal('deleteModal');
-          return;
-        }
-        
-        if (currentAcc.role === 'owner' && deleteTarget === currentUser) {
-          showError('Bạn không thể xóa chính mình!');
-          deleteTarget = null;
-          closeModal('deleteModal');
-          return;
-        }
+  if (!deleteTarget) return;
+  db.ref('accounts/' + deleteTarget).once('value').then(snapshot => {
+    const acc = snapshot.val();
+    if (!acc) { deleteTarget = null; closeModal('deleteModal'); return; }
+    db.ref('accounts/' + currentUser).once('value').then(s => {
+      const currentAcc = s.val();
+      if (!currentAcc) return;
 
-        ref.remove();
-        deleteTarget = null;
-        closeModal('deleteModal');
-        renderUserList();
-        renderTimeTargets();
-      });
+      if (currentAcc.role === 'admin' && acc.role === 'admin') {
+        showError('Admin không được xóa tài khoản Admin khác!');
+        deleteTarget = null; closeModal('deleteModal'); return;
+      }
+      if (currentAcc.role === 'admin' && acc.role === 'owner') {
+        showError('Admin không được xóa tài khoản Owner!');
+        deleteTarget = null; closeModal('deleteModal'); return;
+      }
+      if (currentAcc.role === 'owner' && deleteTarget === currentUser) {
+        showError('Bạn không thể xóa chính mình!');
+        deleteTarget = null; closeModal('deleteModal'); return;
+      }
+
+      writeLog('delete', currentUser + ' đã xóa tài khoản ' + deleteTarget);
+      db.ref('accounts/' + deleteTarget).remove();
+      deleteTarget = null;
+      closeModal('deleteModal');
+      renderUserList();
+      renderTimeTargets();
     });
-  }
+  });
 }
 
 function closeModal(id) {
@@ -1306,23 +1299,12 @@ function closeModal(id) {
 // ===== INIT TÀI KHOẢN =====
 db.ref('accounts/black_0x000000').once('value').then(snapshot => {
   if (!snapshot.exists()) {
-    db.ref('accounts/black_0x000000').set({
-      password: '1',
-      role: 'owner',
-      timeLeft: 0,
-      createdBy: null
-    });
+    db.ref('accounts/black_0x000000').set({ password: '1', role: 'owner', timeLeft: 0, createdBy: null });
   }
 });
-
 db.ref('accounts/admin').once('value').then(snapshot => {
   if (!snapshot.exists()) {
-    db.ref('accounts/admin').set({
-      password: 'admin123',
-      role: 'admin',
-      timeLeft: 0,
-      createdBy: 'black_0x000000'
-    });
+    db.ref('accounts/admin').set({ password: 'admin123', role: 'admin', timeLeft: 0, createdBy: 'black_0x000000' });
   }
 });
 </script>

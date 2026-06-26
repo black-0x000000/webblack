@@ -755,7 +755,6 @@ const db = firebase.database();
 let currentUser = null;
 let countdownInterval = null;
 let currentView = 'web';
-let timeLeft = 0;
 
 // ===== LISTENERS =====
 document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
@@ -864,7 +863,6 @@ function renderLog() {
 function doLogout() {
   stopCountdown();
   currentUser = null;
-  timeLeft = 0;
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('topBar').classList.remove('show');
   document.getElementById('mainContent').classList.remove('show');
@@ -875,37 +873,13 @@ function doLogout() {
   document.getElementById('loginError').textContent = '';
   db.ref('accounts').off();
   db.ref('systemLog').off();
-  db.ref('accounts/' + (currentUser || '')).off();
 }
 
-// ===== COUNTDOWN (FIX - LẮNG NGHE REAL-TIME TỪ FIREBASE) =====
+// ===== COUNTDOWN (FIXED - KHÔNG BỊ DELAY) =====
 function startCountdown() {
   stopCountdown();
   
   const userRef = db.ref('accounts/' + currentUser);
-  
-  // Lắng nghe real-time thay đổi (khi admin nạp thêm time)
-  userRef.on('value', function(snapshot) {
-    const acc = snapshot.val();
-    if (!acc) return;
-    
-    const newTime = acc.timeLeft || 0;
-    
-    // Nếu time mới lớn hơn time hiện tại -> cập nhật lại (admin vừa nạp)
-    if (newTime > timeLeft) {
-      timeLeft = newTime;
-      updateTimerDisplay(timeLeft);
-    }
-    
-    // Nếu hết time
-    if (newTime <= 0 && timeLeft <= 0) {
-      stopCountdown();
-      doLogout();
-      document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
-    }
-  });
-  
-  // Lấy giá trị ban đầu
   userRef.once('value').then(snapshot => {
     const acc = snapshot.val();
     if (!acc || acc.timeLeft <= 0) {
@@ -914,13 +888,11 @@ function startCountdown() {
       return;
     }
     
-    timeLeft = acc.timeLeft;
+    let timeLeft = acc.timeLeft;
     updateTimerDisplay(timeLeft);
     
-    // Đếm ngược
     countdownInterval = setInterval(() => {
       timeLeft--;
-      
       if (timeLeft <= 0) {
         stopCountdown();
         userRef.update({ timeLeft: 0 });
@@ -929,7 +901,6 @@ function startCountdown() {
         return;
       }
       
-      // Gửi update xuống Firebase mỗi giây
       userRef.update({ timeLeft: timeLeft });
       updateTimerDisplay(timeLeft);
     }, 1000);
@@ -938,13 +909,10 @@ function startCountdown() {
 
 function stopCountdown() {
   if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-  if (currentUser) {
-    db.ref('accounts/' + currentUser).off();
-  }
 }
 
-function updateTimerDisplay(timeLeftVal) {
-  const t = timeLeftVal || 0;
+function updateTimerDisplay(timeLeft) {
+  const t = timeLeft || 0;
   const h = Math.floor(t / 3600);
   const m = Math.floor((t % 3600) / 60);
   const s = t % 60;

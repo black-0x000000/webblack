@@ -769,6 +769,7 @@ function showApp(role) {
     currentView = 'web';
     switchView('web');
     renderAdminPanel();
+    watchUserTime(); // Lắng nghe real-time thời gian user
   } else {
     document.getElementById('userPage').style.display = 'flex';
     document.getElementById('adminPage').style.display = 'none';
@@ -788,6 +789,9 @@ function doLogout() {
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginError').textContent = '';
+  
+  // Hủy lắng nghe real-time
+  db.ref('accounts').off();
 }
 
 // ===== COUNTDOWN =====
@@ -895,17 +899,22 @@ function renderMyAccount() {
   });
 }
 
-// ===== RENDER USER LIST =====
+// ===== RENDER USER LIST (REAL-TIME) =====
 function renderUserList() {
   const tbody = document.getElementById('userListBody');
   const ref = db.ref('accounts');
-  ref.once('value').then(snapshot => {
+  
+  // Dùng on() để lắng nghe real-time
+  ref.on('value', function(snapshot) {
     const accounts = snapshot.val();
-    if (!accounts) { tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào.</td></tr>`; return; }
+    if (!accounts) { 
+      tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào.</td></tr>`; 
+      return; 
+    }
     
     const currentRole = accounts[currentUser]?.role || 'admin';
-    
     const others = Object.keys(accounts).filter(u => u !== currentUser);
+    
     if (others.length === 0) {
       tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`;
       return;
@@ -947,10 +956,13 @@ function renderUserList() {
         ? `<button class="btn-sm btn-edit" onclick="openChangePw('${u}')" style="margin-left:6px;">🔑</button>`
         : '';
 
+      // Màu đỏ nếu thời gian <= 60 giây
+      const timeColor = (acc.role === 'user' && t <= 60) ? 'color:#fc8181;' : '';
+
       return `<tr>
         <td>${u}</td>
         <td>${badge}</td>
-        <td class="time-cell">${timeStr}</td>
+        <td class="time-cell" id="time-${u}" style="${timeColor}">${timeStr}</td>
         <td>
           ${editButton}
           ${deleteButton}
@@ -958,6 +970,36 @@ function renderUserList() {
         </td>
       </tr>`;
     }).join('');
+  });
+}
+
+// ===== WATCH USER TIME REAL-TIME =====
+function watchUserTime() {
+  const ref = db.ref('accounts');
+  ref.on('value', function(snapshot) {
+    const accounts = snapshot.val();
+    if (!accounts) return;
+    
+    const currentRole = accounts[currentUser]?.role || 'admin';
+    const others = Object.keys(accounts).filter(u => u !== currentUser);
+    
+    others.forEach(u => {
+      const acc = accounts[u];
+      if (acc.role === 'user') {
+        const t = acc.timeLeft || 0;
+        const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
+        const timeStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
+        const el = document.getElementById(`time-${u}`);
+        if (el) {
+          el.textContent = timeStr;
+          if (t <= 60) {
+            el.style.color = '#fc8181';
+          } else {
+            el.style.color = '';
+          }
+        }
+      }
+    });
   });
 }
 

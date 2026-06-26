@@ -585,12 +585,10 @@
 
 <!-- MAIN CONTENT -->
 <div id="mainContent">
-  <!-- User Page (cũ, không dùng nữa) -->
   <div id="userPage" style="display:none;">
     <div class="updating">🔧 Web đang cập nhật...</div>
   </div>
 
-  <!-- Admin Page (dùng chung cho Owner, Admin, User) -->
   <div id="adminPage" style="display:none;">
     <div class="admin-header">
       <div class="admin-header-left">
@@ -809,7 +807,7 @@ function doLogin() {
   }).catch(e => { err.textContent = '❌ Lỗi kết nối Firebase: ' + e.message; });
 }
 
-// ===== SHOW APP (FIX - ĐỒNG BỘ UI CHO USER) =====
+// ===== SHOW APP (FIX - HIỆN ĐÚNG CHO TỪNG VAI TRÒ) =====
 function showApp(role) {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('topBar').classList.add('show');
@@ -817,13 +815,13 @@ function showApp(role) {
   document.getElementById('topBarTitle').textContent = '👤 ' + currentUser;
   document.getElementById('adminName').textContent = currentUser;
 
-  // Luôn hiện adminPage (dùng chung cho Owner, Admin, User)
+  // Luôn hiện adminPage
   document.getElementById('adminPage').style.display = 'block';
   document.getElementById('userPage').style.display = 'none';
   document.getElementById('timerDisplay').textContent = '';
 
   if (role === 'owner') {
-    // Owner: thấy tất cả
+    // Owner: hiện tất cả
     document.getElementById('tabLogBtn').style.display = 'inline-block';
     document.getElementById('btnSettings').style.display = 'flex';
     document.getElementById('btnWeb').style.display = 'inline-block';
@@ -834,7 +832,7 @@ function showApp(role) {
     watchUserTime();
     renderLog();
   } else if (role === 'admin') {
-    // Admin: thấy hết trừ Log
+    // Admin: hiện quản lý, ẩn Log
     document.getElementById('tabLogBtn').style.display = 'none';
     document.getElementById('btnSettings').style.display = 'flex';
     document.getElementById('btnWeb').style.display = 'inline-block';
@@ -844,16 +842,16 @@ function showApp(role) {
     renderAdminPanel();
     watchUserTime();
   } else {
-    // USER: chỉ thấy Web View, ẩn hết settings
+    // User: chỉ hiện Web View, ẩn hết nút quản lý
     document.getElementById('tabLogBtn').style.display = 'none';
     document.getElementById('btnSettings').style.display = 'none';
     document.getElementById('btnWeb').style.display = 'none';
     document.getElementById('settingsView').style.display = 'none';
     
-    // Hiện Web View
+    // Đảm bảo Web View hiện
     document.getElementById('webView').classList.add('show');
     
-    // Bắt đầu đếm ngược cho User
+    // Bắt đầu đếm ngược
     startCountdown();
   }
 }
@@ -896,7 +894,7 @@ function doLogout() {
   db.ref('systemLog').off();
 }
 
-// ===== COUNTDOWN (FIX - DÙNG TRANSACTION) =====
+// ===== COUNTDOWN =====
 function startCountdown() {
   stopCountdown();
   
@@ -913,12 +911,9 @@ function startCountdown() {
     let timeLeft = acc.timeLeft;
     updateTimerDisplay(timeLeft);
     
-    // Lắng nghe thay đổi từ Firebase để cập nhật local
     userRef.on('value', function(snapshot) {
       const newAcc = snapshot.val();
       if (!newAcc) return;
-      
-      // Nếu Firebase có giá trị mới lớn hơn local -> cập nhật local
       if (newAcc.timeLeft > timeLeft) {
         const added = newAcc.timeLeft - timeLeft;
         timeLeft = newAcc.timeLeft;
@@ -935,10 +930,8 @@ function startCountdown() {
       }
     });
     
-    // Đếm ngược - dùng transaction để tránh ghi đè
     countdownInterval = setInterval(() => {
       timeLeft--;
-      
       if (timeLeft <= 0) {
         stopCountdown();
         userRef.update({ timeLeft: 0 });
@@ -948,14 +941,11 @@ function startCountdown() {
         return;
       }
       
-      // Cập nhật Firebase an toàn, không ghi đè nếu admin đã thay đổi
       userRef.transaction(function(currentData) {
         if (currentData === null) return currentData;
-        // Chỉ cập nhật nếu giá trị hiện tại khớp với giá trị local hiện tại
         if (currentData.timeLeft === timeLeft + 1) {
           currentData.timeLeft = timeLeft;
         } else {
-          // Nếu không khớp, lấy giá trị từ Firebase (admin đã thay đổi)
           timeLeft = currentData.timeLeft;
         }
         return currentData;
@@ -1275,6 +1265,10 @@ function openEdit(u) {
   db.ref('accounts/' + currentUser).once('value').then(snapshot => {
     const currentAcc = snapshot.val();
     if (!currentAcc) return;
+    if (currentAcc.role === 'user') {
+      showError('Bạn không có quyền sửa tài khoản!');
+      return;
+    }
     db.ref('accounts/' + u).once('value').then(s => {
       const targetAcc = s.val();
       if (!targetAcc) return;
@@ -1284,10 +1278,6 @@ function openEdit(u) {
       }
       if (currentAcc.role === 'admin' && targetAcc.role === 'owner') {
         showError('Bạn không có quyền sửa tài khoản Owner!');
-        return;
-      }
-      if (currentAcc.role === 'user') {
-        showError('Bạn không có quyền sửa tài khoản!');
         return;
       }
       document.getElementById('editTarget').value = u;
@@ -1309,6 +1299,10 @@ function saveEdit() {
   db.ref('accounts/' + currentUser).once('value').then(cSnapshot => {
     const currentAcc = cSnapshot.val();
     if (!currentAcc) return;
+    if (currentAcc.role === 'user') {
+      msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa tài khoản!';
+      return;
+    }
     db.ref('accounts/' + oldName).once('value').then(snapshot => {
       const acc = snapshot.val();
       if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
@@ -1319,10 +1313,6 @@ function saveEdit() {
       }
       if (currentAcc.role === 'admin' && acc.role === 'owner') {
         msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa Owner!';
-        return;
-      }
-      if (currentAcc.role === 'user') {
-        msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa tài khoản!';
         return;
       }
 

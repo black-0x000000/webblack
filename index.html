@@ -431,6 +431,35 @@
 
   .empty-msg { color: #4a5568; font-size: 0.9rem; padding: 16px 0; }
 
+  /* Error Modal */
+  #errorModal .modal-box {
+    text-align: center;
+  }
+  #errorModal .modal-box .error-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+  #errorModal .modal-box .error-title {
+    color: #fc8181;
+    margin-bottom: 12px;
+  }
+  #errorModal .modal-box .error-msg {
+    color: #a0aec0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  #errorModal .modal-actions {
+    justify-content: center;
+    margin-top: 20px;
+  }
+  #errorModal .btn-save {
+    background: #4f6ef7;
+    min-width: 120px;
+  }
+  #errorModal .btn-save:hover {
+    background: #3a56d4;
+  }
+
   @media (max-width: 640px) {
     .admin-header {
       flex-direction: column;
@@ -656,6 +685,18 @@
   </div>
 </div>
 
+<!-- Error Modal -->
+<div class="modal-overlay" id="errorModal">
+  <div class="modal-box">
+    <div class="error-icon">⛔</div>
+    <h3 class="error-title">Không có quyền!</h3>
+    <p class="error-msg" id="errorMessage"></p>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="closeModal('errorModal')">Đã hiểu</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -680,6 +721,12 @@ let currentView = 'web';
 // ===== LISTENERS =====
 document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// ===== SHOW ERROR =====
+function showError(message) {
+  document.getElementById('errorMessage').textContent = message;
+  document.getElementById('errorModal').classList.add('show');
+}
 
 // ===== LOGIN =====
 function doLogin() {
@@ -882,7 +929,7 @@ function renderUserList() {
       } else if (currentRole === 'admin' && acc.role === 'user') {
         deleteButton = `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`;
       } else {
-        deleteButton = `<button class="btn-sm btn-del" onclick="alert('❌ Bạn không có quyền xóa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Xóa</button>`;
+        deleteButton = `<button class="btn-sm btn-del" onclick="showError('Bạn không có quyền xóa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Xóa</button>`;
       }
 
       // ===== QUYỀN SỬA =====
@@ -892,7 +939,7 @@ function renderUserList() {
       } else if (currentRole === 'admin' && acc.role === 'user') {
         editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
       } else {
-        editButton = `<button class="btn-sm btn-edit" onclick="alert('❌ Bạn không có quyền sửa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Sửa</button>`;
+        editButton = `<button class="btn-sm btn-edit" onclick="showError('Bạn không có quyền sửa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Sửa</button>`;
       }
 
       // Nút đổi mật khẩu (chỉ Owner)
@@ -997,7 +1044,10 @@ function openChangePw(target) {
 
 function openChangePwFromSelect() {
   const sel = document.getElementById('changePwSelect');
-  if (!sel.value) { alert('Vui lòng chọn tài khoản.'); return; }
+  if (!sel.value) { 
+    showError('Vui lòng chọn tài khoản cần đổi mật khẩu.');
+    return; 
+  }
   openChangePw(sel.value);
 }
 
@@ -1090,13 +1140,12 @@ function openEdit(u) {
       const targetAcc = s.val();
       if (!targetAcc) return;
       
-      // Admin không được sửa Admin khác hoặc Owner
       if (currentAcc.role === 'admin' && targetAcc.role === 'admin') {
-        alert('❌ Bạn không có quyền sửa tài khoản Admin khác!');
+        showError('Bạn không có quyền sửa tài khoản Admin khác!');
         return;
       }
       if (currentAcc.role === 'admin' && targetAcc.role === 'owner') {
-        alert('❌ Bạn không có quyền sửa tài khoản Owner!');
+        showError('Bạn không có quyền sửa tài khoản Owner!');
         return;
       }
       
@@ -1127,7 +1176,6 @@ function saveEdit() {
       const acc = snapshot.val();
       if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
 
-      // Admin không được sửa Admin khác hoặc Owner
       if (currentAcc.role === 'admin' && acc.role === 'admin') {
         msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa Admin khác!';
         return;
@@ -1178,25 +1226,22 @@ function confirmDelete() {
         const currentAcc = s.val();
         if (!currentAcc) return;
         
-        // Admin không được xóa Admin khác
         if (currentAcc.role === 'admin' && acc.role === 'admin') {
-          alert('❌ Admin không được xóa tài khoản Admin khác!');
+          showError('Admin không được xóa tài khoản Admin khác!');
           deleteTarget = null;
           closeModal('deleteModal');
           return;
         }
         
-        // Admin không được xóa Owner
         if (currentAcc.role === 'admin' && acc.role === 'owner') {
-          alert('❌ Admin không được xóa tài khoản Owner!');
+          showError('Admin không được xóa tài khoản Owner!');
           deleteTarget = null;
           closeModal('deleteModal');
           return;
         }
         
-        // Owner không được xóa chính mình
         if (currentAcc.role === 'owner' && deleteTarget === currentUser) {
-          alert('❌ Bạn không thể xóa chính mình!');
+          showError('Bạn không thể xóa chính mình!');
           deleteTarget = null;
           closeModal('deleteModal');
           return;

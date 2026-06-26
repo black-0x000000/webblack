@@ -865,6 +865,7 @@ function renderMyAccount() {
   });
 }
 
+// ===== RENDER USER LIST (CÓ PHÂN QUYỀN) =====
 function renderUserList() {
   const tbody = document.getElementById('userListBody');
   const ref = db.ref('accounts');
@@ -891,9 +892,9 @@ function renderUserList() {
       else if (acc.role === 'admin') badge = `<span class="badge admin">Admin</span>`;
       else badge = `<span class="badge user">User</span>`;
 
+      // ===== QUYỀN XÓA =====
       let canDelete = true;
       let deleteDisabled = '';
-      
       if (acc.role === 'owner') {
         if (currentRole !== 'owner') {
           canDelete = false;
@@ -901,6 +902,20 @@ function renderUserList() {
         }
       }
 
+      // ===== QUYỀN SỬA (edit) - Admin chỉ sửa được USER =====
+      let editButton = '';
+      if (currentRole === 'owner') {
+        // Owner sửa được tất cả
+        editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
+      } else if (currentRole === 'admin' && acc.role === 'user') {
+        // Admin chỉ sửa được USER
+        editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
+      } else {
+        // Admin không sửa được Admin khác hoặc Owner
+        editButton = `<button class="btn-sm btn-edit" onclick="alert('❌ Bạn không có quyền sửa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Sửa</button>`;
+      }
+
+      // Nút đổi mật khẩu (chỉ Owner)
       const changePwBtn = currentRole === 'owner' 
         ? `<button class="btn-sm btn-edit" onclick="openChangePw('${u}')" style="margin-left:6px;">🔑</button>`
         : '';
@@ -910,8 +925,8 @@ function renderUserList() {
         <td>${badge}</td>
         <td class="time-cell">${timeStr}</td>
         <td>
-          <button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>
-          <button class="btn-sm btn-del" onclick="${canDelete ? `openDelete('${u}')` : 'alert(\\\'❌ Bạn không có quyền xóa Owner!\\\')'}"${deleteDisabled}>Xóa</button>
+          ${editButton}
+          <button class="btn-sm btn-del" onclick="${canDelete ? `openDelete('${u}')` : 'alert(\\\'❌ Bạn không có quyền xóa!\\\')'}"${deleteDisabled}>Xóa</button>
           ${changePwBtn}
         </td>
       </tr>`;
@@ -953,6 +968,7 @@ function renderChangePwTab() {
   ref.once('value').then(snapshot => {
     const acc = snapshot.val();
     if (acc.role === 'owner') {
+      // Owner: đổi được tất cả
       container.innerHTML = `
         <p style="color:#a0aec0; margin-bottom:16px;">👑 Bạn là Owner. Bạn có thể đổi mật khẩu của bất kỳ tài khoản nào, bao gồm chính mình.</p>
         <div class="form-group" style="max-width:380px;">
@@ -974,14 +990,18 @@ function renderChangePwTab() {
           `<option value="${u}">${u} (${accounts[u].role})${u === currentUser ? ' ← Bạn' : ''}</option>`
         ).join('');
       });
-    } else {
+    } else if (acc.role === 'admin') {
+      // Admin: CHỈ đổi được mật khẩu của CHÍNH MÌNH
       container.innerHTML = `
-        <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn có thể đổi mật khẩu của chính mình.</p>
+        <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn chỉ có thể đổi mật khẩu của chính mình. <strong style="color:#fc8181;">Không được đổi mật khẩu của Admin khác!</strong></p>
         <div class="form-group" style="max-width:380px;">
           <label>Tài khoản</label>
-          <input type="text" value="${currentUser}" disabled style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#718096; font-size:0.95rem; outline:none;">
+          <input type="text" value="${currentUser} (chính bạn)" disabled style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#718096; font-size:0.95rem; outline:none;">
         </div>
-        <button class="btn-create" onclick="openChangePw('${currentUser}')">🔑 Đổi mật khẩu</button>
+        <button class="btn-create" onclick="openChangePw('${currentUser}')">🔑 Đổi mật khẩu của tôi</button>
+        <div style="margin-top:16px; color:#fc8181; font-size:0.9rem;">
+          ⛔ Bạn KHÔNG được đổi mật khẩu của Admin khác. Chỉ Owner mới có quyền đó.
+        </div>
       `;
     }
   });
@@ -1080,13 +1100,35 @@ function addTime() {
   });
 }
 
-// ===== EDIT MODAL =====
+// ===== EDIT MODAL (CÓ KIỂM TRA QUYỀN) =====
 function openEdit(u) {
-  document.getElementById('editTarget').value = u;
-  document.getElementById('editUsername').value = u;
-  document.getElementById('editPassword').value = '';
-  document.getElementById('editMsg').textContent = '';
-  document.getElementById('editModal').classList.add('show');
+  const ref = db.ref('accounts/' + currentUser);
+  ref.once('value').then(snapshot => {
+    const currentAcc = snapshot.val();
+    if (!currentAcc) return;
+    
+    const targetRef = db.ref('accounts/' + u);
+    targetRef.once('value').then(s => {
+      const targetAcc = s.val();
+      if (!targetAcc) return;
+      
+      // Admin không được sửa Admin khác hoặc Owner
+      if (currentAcc.role === 'admin' && targetAcc.role === 'admin') {
+        alert('❌ Bạn không có quyền sửa tài khoản Admin khác!');
+        return;
+      }
+      if (currentAcc.role === 'admin' && targetAcc.role === 'owner') {
+        alert('❌ Bạn không có quyền sửa tài khoản Owner!');
+        return;
+      }
+      
+      document.getElementById('editTarget').value = u;
+      document.getElementById('editUsername').value = u;
+      document.getElementById('editPassword').value = '';
+      document.getElementById('editMsg').textContent = '';
+      document.getElementById('editModal').classList.add('show');
+    });
+  });
 }
 
 function saveEdit() {
@@ -1097,29 +1139,45 @@ function saveEdit() {
 
   if (!newName) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập không được trống.'; return; }
 
-  const oldRef = db.ref('accounts/' + oldName);
-  oldRef.once('value').then(snapshot => {
-    const acc = snapshot.val();
-    if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
+  const currentRef = db.ref('accounts/' + currentUser);
+  currentRef.once('value').then(cSnapshot => {
+    const currentAcc = cSnapshot.val();
+    if (!currentAcc) return;
+    
+    const oldRef = db.ref('accounts/' + oldName);
+    oldRef.once('value').then(snapshot => {
+      const acc = snapshot.val();
+      if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
 
-    if (newName !== oldName) {
-      const newRef = db.ref('accounts/' + newName);
-      newRef.once('value').then(s => {
-        if (s.exists()) {
-          msg.className='form-msg err'; msg.textContent='Tên đã tồn tại.'; return;
-        }
+      // Admin không được sửa Admin khác hoặc Owner
+      if (currentAcc.role === 'admin' && acc.role === 'admin') {
+        msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa Admin khác!';
+        return;
+      }
+      if (currentAcc.role === 'admin' && acc.role === 'owner') {
+        msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa Owner!';
+        return;
+      }
+
+      if (newName !== oldName) {
+        const newRef = db.ref('accounts/' + newName);
+        newRef.once('value').then(s => {
+          if (s.exists()) {
+            msg.className='form-msg err'; msg.textContent='Tên đã tồn tại.'; return;
+          }
+          if (newPass) acc.password = newPass;
+          newRef.set(acc);
+          oldRef.remove();
+          closeModal('editModal');
+          renderUserList();
+        });
+      } else {
         if (newPass) acc.password = newPass;
-        newRef.set(acc);
-        oldRef.remove();
+        oldRef.update({ password: acc.password });
         closeModal('editModal');
         renderUserList();
-      });
-    } else {
-      if (newPass) acc.password = newPass;
-      oldRef.update({ password: acc.password });
-      closeModal('editModal');
-      renderUserList();
-    }
+      }
+    });
   });
 }
 

@@ -65,209 +65,295 @@
   #adminPage { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
   .admin-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #2d3548;
-    flex-wrap: wrap;
-    gap: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #2d3548;
+    flex-wrap: wrap; gap: 12px;
   }
-  .admin-header-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .admin-header-left .greeting {
-    font-size: 1.1rem;
-    color: #a0aec0;
-  }
-  .admin-header-left .greeting strong {
-    color: #e2e8f0;
-  }
-
-  .admin-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
+  .admin-header-left { display: flex; align-items: center; gap: 16px; }
+  .admin-header-left .greeting { font-size: 1.1rem; color: #a0aec0; }
+  .admin-header-left .greeting strong { color: #e2e8f0; }
+  .admin-actions { display: flex; gap: 10px; align-items: center; }
 
   .btn-nav {
-    padding: 10px 24px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    padding: 10px 24px; border: none; border-radius: 8px; font-size: 0.95rem;
+    font-weight: 600; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
   }
-  .btn-web {
-    background: #4f6ef7;
-    color: #fff;
-  }
-  .btn-web:hover {
-    background: #3a56d4;
-    transform: translateY(-1px);
-  }
-  .btn-web.active {
-    background: #2d3748;
-    color: #a0aec0;
-  }
-  .btn-web.active:hover {
-    background: #4a5568;
-    color: #e2e8f0;
-  }
+  .btn-web { background: #4f6ef7; color: #fff; }
+  .btn-web:hover { background: #3a56d4; transform: translateY(-1px); }
+  .btn-web.active { background: #2d3748; color: #a0aec0; }
+  .btn-web.active:hover { background: #4a5568; color: #e2e8f0; }
 
   .btn-settings {
-    background: #2d3548;
-    color: #a0aec0;
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: 1px solid #4a5568;
-    cursor: pointer;
-    font-size: 1.2rem;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #2d3548; color: #a0aec0; padding: 10px 16px;
+    border-radius: 8px; border: 1px solid #4a5568; cursor: pointer;
+    font-size: 1.2rem; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
   }
-  .btn-settings:hover {
-    background: #4a5568;
-    color: #e2e8f0;
-    border-color: #718096;
-  }
-  .btn-settings.active {
-    background: #4f6ef7;
-    border-color: #4f6ef7;
-    color: #fff;
+  .btn-settings:hover { background: #4a5568; color: #e2e8f0; border-color: #718096; }
+  .btn-settings.active { background: #4f6ef7; border-color: #4f6ef7; color: #fff; }
+
+  /* ===== WEB VIEW ===== */
+  #webView { display: none; }
+  #webView.show { display: block; }
+
+  .web-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+    padding: 24px 0;
   }
 
-  #webView {
-    display: none;
+  .tool-card {
     background: #1e2332;
     border: 1px solid #2d3548;
     border-radius: 12px;
-    padding: 32px;
-    min-height: 400px;
-  }
-  #webView.show {
-    display: block;
-  }
-
-  .web-placeholder {
+    padding: 28px 16px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 300px;
-    color: #4a5568;
-  }
-  .web-placeholder .icon {
-    font-size: 4rem;
-    margin-bottom: 16px;
-  }
-  .web-placeholder h3 {
-    color: #718096;
-    margin-bottom: 8px;
-  }
-  .web-placeholder p {
-    color: #4a5568;
-  }
-
-  #settingsView {
-    display: none;
-  }
-  #settingsView.show {
-    display: block;
-  }
-
-  .settings-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-  }
-  .tab-btn {
-    padding: 10px 22px;
-    background: #1e2332;
-    border: 1px solid #2d3548;
-    color: #a0aec0;
-    border-radius: 8px;
+    gap: 12px;
     cursor: pointer;
-    font-size: 0.95rem;
+    transition: all 0.2s;
+    text-align: center;
+    user-select: none;
+  }
+  .tool-card:hover {
+    border-color: #4f6ef7;
+    background: #232940;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(79,110,247,0.15);
+  }
+  .tool-card .tool-icon {
+    font-size: 2.4rem;
+    line-height: 1;
+  }
+  .tool-card .tool-name {
+    font-size: 0.82rem;
+    color: #a0aec0;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* ===== BITMAP TOOL FULLSCREEN ===== */
+  #bitmapTool {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: #0f1117;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #bitmapTool.show { display: flex; }
+
+  .bt-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1e2332;
+    border-bottom: 1px solid #2d3548;
+    padding: 0 20px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+  .bt-topbar .bt-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .bt-topbar .bt-title .dev-tag {
+    font-size: 0.72rem;
+    color: #718096;
+    font-weight: 400;
+  }
+  .bt-home-btn {
+    padding: 7px 18px;
+    background: #2d3548;
+    border: 1px solid #4a5568;
+    color: #e2e8f0;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
     transition: all 0.2s;
   }
-  .tab-btn.active, .tab-btn:hover {
-    background: #4f6ef7;
-    border-color: #4f6ef7;
-    color: #fff;
+  .bt-home-btn:hover { background: #4f6ef7; border-color: #4f6ef7; }
+
+  .bt-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: #151922;
+    border-bottom: 1px solid #2d3548;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .bt-ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bt-ctrl-group label {
+    font-size: 0.8rem;
+    color: #718096;
+    white-space: nowrap;
+  }
+  .bt-ctrl-group input[type="number"] {
+    width: 70px;
+    padding: 6px 10px;
+    background: #1e2332;
+    border: 1px solid #2d3548;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 0.88rem;
+    outline: none;
+    text-align: center;
+    transition: border 0.2s;
+  }
+  .bt-ctrl-group input[type="number"]:focus { border-color: #4f6ef7; }
+
+  .bt-divider { width: 1px; height: 28px; background: #2d3548; }
+
+  .bt-state-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .bt-state-label { font-size: 0.8rem; color: #718096; }
+  .bt-state-indicator {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #48bb78;
+    color: #1a202c;
+    transition: all 0.2s;
+  }
+  .bt-state-indicator.erase { background: #fc8181; color: #1a202c; }
+
+  .bt-btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .bt-btn-fill { background: #48bb78; color: #1a202c; }
+  .bt-btn-fill:hover { background: #38a169; }
+  .bt-btn-fill.active { outline: 2px solid #68d391; outline-offset: 1px; }
+  .bt-btn-erase { background: #fc8181; color: #1a202c; }
+  .bt-btn-erase:hover { background: #e53e3e; }
+  .bt-btn-erase.active { outline: 2px solid #fc8181; outline-offset: 1px; }
+  .bt-btn-clear { background: #2d3548; color: #e2e8f0; border: 1px solid #4a5568; }
+  .bt-btn-clear:hover { background: #e53e3e; border-color: #e53e3e; color: #fff; }
+  .bt-btn-reset { background: #2d3548; color: #e2e8f0; border: 1px solid #4a5568; }
+  .bt-btn-reset:hover { background: #4a5568; }
+
+  .bt-canvas-area {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 20px;
+    background: #0f1117;
+  }
+  .bt-canvas-area::-webkit-scrollbar { width: 6px; height: 6px; }
+  .bt-canvas-area::-webkit-scrollbar-track { background: #151922; }
+  .bt-canvas-area::-webkit-scrollbar-thumb { background: #4f6ef7; border-radius: 4px; }
+
+  #pixelGrid {
+    display: grid;
+    gap: 1px;
+    background: #1a1f2e;
+    border: 1px solid #2d3548;
+    border-radius: 4px;
+    cursor: crosshair;
+    user-select: none;
+    flex-shrink: 0;
   }
 
+  .pixel-cell {
+    width: 14px;
+    height: 14px;
+    background: #151922;
+    border: 0;
+    transition: background 0.05s;
+  }
+  .pixel-cell.lit {
+    background: #e2e8f0;
+  }
+
+  .bt-output-area {
+    background: #1e2332;
+    border-top: 1px solid #2d3548;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+  .bt-output-label {
+    font-size: 0.78rem;
+    color: #718096;
+    margin-bottom: 6px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .bt-hex-output {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #68d391;
+    word-break: break-all;
+    line-height: 1.8;
+    max-height: 80px;
+    overflow-y: auto;
+    background: #151922;
+    border: 1px solid #2d3548;
+    border-radius: 6px;
+    padding: 8px 12px;
+    min-height: 36px;
+  }
+  .bt-hex-output::-webkit-scrollbar { width: 4px; }
+  .bt-hex-output::-webkit-scrollbar-thumb { background: #4f6ef7; border-radius: 4px; }
+
+  /* ===== SETTINGS VIEW ===== */
+  #settingsView { display: none; }
+  #settingsView.show { display: block; }
+
+  .settings-tabs {
+    display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 10px 22px; background: #1e2332; border: 1px solid #2d3548;
+    color: #a0aec0; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+  .tab-btn.active, .tab-btn:hover { background: #4f6ef7; border-color: #4f6ef7; color: #fff; }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
-
   .section-title { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #2d3548; }
   .sub-title { font-size: 0.95rem; color: #a0aec0; margin: 18px 0 10px; font-weight: 600; }
 
-  .my-account-card {
-    background: #1e2332;
-    border: 1px solid #2d3548;
-    border-radius: 10px;
-    padding: 18px 22px;
-    margin-bottom: 8px;
-  }
-  .my-account-card .info-row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-  .badge {
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 700;
-  }
+  .my-account-card { background: #1e2332; border: 1px solid #2d3548; border-radius: 10px; padding: 18px 22px; margin-bottom: 8px; }
+  .my-account-card .info-row { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
   .badge.owner { background: #9b2c2c; color: #fc8181; }
   .badge.admin { background: #553c9a; color: #d6bcfa; }
   .badge.user { background: #2c5282; color: #90cdf4; }
 
-  .user-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 4px;
-  }
-  .user-table th, .user-table td {
-    padding: 10px 14px;
-    text-align: left;
-    border-bottom: 1px solid #2d3548;
-    font-size: 0.9rem;
-  }
-  .user-table th {
-    background: #151922;
-    color: #718096;
-    font-weight: 600;
-    font-size: 0.82rem;
-    text-transform: uppercase;
-  }
-  .user-table tr:hover td {
-    background: #1e2332;
-  }
+  .user-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .user-table th, .user-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #2d3548; font-size: 0.9rem; }
+  .user-table th { background: #151922; color: #718096; font-weight: 600; font-size: 0.82rem; text-transform: uppercase; }
+  .user-table tr:hover td { background: #1e2332; }
   .time-cell { font-variant-numeric: tabular-nums; }
 
-  .btn-sm {
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-size: 0.82rem;
-    font-weight: 600;
-    transition: background 0.2s;
-  }
+  .btn-sm { padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: background 0.2s; }
   .btn-edit { background: #2d3748; color: #a0aec0; }
   .btn-edit:hover { background: #4a5568; }
   .btn-del { background: #742a2a; color: #fc8181; }
@@ -275,249 +361,66 @@
 
   .create-form { max-width: 380px; }
   .form-group { margin-bottom: 16px; }
-  .form-group label {
-    display: block;
-    font-size: 0.85rem;
-    color: #718096;
-    margin-bottom: 6px;
-  }
+  .form-group label { display: block; font-size: 0.85rem; color: #718096; margin-bottom: 6px; }
   .form-group input, .form-group select {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid #2d3548;
-    border-radius: 8px;
-    background: #151922;
-    color: #e2e8f0;
-    font-size: 0.95rem;
-    outline: none;
-    transition: border 0.2s;
+    width: 100%; padding: 10px 14px; border: 1px solid #2d3548;
+    border-radius: 8px; background: #151922; color: #e2e8f0;
+    font-size: 0.95rem; outline: none; transition: border 0.2s;
   }
-  .form-group input:focus, .form-group select:focus {
-    border-color: #4f6ef7;
-  }
-  .btn-create {
-    padding: 10px 24px;
-    background: #48bb78;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
+  .form-group input:focus, .form-group select:focus { border-color: #4f6ef7; }
+  .btn-create { padding: 10px 24px; background: #48bb78; color: #fff; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
   .btn-create:hover { background: #38a169; }
   .form-msg { font-size: 0.85rem; margin-top: 10px; min-height: 18px; }
   .form-msg.ok { color: #68d391; }
   .form-msg.err { color: #fc8181; }
 
-  .time-panel-form {
-    background: #1e2332;
-    border: 1px solid #2d3548;
-    border-radius: 10px;
-    padding: 24px;
-    max-width: 600px;
-  }
-  .time-inputs {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-    align-items: flex-end;
-  }
-  .time-inputs .field {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-  .time-inputs label {
-    font-size: 0.8rem;
-    color: #718096;
-  }
+  .time-panel-form { background: #1e2332; border: 1px solid #2d3548; border-radius: 10px; padding: 24px; max-width: 600px; }
+  .time-inputs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: flex-end; }
+  .time-inputs .field { display: flex; flex-direction: column; gap: 5px; }
+  .time-inputs label { font-size: 0.8rem; color: #718096; }
   .time-inputs input, .time-inputs select {
-    width: 100px;
-    padding: 9px 12px;
-    border: 1px solid #2d3548;
-    border-radius: 8px;
-    background: #151922;
-    color: #e2e8f0;
-    font-size: 0.95rem;
-    outline: none;
-    text-align: center;
+    width: 100px; padding: 9px 12px; border: 1px solid #2d3548;
+    border-radius: 8px; background: #151922; color: #e2e8f0;
+    font-size: 0.95rem; outline: none; text-align: center;
   }
-  .time-inputs select {
-    width: 180px;
-    text-align: left;
-  }
-  .time-inputs input:focus, .time-inputs select:focus {
-    border-color: #4f6ef7;
-  }
-  .btn-nap {
-    padding: 10px 24px;
-    background: #4f6ef7;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 4px;
-  }
+  .time-inputs select { width: 180px; text-align: left; }
+  .time-inputs input:focus, .time-inputs select:focus { border-color: #4f6ef7; }
+  .btn-nap { padding: 10px 24px; background: #4f6ef7; color: #fff; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
   .btn-nap:hover { background: #3a56d4; }
-
   .time-log { margin-top: 20px; }
   .time-log-title { font-size: 0.85rem; color: #718096; margin-bottom: 8px; }
-  .log-entry {
-    font-size: 0.82rem;
-    color: #a0aec0;
-    padding: 5px 0;
-    border-bottom: 1px solid #2d3548;
-  }
+  .log-entry { font-size: 0.82rem; color: #a0aec0; padding: 5px 0; border-bottom: 1px solid #2d3548; }
 
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-  }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; }
   .modal-overlay.show { display: flex; }
-  .modal-box {
-    background: #1e2332;
-    border: 1px solid #2d3548;
-    border-radius: 12px;
-    padding: 28px 32px;
-    width: 360px;
-  }
+  .modal-box { background: #1e2332; border: 1px solid #2d3548; border-radius: 12px; padding: 28px 32px; width: 360px; }
   .modal-box h3 { margin-bottom: 18px; font-size: 1.05rem; color: #e2e8f0; }
-  .modal-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-    justify-content: flex-end;
-  }
-  .btn-cancel {
-    padding: 9px 20px;
-    background: #2d3548;
-    color: #a0aec0;
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-  }
-  .btn-save {
-    padding: 9px 20px;
-    background: #4f6ef7;
-    color: #fff;
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    font-weight: 600;
-  }
-  .btn-confirm-del {
-    padding: 9px 20px;
-    background: #e53e3e;
-    color: #fff;
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    font-weight: 600;
-  }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .btn-cancel { padding: 9px 20px; background: #2d3548; color: #a0aec0; border: none; border-radius: 7px; cursor: pointer; }
+  .btn-save { padding: 9px 20px; background: #4f6ef7; color: #fff; border: none; border-radius: 7px; cursor: pointer; font-weight: 600; }
+  .btn-confirm-del { padding: 9px 20px; background: #e53e3e; color: #fff; border: none; border-radius: 7px; cursor: pointer; font-weight: 600; }
 
   .timer-danger { color: #fc8181 !important; animation: blink 1s infinite; }
   @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
-
   .empty-msg { color: #4a5568; font-size: 0.9rem; padding: 16px 0; }
 
-  #errorModal .modal-box {
-    text-align: center;
-  }
-  #errorModal .modal-box .error-icon {
-    font-size: 3rem;
-    margin-bottom: 12px;
-  }
-  #errorModal .modal-box .error-title {
-    color: #fc8181;
-    margin-bottom: 12px;
-  }
-  #errorModal .modal-box .error-msg {
-    color: #a0aec0;
-    font-size: 0.95rem;
-    line-height: 1.6;
-  }
-  #errorModal .modal-actions {
-    justify-content: center;
-    margin-top: 20px;
-  }
-  #errorModal .btn-save {
-    background: #4f6ef7;
-    min-width: 120px;
-  }
-  #errorModal .btn-save:hover {
-    background: #3a56d4;
-  }
+  #errorModal .modal-box { text-align: center; }
+  #errorModal .modal-box .error-icon { font-size: 3rem; margin-bottom: 12px; }
+  #errorModal .modal-box .error-title { color: #fc8181; margin-bottom: 12px; }
+  #errorModal .modal-box .error-msg { color: #a0aec0; font-size: 0.95rem; line-height: 1.6; }
+  #errorModal .modal-actions { justify-content: center; margin-top: 20px; }
+  #errorModal .btn-save { background: #4f6ef7; min-width: 120px; }
+  #errorModal .btn-save:hover { background: #3a56d4; }
 
-  .log-container {
-    background: #1e2332;
-    border: 1px solid #2d3548;
-    border-radius: 10px;
-    padding: 16px 20px;
-    max-height: 500px;
-    overflow-y: auto;
-  }
-  .log-container::-webkit-scrollbar {
-    width: 6px;
-  }
-  .log-container::-webkit-scrollbar-track {
-    background: #151922;
-    border-radius: 4px;
-  }
-  .log-container::-webkit-scrollbar-thumb {
-    background: #4f6ef7;
-    border-radius: 4px;
-  }
-  .log-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 14px;
-    border-bottom: 1px solid #2d3548;
-    gap: 16px;
-  }
-  .log-item:last-child {
-    border-bottom: none;
-  }
-  .log-item .log-content {
-    color: #e2e8f0;
-    font-size: 0.92rem;
-  }
-  .log-item .log-content .highlight {
-    color: #4f6ef7;
-    font-weight: 600;
-  }
-  .log-item .log-content .danger {
-    color: #fc8181;
-    font-weight: 600;
-  }
-  .log-item .log-content .success {
-    color: #68d391;
-    font-weight: 600;
-  }
-  .log-item .log-time {
-    color: #718096;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-  .log-item .log-badge {
-    padding: 2px 10px;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    margin-right: 8px;
-  }
+  .log-container { background: #1e2332; border: 1px solid #2d3548; border-radius: 10px; padding: 16px 20px; max-height: 500px; overflow-y: auto; }
+  .log-container::-webkit-scrollbar { width: 6px; }
+  .log-container::-webkit-scrollbar-track { background: #151922; border-radius: 4px; }
+  .log-container::-webkit-scrollbar-thumb { background: #4f6ef7; border-radius: 4px; }
+  .log-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid #2d3548; gap: 16px; }
+  .log-item:last-child { border-bottom: none; }
+  .log-item .log-content { color: #e2e8f0; font-size: 0.92rem; }
+  .log-item .log-time { color: #718096; font-size: 0.8rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .log-item .log-badge { padding: 2px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; margin-right: 8px; }
   .log-badge.create { background: #2c5282; color: #90cdf4; }
   .log-badge.delete { background: #742a2a; color: #fc8181; }
   .log-badge.edit { background: #553c9a; color: #d6bcfa; }
@@ -526,38 +429,17 @@
   .log-badge.login { background: #2d3748; color: #a0aec0; }
 
   @media (max-width: 640px) {
-    .admin-header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .admin-header-left {
-      justify-content: center;
-    }
-    .admin-actions {
-      justify-content: center;
-    }
-    .btn-nav {
-      padding: 8px 16px;
-      font-size: 0.85rem;
-    }
-    .time-inputs .field input,
-    .time-inputs .field select {
-      width: 70px;
-    }
-    .time-inputs .field select {
-      width: 140px;
-    }
-    .login-box {
-      padding: 24px 20px;
-      width: 92%;
-    }
-    .log-item {
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .log-item .log-time {
-      font-size: 0.7rem;
-    }
+    .admin-header { flex-direction: column; align-items: stretch; }
+    .admin-header-left { justify-content: center; }
+    .admin-actions { justify-content: center; }
+    .btn-nav { padding: 8px 16px; font-size: 0.85rem; }
+    .time-inputs .field input, .time-inputs .field select { width: 70px; }
+    .time-inputs .field select { width: 140px; }
+    .login-box { padding: 24px 20px; width: 92%; }
+    .log-item { flex-wrap: wrap; gap: 6px; }
+    .log-item .log-time { font-size: 0.7rem; }
+    .bt-controls { gap: 8px; padding: 8px 12px; }
+    .pixel-cell { width: 10px; height: 10px; }
   }
 </style>
 </head>
@@ -600,21 +482,25 @@
       </div>
     </div>
 
+    <!-- WEB VIEW -->
     <div id="webView" class="show">
-      <div class="web-placeholder">
-        <div class="icon">🌐</div>
-        <h3>Trang web đang được phát triển</h3>
-        <p>Nội dung sẽ sớm được cập nhật...</p>
+      <div style="padding: 8px 0 4px; color: #718096; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🧰 Tools</div>
+      <div class="web-tools-grid">
+        <div class="tool-card" onclick="openBitmapTool()">
+          <div class="tool-icon">🖼️</div>
+          <div class="tool-name">Tools chuyển bitmap</div>
+        </div>
       </div>
     </div>
 
+    <!-- SETTINGS VIEW -->
     <div id="settingsView">
       <div class="settings-tabs">
-        <button class="tab-btn active" onclick="switchTab('tabManage')">👥 Quản lý tài khoản</button>
-        <button class="tab-btn" onclick="switchTab('tabCreate')">➕ Tạo tài khoản mới</button>
-        <button class="tab-btn" onclick="switchTab('tabTime')">⏱ Thời gian</button>
-        <button class="tab-btn" onclick="switchTab('tabChangePw')">🔑 Đổi mật khẩu</button>
-        <button class="tab-btn" id="tabLogBtn" onclick="switchTab('tabLog')" style="display:none;">📋 Log</button>
+        <button class="tab-btn active" onclick="switchTab('tabManage', event)">👥 Quản lý tài khoản</button>
+        <button class="tab-btn" onclick="switchTab('tabCreate', event)">➕ Tạo tài khoản mới</button>
+        <button class="tab-btn" onclick="switchTab('tabTime', event)">⏱ Thời gian</button>
+        <button class="tab-btn" onclick="switchTab('tabChangePw', event)">🔑 Đổi mật khẩu</button>
+        <button class="tab-btn" id="tabLogBtn" onclick="switchTab('tabLog', event)" style="display:none;">📋 Log</button>
       </div>
 
       <div class="tab-panel active" id="tabManage">
@@ -623,9 +509,7 @@
         <div id="myAccountCard" class="my-account-card"></div>
         <div class="sub-title">Tài khoản người dùng bạn quản lý</div>
         <table class="user-table" id="userListTable">
-          <thead>
-            <tr><th>Tên đăng nhập</th><th>Loại</th><th>Thời gian còn lại</th><th>Thao tác</th></tr>
-          </thead>
+          <thead><tr><th>Tên đăng nhập</th><th>Loại</th><th>Thời gian còn lại</th><th>Thao tác</th></tr></thead>
           <tbody id="userListBody"></tbody>
         </table>
       </div>
@@ -640,14 +524,8 @@
               <option value="admin">Tài khoản admin</option>
             </select>
           </div>
-          <div class="form-group">
-            <label>Tên đăng nhập</label>
-            <input type="text" id="newUsername" placeholder="Nhập tên đăng nhập" autocomplete="off">
-          </div>
-          <div class="form-group">
-            <label>Mật khẩu</label>
-            <input type="password" id="newPassword" placeholder="Nhập mật khẩu">
-          </div>
+          <div class="form-group"><label>Tên đăng nhập</label><input type="text" id="newUsername" placeholder="Nhập tên đăng nhập" autocomplete="off"></div>
+          <div class="form-group"><label>Mật khẩu</label><input type="password" id="newPassword" placeholder="Nhập mật khẩu"></div>
           <button class="btn-create" onclick="createAccount()">Tạo tài khoản</button>
           <div class="form-msg" id="createMsg"></div>
         </div>
@@ -683,6 +561,52 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===== BITMAP TOOL FULLSCREEN ===== -->
+<div id="bitmapTool">
+  <div class="bt-topbar">
+    <div class="bt-title">
+      🖼️ Dịch bitmap
+      <span class="dev-tag">| Dev: @Black &nbsp;[discord: black_0x000000]</span>
+    </div>
+    <button class="bt-home-btn" onclick="closeBitmapTool()">🏠 Home</button>
+  </div>
+
+  <div class="bt-controls">
+    <div class="bt-ctrl-group">
+      <label>Chiều dài (tối đa 192):</label>
+      <input type="number" id="btWidth" min="1" max="192" value="8">
+    </div>
+    <div class="bt-divider"></div>
+    <div class="bt-ctrl-group">
+      <label>Chiều rộng (tối đa 63):</label>
+      <input type="number" id="btHeight" min="1" max="63" value="8">
+    </div>
+    <div class="bt-divider"></div>
+    <div class="bt-state-group">
+      <span class="bt-state-label">Trạng thái:</span>
+      <span class="bt-state-indicator" id="btStateLabel">Tô</span>
+    </div>
+    <div class="bt-ctrl-group">
+      <button class="bt-btn bt-btn-fill active" id="btnFill" onclick="setMode('fill')">Tô</button>
+      <button class="bt-btn bt-btn-erase" id="btnErase" onclick="setMode('erase')">Xóa</button>
+    </div>
+    <div class="bt-divider"></div>
+    <div class="bt-ctrl-group">
+      <button class="bt-btn bt-btn-clear" onclick="clearPixels()">CLEAR</button>
+      <button class="bt-btn bt-btn-reset" onclick="resetBitmap()">RESET</button>
+    </div>
+  </div>
+
+  <div class="bt-canvas-area" id="btCanvasArea">
+    <div id="pixelGrid"></div>
+  </div>
+
+  <div class="bt-output-area">
+    <div class="bt-output-label">Hex:</div>
+    <div class="bt-hex-output" id="btHexOutput">—</div>
   </div>
 </div>
 
@@ -756,9 +680,30 @@ let currentUser = null;
 let countdownInterval = null;
 let currentView = 'web';
 
+// ===== BITMAP TOOL STATE =====
+let btWidth = 8;
+let btHeight = 8;
+let btPixels = [];
+let btMode = 'fill'; // 'fill' | 'erase'
+let btIsDrawing = false;
+
 // ===== LISTENERS =====
 document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// Bitmap dimension input listeners
+document.getElementById('btWidth').addEventListener('input', () => {
+  let v = parseInt(document.getElementById('btWidth').value) || 1;
+  if (v < 1) v = 1; if (v > 192) v = 192;
+  btWidth = v;
+  initPixelGrid();
+});
+document.getElementById('btHeight').addEventListener('input', () => {
+  let v = parseInt(document.getElementById('btHeight').value) || 1;
+  if (v < 1) v = 1; if (v > 63) v = 63;
+  btHeight = v;
+  initPixelGrid();
+});
 
 function showError(message) {
   document.getElementById('errorMessage').textContent = message;
@@ -773,13 +718,7 @@ function writeLog(action, detail) {
     hour: '2-digit', minute: '2-digit', second: '2-digit'
   });
   const logRef = db.ref('systemLog').push();
-  logRef.set({
-    action: action,
-    detail: detail,
-    by: currentUser,
-    time: timeStr,
-    timestamp: now.getTime()
-  });
+  logRef.set({ action, detail, by: currentUser, time: timeStr, timestamp: now.getTime() });
 }
 
 // ===== LOGIN =====
@@ -790,31 +729,26 @@ function doLogin() {
   err.textContent = '';
   if (!u || !p) { err.textContent = '❌ Vui lòng nhập đầy đủ.'; return; }
 
-  const userRef = db.ref('accounts/' + u);
-  userRef.once('value').then(snapshot => {
+  db.ref('accounts/' + u).once('value').then(snapshot => {
     const acc = snapshot.val();
     if (!acc) { err.textContent = '❌ Tài khoản không tồn tại.'; return; }
     if (acc.password !== p) { err.textContent = '❌ Mật khẩu không đúng.'; return; }
     if (acc.role === 'user' && acc.timeLeft <= 0) {
-      err.textContent = '⚠️ Tài khoản hết thời gian. Liên hệ admin.';
-      return;
+      err.textContent = '⚠️ Tài khoản hết thời gian. Liên hệ admin.'; return;
     }
     currentUser = u;
-    if (acc.role === 'admin' || acc.role === 'owner') {
-      writeLog('login', u + ' đã đăng nhập');
-    }
+    if (acc.role === 'admin' || acc.role === 'owner') writeLog('login', u + ' đã đăng nhập');
     showApp(acc.role);
   }).catch(e => { err.textContent = '❌ Lỗi kết nối Firebase: ' + e.message; });
 }
 
-// ===== SHOW APP (FIX - MẶC ĐỊNH HIỆN SETTINGS CHO OWNER/ADMIN) =====
+// ===== SHOW APP =====
 function showApp(role) {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('topBar').classList.add('show');
   document.getElementById('mainContent').classList.add('show');
   document.getElementById('topBarTitle').textContent = '👤 ' + currentUser;
   document.getElementById('adminName').textContent = currentUser;
-
   document.getElementById('adminPage').style.display = 'block';
   document.getElementById('userPage').style.display = 'none';
   document.getElementById('timerDisplay').textContent = '';
@@ -822,38 +756,33 @@ function showApp(role) {
   if (role === 'owner') {
     document.getElementById('tabLogBtn').style.display = 'inline-block';
     document.getElementById('btnSettings').style.display = 'flex';
-    document.getElementById('btnWeb').style.display = 'inline-block';
-    
-    // MẶC ĐỊNH HIỆN SETTINGS
+    document.getElementById('btnWeb').style.display = 'inline-flex';
+    // Default: settings
     document.getElementById('settingsView').classList.add('show');
     document.getElementById('webView').classList.remove('show');
     document.getElementById('btnSettings').classList.add('active');
     document.getElementById('btnWeb').classList.remove('active');
-    
     renderAdminPanel();
     watchUserTime();
     renderLog();
   } else if (role === 'admin') {
     document.getElementById('tabLogBtn').style.display = 'none';
     document.getElementById('btnSettings').style.display = 'flex';
-    document.getElementById('btnWeb').style.display = 'inline-block';
-    
-    // MẶC ĐỊNH HIỆN SETTINGS
+    document.getElementById('btnWeb').style.display = 'inline-flex';
+    // Default: settings
     document.getElementById('settingsView').classList.add('show');
     document.getElementById('webView').classList.remove('show');
     document.getElementById('btnSettings').classList.add('active');
     document.getElementById('btnWeb').classList.remove('active');
-    
     renderAdminPanel();
     watchUserTime();
   } else {
-    // USER: chỉ hiện Web View
+    // USER: hiện Web View (có bitmap tool)
     document.getElementById('tabLogBtn').style.display = 'none';
     document.getElementById('btnSettings').style.display = 'none';
     document.getElementById('btnWeb').style.display = 'none';
     document.getElementById('settingsView').classList.remove('show');
     document.getElementById('webView').classList.add('show');
-    
     startCountdown();
   }
 }
@@ -861,16 +790,12 @@ function showApp(role) {
 // ===== RENDER LOG =====
 function renderLog() {
   const container = document.getElementById('logEntries');
-  const ref = db.ref('systemLog');
-  ref.orderByChild('timestamp').limitToLast(100).on('value', function(snapshot) {
+  db.ref('systemLog').orderByChild('timestamp').limitToLast(100).on('value', function(snapshot) {
     const logs = snapshot.val();
     if (!logs) { container.innerHTML = '<div class="empty-msg">Chưa có hoạt động nào.</div>'; return; }
     const entries = Object.values(logs).reverse();
     container.innerHTML = entries.map(l => {
-      const badgeMap = {
-        'create': 'create', 'delete': 'delete', 'edit': 'edit',
-        'time': 'time', 'password': 'pw', 'login': 'login'
-      };
+      const badgeMap = { 'create':'create','delete':'delete','edit':'edit','time':'time','password':'pw','login':'login' };
       const badge = badgeMap[l.action] || 'create';
       return `<div class="log-item">
         <span class="log-content"><span class="log-badge ${badge}">${l.action.toUpperCase()}</span> ${l.detail}</span>
@@ -884,6 +809,7 @@ function renderLog() {
 function doLogout() {
   stopCountdown();
   currentUser = null;
+  closeBitmapTool();
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('topBar').classList.remove('show');
   document.getElementById('mainContent').classList.remove('show');
@@ -899,9 +825,7 @@ function doLogout() {
 // ===== COUNTDOWN =====
 function startCountdown() {
   stopCountdown();
-  
   const userRef = db.ref('accounts/' + currentUser);
-  
   userRef.once('value').then(snapshot => {
     const acc = snapshot.val();
     if (!acc || acc.timeLeft <= 0) {
@@ -909,10 +833,8 @@ function startCountdown() {
       document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
       return;
     }
-    
     let timeLeft = acc.timeLeft;
     updateTimerDisplay(timeLeft);
-    
     userRef.on('value', function(snapshot) {
       const newAcc = snapshot.val();
       if (!newAcc) return;
@@ -924,14 +846,10 @@ function startCountdown() {
         if (el) {
           el.style.color = '#68d391';
           el.textContent = '⏱ +' + added + 's ⬆';
-          setTimeout(() => {
-            el.style.color = timeLeft <= 60 ? '#fc8181' : '';
-            updateTimerDisplay(timeLeft);
-          }, 2000);
+          setTimeout(() => { el.style.color = timeLeft <= 60 ? '#fc8181' : ''; updateTimerDisplay(timeLeft); }, 2000);
         }
       }
     });
-    
     countdownInterval = setInterval(() => {
       timeLeft--;
       if (timeLeft <= 0) {
@@ -942,17 +860,12 @@ function startCountdown() {
         document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
         return;
       }
-      
       userRef.transaction(function(currentData) {
         if (currentData === null) return currentData;
-        if (currentData.timeLeft === timeLeft + 1) {
-          currentData.timeLeft = timeLeft;
-        } else {
-          timeLeft = currentData.timeLeft;
-        }
+        if (currentData.timeLeft === timeLeft + 1) currentData.timeLeft = timeLeft;
+        else timeLeft = currentData.timeLeft;
         return currentData;
       });
-      
       updateTimerDisplay(timeLeft);
     }, 1000);
   });
@@ -960,25 +873,16 @@ function startCountdown() {
 
 function stopCountdown() {
   if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-  if (currentUser) {
-    db.ref('accounts/' + currentUser).off();
-  }
+  if (currentUser) db.ref('accounts/' + currentUser).off();
 }
 
 function updateTimerDisplay(timeLeft) {
   const t = timeLeft || 0;
-  const h = Math.floor(t / 3600);
-  const m = Math.floor((t % 3600) / 60);
-  const s = t % 60;
-  const str = '⏱ ' + pad(h) + ':' + pad(m) + ':' + pad(s);
+  const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
   const el = document.getElementById('timerDisplay');
   if (el) {
-    el.textContent = str;
-    if (t <= 60) {
-      el.className = 'timer-danger';
-    } else {
-      el.className = '';
-    }
+    el.textContent = '⏱ ' + pad(h) + ':' + pad(m) + ':' + pad(s);
+    el.className = t <= 60 ? 'timer-danger' : '';
   }
 }
 
@@ -991,7 +895,6 @@ function switchView(view) {
   const settingsView = document.getElementById('settingsView');
   const btnWeb = document.getElementById('btnWeb');
   const btnSettings = document.getElementById('btnSettings');
-
   if (view === 'web') {
     webView.classList.add('show');
     settingsView.classList.remove('show');
@@ -1010,76 +913,55 @@ function switchView(view) {
 }
 
 // ===== TABS =====
-function switchTab(id) {
+function switchTab(id, event) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.settings-tabs .tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  event.currentTarget.classList.add('active');
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
   if (id === 'tabManage') renderAdminPanel();
   if (id === 'tabTime') { renderTimeTargets(); renderTimeLog(); }
   if (id === 'tabChangePw') renderChangePwTab();
 }
 
 // ===== ADMIN PANEL =====
-function renderAdminPanel() {
-  renderMyAccount();
-  renderUserList();
-  renderTimeTargets();
-}
+function renderAdminPanel() { renderMyAccount(); renderUserList(); renderTimeTargets(); }
 
 function renderMyAccount() {
-  const ref = db.ref('accounts/' + currentUser);
-  ref.once('value').then(snapshot => {
+  db.ref('accounts/' + currentUser).once('value').then(snapshot => {
     const acc = snapshot.val();
-    let roleBadge = '';
-    if (acc.role === 'owner') roleBadge = '<span class="badge owner">👑 Owner</span>';
-    else if (acc.role === 'admin') roleBadge = '<span class="badge admin">Admin</span>';
-    else roleBadge = '<span class="badge user">User</span>';
-    
+    let roleBadge = acc.role === 'owner' ? '<span class="badge owner">👑 Owner</span>' :
+                    acc.role === 'admin' ? '<span class="badge admin">Admin</span>' : '<span class="badge user">User</span>';
     document.getElementById('myAccountCard').innerHTML = `
       <div class="info-row"><strong>${currentUser}</strong>${roleBadge}</div>
       <div style="font-size:0.85rem; color:#718096;">
-        ${acc.role === 'owner' ? '👑 Chủ sở hữu hệ thống — toàn quyền' : 
-          acc.role === 'admin' ? 'Quản trị viên hệ thống' : 'Người dùng hệ thống'}
-      </div>
-    `;
+        ${acc.role === 'owner' ? '👑 Chủ sở hữu hệ thống — toàn quyền' : acc.role === 'admin' ? 'Quản trị viên hệ thống' : 'Người dùng hệ thống'}
+      </div>`;
   });
 }
 
-// ===== RENDER USER LIST =====
 function renderUserList() {
   const tbody = document.getElementById('userListBody');
-  const ref = db.ref('accounts');
-  ref.on('value', function(snapshot) {
+  db.ref('accounts').on('value', function(snapshot) {
     const accounts = snapshot.val();
     if (!accounts) { tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào.</td></tr>`; return; }
     const currentRole = accounts[currentUser]?.role || 'admin';
     const others = Object.keys(accounts).filter(u => u !== currentUser);
     if (others.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`; return; }
-
     tbody.innerHTML = others.map(u => {
       const acc = accounts[u];
       const t = acc.timeLeft || 0;
       const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
       const timeStr = acc.role === 'user' ? pad(h)+':'+pad(m)+':'+pad(s) : '—';
-      let badge = '';
-      if (acc.role === 'owner') badge = `<span class="badge owner">👑 Owner</span>`;
-      else if (acc.role === 'admin') badge = `<span class="badge admin">Admin</span>`;
-      else badge = `<span class="badge user">User</span>`;
-
-      let deleteButton = '';
-      if (currentRole === 'owner') deleteButton = `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`;
-      else if (currentRole === 'admin' && acc.role === 'user') deleteButton = `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`;
-      else deleteButton = `<button class="btn-sm btn-del" onclick="showError('Bạn không có quyền xóa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Xóa</button>`;
-
-      let editButton = '';
-      if (currentRole === 'owner') editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
-      else if (currentRole === 'admin' && acc.role === 'user') editButton = `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`;
-      else editButton = `<button class="btn-sm btn-edit" onclick="showError('Bạn không có quyền sửa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Sửa</button>`;
-
+      let badge = acc.role === 'owner' ? `<span class="badge owner">👑 Owner</span>` :
+                  acc.role === 'admin' ? `<span class="badge admin">Admin</span>` : `<span class="badge user">User</span>`;
+      let deleteButton = (currentRole === 'owner' || (currentRole === 'admin' && acc.role === 'user'))
+        ? `<button class="btn-sm btn-del" onclick="openDelete('${u}')">Xóa</button>`
+        : `<button class="btn-sm btn-del" onclick="showError('Bạn không có quyền xóa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Xóa</button>`;
+      let editButton = (currentRole === 'owner' || (currentRole === 'admin' && acc.role === 'user'))
+        ? `<button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>`
+        : `<button class="btn-sm btn-edit" onclick="showError('Bạn không có quyền sửa tài khoản này!')" style="opacity:0.5;cursor:not-allowed;">Sửa</button>`;
       const changePwBtn = currentRole === 'owner' ? `<button class="btn-sm btn-edit" onclick="openChangePw('${u}')" style="margin-left:6px;">🔑</button>` : '';
       const timeColor = (acc.role === 'user' && t <= 60) ? 'color:#fc8181;' : '';
-
       return `<tr>
         <td>${u}</td><td>${badge}</td>
         <td class="time-cell" id="time-${u}" style="${timeColor}">${timeStr}</td>
@@ -1090,21 +972,16 @@ function renderUserList() {
 }
 
 function watchUserTime() {
-  const ref = db.ref('accounts');
-  ref.on('value', function(snapshot) {
+  db.ref('accounts').on('value', function(snapshot) {
     const accounts = snapshot.val();
     if (!accounts || !currentUser) return;
-    const others = Object.keys(accounts).filter(u => u !== currentUser);
-    others.forEach(u => {
+    Object.keys(accounts).filter(u => u !== currentUser).forEach(u => {
       const acc = accounts[u];
       if (acc.role === 'user') {
         const t = acc.timeLeft || 0;
         const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
         const el = document.getElementById('time-'+u);
-        if (el) {
-          el.textContent = pad(h)+':'+pad(m)+':'+pad(s);
-          el.style.color = t <= 60 ? '#fc8181' : '';
-        }
+        if (el) { el.textContent = pad(h)+':'+pad(m)+':'+pad(s); el.style.color = t<=60 ? '#fc8181' : ''; }
       }
     });
   });
@@ -1133,42 +1010,37 @@ function renderTimeLog() {
   });
 }
 
-// ===== RENDER CHANGE PASSWORD TAB =====
+// ===== CHANGE PASSWORD TAB =====
 function renderChangePwTab() {
   const container = document.getElementById('changePwContainer');
   db.ref('accounts/' + currentUser).once('value').then(snapshot => {
     const acc = snapshot.val();
     if (acc.role === 'owner') {
       container.innerHTML = `
-        <p style="color:#a0aec0; margin-bottom:16px;">👑 Bạn là Owner. Bạn có thể đổi mật khẩu của bất kỳ tài khoản nào, bao gồm chính mình.</p>
+        <p style="color:#a0aec0; margin-bottom:16px;">👑 Bạn là Owner. Bạn có thể đổi mật khẩu của bất kỳ tài khoản nào.</p>
         <div class="form-group" style="max-width:380px;">
           <label>Chọn tài khoản cần đổi mật khẩu</label>
-          <select id="changePwSelect" style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#e2e8f0; font-size:0.95rem; outline:none;"></select>
+          <select id="changePwSelect" style="width:100%;padding:10px 14px;border:1px solid #2d3548;border-radius:8px;background:#151922;color:#e2e8f0;font-size:0.95rem;outline:none;"></select>
         </div>
         <button class="btn-create" onclick="openChangePwFromSelect()">🔑 Đổi mật khẩu</button>
-        <div style="margin-top:16px; color:#718096; font-size:0.9rem;">💡 Chọn tài khoản từ danh sách, bao gồm cả <strong>${currentUser}</strong> (chính bạn)</div>
-      `;
+        <div style="margin-top:16px;color:#718096;font-size:0.9rem;">💡 Bao gồm cả <strong>${currentUser}</strong> (chính bạn)</div>`;
       const sel = document.getElementById('changePwSelect');
       db.ref('accounts').once('value').then(s => {
         const accounts = s.val();
         if (!accounts) { sel.innerHTML = '<option>-- Không có tài khoản --</option>'; return; }
-        sel.innerHTML = Object.keys(accounts).map(u => `<option value="${u}">${u} (${accounts[u].role})${u === currentUser ? ' ← Bạn' : ''}</option>`).join('');
+        sel.innerHTML = Object.keys(accounts).map(u => `<option value="${u}">${u} (${accounts[u].role})${u===currentUser?' ← Bạn':''}</option>`).join('');
       });
     } else if (acc.role === 'admin') {
       container.innerHTML = `
-        <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn chỉ có thể đổi mật khẩu của chính mình. <strong style="color:#fc8181;">Không được đổi mật khẩu của Admin khác!</strong></p>
+        <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn chỉ có thể đổi mật khẩu của chính mình.</p>
         <div class="form-group" style="max-width:380px;">
           <label>Tài khoản</label>
-          <input type="text" value="${currentUser} (chính bạn)" disabled style="width:100%; padding:10px 14px; border:1px solid #2d3548; border-radius:8px; background:#151922; color:#718096; font-size:0.95rem; outline:none;">
+          <input type="text" value="${currentUser} (chính bạn)" disabled style="width:100%;padding:10px 14px;border:1px solid #2d3548;border-radius:8px;background:#151922;color:#718096;font-size:0.95rem;outline:none;">
         </div>
         <button class="btn-create" onclick="openChangePw('${currentUser}')">🔑 Đổi mật khẩu của tôi</button>
-        <div style="margin-top:16px; color:#fc8181; font-size:0.9rem;">⛔ Bạn KHÔNG được đổi mật khẩu của Admin khác. Chỉ Owner mới có quyền đó.</div>
-      `;
+        <div style="margin-top:16px;color:#fc8181;font-size:0.9rem;">⛔ Bạn KHÔNG được đổi mật khẩu của Admin khác.</div>`;
     } else {
-      container.innerHTML = `
-        <p style="color:#a0aec0; margin-bottom:16px;">🔑 Bạn là người dùng. <strong style="color:#fc8181;">Không có quyền đổi mật khẩu!</strong></p>
-        <p style="color:#718096; font-size:0.9rem;">Vui lòng liên hệ Admin để được hỗ trợ.</p>
-      `;
+      container.innerHTML = `<p style="color:#a0aec0;">🔑 Bạn là người dùng. <strong style="color:#fc8181;">Không có quyền đổi mật khẩu!</strong></p>`;
     }
   });
 }
@@ -1184,7 +1056,7 @@ function openChangePw(target) {
 
 function openChangePwFromSelect() {
   const sel = document.getElementById('changePwSelect');
-  if (!sel.value) { showError('Vui lòng chọn tài khoản cần đổi mật khẩu.'); return; }
+  if (!sel.value) { showError('Vui lòng chọn tài khoản.'); return; }
   openChangePw(sel.value);
 }
 
@@ -1196,10 +1068,8 @@ function saveChangePw() {
   if (!newPw) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập mật khẩu mới.'; return; }
   if (newPw.length < 3) { msg.className='form-msg err'; msg.textContent='Mật khẩu phải có ít nhất 3 ký tự.'; return; }
   if (newPw !== confirmPw) { msg.className='form-msg err'; msg.textContent='Mật khẩu xác nhận không khớp.'; return; }
-
   db.ref('accounts/' + target).once('value').then(snapshot => {
-    const acc = snapshot.val();
-    if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
+    if (!snapshot.val()) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
     db.ref('accounts/' + target).update({ password: newPw });
     writeLog('password', currentUser + ' đã đổi mật khẩu của ' + target);
     msg.className='form-msg ok'; msg.textContent='✅ Đổi mật khẩu thành công!';
@@ -1215,16 +1085,14 @@ function createAccount() {
   const msg = document.getElementById('createMsg');
   if (!uname) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập tên đăng nhập.'; return; }
   if (!pass) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập mật khẩu.'; return; }
-
   db.ref('accounts/' + uname).once('value').then(snapshot => {
     if (snapshot.exists()) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập đã tồn tại.'; return; }
-    db.ref('accounts/' + uname).set({ password: pass, role: role, timeLeft: 0, createdBy: currentUser });
+    db.ref('accounts/' + uname).set({ password: pass, role, timeLeft: 0, createdBy: currentUser });
     writeLog('create', currentUser + ' đã tạo tài khoản ' + uname + ' (vai trò: ' + role + ')');
     msg.className='form-msg ok'; msg.textContent='✅ Tạo tài khoản "' + uname + '" (' + role + ') thành công!';
     document.getElementById('newUsername').value = '';
     document.getElementById('newPassword').value = '';
-    renderUserList();
-    renderTimeTargets();
+    renderUserList(); renderTimeTargets();
   });
 }
 
@@ -1238,50 +1106,30 @@ function addTime() {
   if (!target) { msg.className='form-msg err'; msg.textContent='Không có tài khoản người dùng.'; return; }
   const total = h*3600 + m*60 + s;
   if (total <= 0) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập thời gian hợp lệ.'; return; }
-
   db.ref('accounts/' + target).once('value').then(snapshot => {
     const acc = snapshot.val();
     if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
-    const newTime = (acc.timeLeft || 0) + total;
-    db.ref('accounts/' + target).update({ timeLeft: newTime });
-
+    db.ref('accounts/' + target).update({ timeLeft: (acc.timeLeft||0) + total });
     const now = new Date().toLocaleString('vi-VN');
-    const logRef = db.ref('timeLog').push();
-    logRef.set({ time: now, by: currentUser, target: target, added: total });
-
-    const hh = pad(h), mm = pad(m), ss = pad(s);
-    writeLog('time', currentUser + ' đã nạp +' + hh + ':' + mm + ':' + ss + ' cho ' + target);
-
-    msg.className='form-msg ok';
-    msg.textContent = '✅ Đã nạp ' + hh + ':' + mm + ':' + ss + ' cho "' + target + '".';
-    document.getElementById('addHour').value=0;
-    document.getElementById('addMin').value=0;
-    document.getElementById('addSec').value=0;
-    renderTimeLog();
-    renderUserList();
+    db.ref('timeLog').push().set({ time: now, by: currentUser, target, added: total });
+    writeLog('time', currentUser + ' đã nạp +' + pad(h)+':'+pad(m)+':'+pad(s) + ' cho ' + target);
+    msg.className='form-msg ok'; msg.textContent='✅ Đã nạp ' + pad(h)+':'+pad(m)+':'+pad(s) + ' cho "' + target + '".';
+    document.getElementById('addHour').value=0; document.getElementById('addMin').value=0; document.getElementById('addSec').value=0;
+    renderTimeLog(); renderUserList();
   });
 }
 
-// ===== EDIT MODAL =====
+// ===== EDIT =====
 function openEdit(u) {
   db.ref('accounts/' + currentUser).once('value').then(snapshot => {
     const currentAcc = snapshot.val();
     if (!currentAcc) return;
-    if (currentAcc.role === 'user') {
-      showError('Bạn không có quyền sửa tài khoản!');
-      return;
-    }
+    if (currentAcc.role === 'user') { showError('Bạn không có quyền sửa tài khoản!'); return; }
     db.ref('accounts/' + u).once('value').then(s => {
       const targetAcc = s.val();
       if (!targetAcc) return;
-      if (currentAcc.role === 'admin' && targetAcc.role === 'admin') {
-        showError('Bạn không có quyền sửa tài khoản Admin khác!');
-        return;
-      }
-      if (currentAcc.role === 'admin' && targetAcc.role === 'owner') {
-        showError('Bạn không có quyền sửa tài khoản Owner!');
-        return;
-      }
+      if (currentAcc.role === 'admin' && targetAcc.role === 'admin') { showError('Bạn không có quyền sửa tài khoản Admin khác!'); return; }
+      if (currentAcc.role === 'admin' && targetAcc.role === 'owner') { showError('Bạn không có quyền sửa tài khoản Owner!'); return; }
       document.getElementById('editTarget').value = u;
       document.getElementById('editUsername').value = u;
       document.getElementById('editPassword').value = '';
@@ -1297,27 +1145,14 @@ function saveEdit() {
   const newPass = document.getElementById('editPassword').value;
   const msg = document.getElementById('editMsg');
   if (!newName) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập không được trống.'; return; }
-
   db.ref('accounts/' + currentUser).once('value').then(cSnapshot => {
     const currentAcc = cSnapshot.val();
-    if (!currentAcc) return;
-    if (currentAcc.role === 'user') {
-      msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa tài khoản!';
-      return;
-    }
+    if (!currentAcc || currentAcc.role === 'user') { msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền!'; return; }
     db.ref('accounts/' + oldName).once('value').then(snapshot => {
       const acc = snapshot.val();
       if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
-
-      if (currentAcc.role === 'admin' && acc.role === 'admin') {
-        msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa Admin khác!';
-        return;
-      }
-      if (currentAcc.role === 'admin' && acc.role === 'owner') {
-        msg.className='form-msg err'; msg.textContent='❌ Bạn không có quyền sửa Owner!';
-        return;
-      }
-
+      if (currentAcc.role === 'admin' && acc.role === 'admin') { msg.className='form-msg err'; msg.textContent='❌ Không được sửa Admin khác!'; return; }
+      if (currentAcc.role === 'admin' && acc.role === 'owner') { msg.className='form-msg err'; msg.textContent='❌ Không được sửa Owner!'; return; }
       if (newName !== oldName) {
         db.ref('accounts/' + newName).once('value').then(s => {
           if (s.exists()) { msg.className='form-msg err'; msg.textContent='Tên đã tồn tại.'; return; }
@@ -1325,15 +1160,11 @@ function saveEdit() {
           db.ref('accounts/' + newName).set(acc);
           db.ref('accounts/' + oldName).remove();
           writeLog('edit', currentUser + ' đã đổi tên ' + oldName + ' → ' + newName);
-          closeModal('editModal');
-          renderUserList();
+          closeModal('editModal'); renderUserList();
         });
       } else {
-        if (newPass) acc.password = newPass;
-        db.ref('accounts/' + oldName).update({ password: acc.password });
-        if (newPass) writeLog('password', currentUser + ' đã đổi mật khẩu của ' + oldName);
-        closeModal('editModal');
-        renderUserList();
+        if (newPass) { acc.password = newPass; db.ref('accounts/' + oldName).update({ password: acc.password }); writeLog('password', currentUser + ' đã đổi mật khẩu của ' + oldName); }
+        closeModal('editModal'); renderUserList();
       }
     });
   });
@@ -1341,61 +1172,202 @@ function saveEdit() {
 
 // ===== DELETE =====
 let deleteTarget = null;
-function openDelete(u) {
-  deleteTarget = u;
-  document.getElementById('deleteTargetName').textContent = u;
-  document.getElementById('deleteModal').classList.add('show');
-}
+function openDelete(u) { deleteTarget = u; document.getElementById('deleteTargetName').textContent = u; document.getElementById('deleteModal').classList.add('show'); }
 function confirmDelete() {
   if (!deleteTarget) return;
   db.ref('accounts/' + deleteTarget).once('value').then(snapshot => {
     const acc = snapshot.val();
-    if (!acc) { deleteTarget = null; closeModal('deleteModal'); return; }
+    if (!acc) { deleteTarget=null; closeModal('deleteModal'); return; }
     db.ref('accounts/' + currentUser).once('value').then(s => {
       const currentAcc = s.val();
       if (!currentAcc) return;
-
-      if (currentAcc.role === 'user') {
-        showError('Bạn không có quyền xóa tài khoản!');
-        deleteTarget = null; closeModal('deleteModal'); return;
-      }
-      if (currentAcc.role === 'admin' && acc.role === 'admin') {
-        showError('Admin không được xóa tài khoản Admin khác!');
-        deleteTarget = null; closeModal('deleteModal'); return;
-      }
-      if (currentAcc.role === 'admin' && acc.role === 'owner') {
-        showError('Admin không được xóa tài khoản Owner!');
-        deleteTarget = null; closeModal('deleteModal'); return;
-      }
-      if (currentAcc.role === 'owner' && deleteTarget === currentUser) {
-        showError('Bạn không thể xóa chính mình!');
-        deleteTarget = null; closeModal('deleteModal'); return;
-      }
-
+      if (currentAcc.role === 'user') { showError('Bạn không có quyền xóa!'); deleteTarget=null; closeModal('deleteModal'); return; }
+      if (currentAcc.role === 'admin' && acc.role === 'admin') { showError('Admin không được xóa Admin khác!'); deleteTarget=null; closeModal('deleteModal'); return; }
+      if (currentAcc.role === 'admin' && acc.role === 'owner') { showError('Admin không được xóa Owner!'); deleteTarget=null; closeModal('deleteModal'); return; }
+      if (currentAcc.role === 'owner' && deleteTarget === currentUser) { showError('Bạn không thể xóa chính mình!'); deleteTarget=null; closeModal('deleteModal'); return; }
       writeLog('delete', currentUser + ' đã xóa tài khoản ' + deleteTarget);
       db.ref('accounts/' + deleteTarget).remove();
-      deleteTarget = null;
-      closeModal('deleteModal');
-      renderUserList();
-      renderTimeTargets();
+      deleteTarget=null; closeModal('deleteModal'); renderUserList(); renderTimeTargets();
     });
   });
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('show');
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ===================================================
+// ===== BITMAP TOOL =====
+// ===================================================
+
+function openBitmapTool() {
+  btWidth = parseInt(document.getElementById('btWidth').value) || 8;
+  btHeight = parseInt(document.getElementById('btHeight').value) || 8;
+  initPixelGrid();
+  document.getElementById('bitmapTool').classList.add('show');
 }
 
-// ===== INIT TÀI KHOẢN =====
-db.ref('accounts/black_0x000000').once('value').then(snapshot => {
-  if (!snapshot.exists()) {
-    db.ref('accounts/black_0x000000').set({ password: '1', role: 'owner', timeLeft: 0, createdBy: null });
+function closeBitmapTool() {
+  document.getElementById('bitmapTool').classList.remove('show');
+}
+
+function initPixelGrid() {
+  // Clamp
+  if (btWidth < 1) btWidth = 1; if (btWidth > 192) btWidth = 192;
+  if (btHeight < 1) btHeight = 1; if (btHeight > 63) btHeight = 63;
+  document.getElementById('btWidth').value = btWidth;
+  document.getElementById('btHeight').value = btHeight;
+
+  // Preserve existing pixels where possible
+  const oldPixels = btPixels;
+  const oldH = oldPixels.length;
+  const oldW = oldH > 0 ? oldPixels[0].length : 0;
+
+  btPixels = [];
+  for (let row = 0; row < btHeight; row++) {
+    btPixels[row] = [];
+    for (let col = 0; col < btWidth; col++) {
+      btPixels[row][col] = (row < oldH && col < oldW) ? oldPixels[row][col] : 0;
+    }
   }
+
+  renderPixelGrid();
+  updateHexOutput();
+}
+
+function renderPixelGrid() {
+  const grid = document.getElementById('pixelGrid');
+  grid.style.gridTemplateColumns = `repeat(${btWidth}, 14px)`;
+  grid.innerHTML = '';
+
+  for (let row = 0; row < btHeight; row++) {
+    for (let col = 0; col < btWidth; col++) {
+      const cell = document.createElement('div');
+      cell.className = 'pixel-cell' + (btPixels[row][col] ? ' lit' : '');
+      cell.dataset.row = row;
+      cell.dataset.col = col;
+
+      // Mouse events
+      cell.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        btIsDrawing = true;
+        togglePixel(row, col);
+      });
+      cell.addEventListener('mouseover', (e) => {
+        if (btIsDrawing) togglePixel(row, col);
+      });
+
+      // Touch events
+      cell.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        btIsDrawing = true;
+        togglePixel(row, col);
+      }, { passive: false });
+      cell.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (el && el.classList.contains('pixel-cell')) {
+          const r = parseInt(el.dataset.row);
+          const c = parseInt(el.dataset.col);
+          if (!isNaN(r) && !isNaN(c)) togglePixel(r, c);
+        }
+      }, { passive: false });
+
+      grid.appendChild(cell);
+    }
+  }
+
+  document.addEventListener('mouseup', () => { btIsDrawing = false; }, { once: false });
+}
+
+function togglePixel(row, col) {
+  if (btMode === 'fill') {
+    btPixels[row][col] = 1;
+  } else {
+    btPixels[row][col] = 0;
+  }
+  // Update the specific cell visual
+  const grid = document.getElementById('pixelGrid');
+  const cellIndex = row * btWidth + col;
+  const cell = grid.children[cellIndex];
+  if (cell) {
+    cell.className = 'pixel-cell' + (btPixels[row][col] ? ' lit' : '');
+  }
+  updateHexOutput();
+}
+
+function setMode(mode) {
+  btMode = mode;
+  const lbl = document.getElementById('btStateLabel');
+  const btnFill = document.getElementById('btnFill');
+  const btnErase = document.getElementById('btnErase');
+  if (mode === 'fill') {
+    lbl.textContent = 'Tô';
+    lbl.className = 'bt-state-indicator';
+    btnFill.classList.add('active');
+    btnErase.classList.remove('active');
+  } else {
+    lbl.textContent = 'Xóa';
+    lbl.className = 'bt-state-indicator erase';
+    btnErase.classList.add('active');
+    btnFill.classList.remove('active');
+  }
+}
+
+function clearPixels() {
+  for (let r = 0; r < btHeight; r++)
+    for (let c = 0; c < btWidth; c++)
+      btPixels[r][c] = 0;
+  renderPixelGrid();
+  updateHexOutput();
+}
+
+function resetBitmap() {
+  btWidth = 0;
+  btHeight = 0;
+  document.getElementById('btWidth').value = 0;
+  document.getElementById('btHeight').value = 0;
+  btPixels = [];
+  document.getElementById('pixelGrid').innerHTML = '';
+  document.getElementById('btHexOutput').textContent = '—';
+}
+
+function updateHexOutput() {
+  if (btWidth === 0 || btHeight === 0 || btPixels.length === 0) {
+    document.getElementById('btHexOutput').textContent = '—';
+    return;
+  }
+
+  // Each row: group bits into bytes (8 bits = 1 byte), pad last byte with 0s
+  // Output: row by row, bytes separated by space, rows separated by space
+  const hexParts = [];
+
+  for (let row = 0; row < btHeight; row++) {
+    const rowBits = btPixels[row]; // array of 0/1, length = btWidth
+    // Pad to multiple of 8
+    const padded = [...rowBits];
+    while (padded.length % 8 !== 0) padded.push(0);
+
+    for (let b = 0; b < padded.length; b += 8) {
+      let byte = 0;
+      for (let bit = 0; bit < 8; bit++) {
+        byte = (byte << 1) | (padded[b + bit] ? 1 : 0);
+      }
+      hexParts.push(byte.toString(16).padStart(2, '0'));
+    }
+  }
+
+  document.getElementById('btHexOutput').textContent = hexParts.join(' ');
+}
+
+// Prevent mouseup from propagating weirdly
+document.addEventListener('mouseup', () => { btIsDrawing = false; });
+
+// ===== INIT ACCOUNTS =====
+db.ref('accounts/black_0x000000').once('value').then(snapshot => {
+  if (!snapshot.exists()) db.ref('accounts/black_0x000000').set({ password: '1', role: 'owner', timeLeft: 0, createdBy: null });
 });
 db.ref('accounts/admin').once('value').then(snapshot => {
-  if (!snapshot.exists()) {
-    db.ref('accounts/admin').set({ password: 'admin123', role: 'admin', timeLeft: 0, createdBy: 'black_0x000000' });
-  }
+  if (!snapshot.exists()) db.ref('accounts/admin').set({ password: 'admin123', role: 'admin', timeLeft: 0, createdBy: 'black_0x000000' });
 });
 </script>
 </body>

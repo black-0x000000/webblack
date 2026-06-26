@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hệ thống quản lý tài khoản</title>
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -233,6 +232,7 @@
     font-size: 0.8rem;
     font-weight: 700;
   }
+  .badge.owner { background: #9b2c2c; color: #fc8181; }
   .badge.admin { background: #553c9a; color: #d6bcfa; }
   .badge.user { background: #2c5282; color: #90cdf4; }
 
@@ -686,7 +686,7 @@ function showApp(role) {
   document.getElementById('mainContent').classList.add('show');
   document.getElementById('topBarTitle').textContent = '👤 ' + currentUser;
 
-  if (role === 'admin') {
+  if (role === 'owner' || role === 'admin') {
     document.getElementById('adminPage').style.display = 'block';
     document.getElementById('userPage').style.display = 'none';
     document.getElementById('timerDisplay').textContent = '';
@@ -803,12 +803,17 @@ function renderMyAccount() {
   const ref = db.ref('accounts/' + currentUser);
   ref.once('value').then(snapshot => {
     const acc = snapshot.val();
+    const roleBadge = acc.role === 'owner' 
+      ? '<span class="badge owner">👑 Owner</span>' 
+      : '<span class="badge admin">Admin</span>';
     document.getElementById('myAccountCard').innerHTML = `
       <div class="info-row">
         <strong>${currentUser}</strong>
-        <span class="badge admin">Admin</span>
+        ${roleBadge}
       </div>
-      <div style="font-size:0.85rem; color:#718096;">Tài khoản quản trị viên — toàn quyền quản lý hệ thống</div>
+      <div style="font-size:0.85rem; color:#718096;">
+        ${acc.role === 'owner' ? '👑 Chủ sở hữu hệ thống — toàn quyền' : 'Quản trị viên hệ thống'}
+      </div>
     `;
   });
 }
@@ -819,6 +824,9 @@ function renderUserList() {
   ref.once('value').then(snapshot => {
     const accounts = snapshot.val();
     if (!accounts) { tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào.</td></tr>`; return; }
+    
+    // Lấy role của current user
+    const currentRole = accounts[currentUser]?.role || 'admin';
     
     const others = Object.keys(accounts).filter(u => u !== currentUser);
     if (others.length === 0) {
@@ -831,16 +839,31 @@ function renderUserList() {
       const t = acc.timeLeft || 0;
       const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
       const timeStr = acc.role === 'user' ? `${pad(h)}:${pad(m)}:${pad(s)}` : '—';
-      const badge = acc.role === 'admin'
-        ? `<span class="badge admin">Admin</span>`
-        : `<span class="badge user">User</span>`;
+      
+      let badge = '';
+      if (acc.role === 'owner') badge = `<span class="badge owner">👑 Owner</span>`;
+      else if (acc.role === 'admin') badge = `<span class="badge admin">Admin</span>`;
+      else badge = `<span class="badge user">User</span>`;
+
+      // Kiểm tra xem có được xóa không
+      let canDelete = true;
+      let deleteDisabled = '';
+      
+      // Không cho xóa Owner (trừ khi current user cũng là Owner)
+      if (acc.role === 'owner') {
+        if (currentRole !== 'owner') {
+          canDelete = false;
+          deleteDisabled = ' style="opacity:0.5;cursor:not-allowed;" disabled';
+        }
+      }
+
       return `<tr>
         <td>${u}</td>
         <td>${badge}</td>
         <td class="time-cell">${timeStr}</td>
         <td>
           <button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>
-          <button class="btn-sm btn-del" onclick="openDelete('${u}')" style="margin-left:6px;">Xóa</button>
+          <button class="btn-sm btn-del" onclick="${canDelete ? `openDelete('${u}')` : 'alert(\\\'❌ Bạn không có quyền xóa Owner!\\\')'}"${deleteDisabled}>Xóa</button>
         </td>
       </tr>`;
     }).join('');
@@ -983,26 +1006,65 @@ function openDelete(u) {
 }
 function confirmDelete() {
   if (deleteTarget) {
-    db.ref('accounts/' + deleteTarget).remove();
-    deleteTarget = null;
+    // Kiểm tra xem target có phải là Owner không
+    const ref = db.ref('accounts/' + deleteTarget);
+    ref.once('value').then(snapshot => {
+      const acc = snapshot.val();
+      if (acc && acc.role === 'owner') {
+        // Kiểm tra current user có phải Owner không
+        const currentRef = db.ref('accounts/' + currentUser);
+        currentRef.once('value').then(s => {
+          const currentAcc = s.val();
+          if (currentAcc && currentAcc.role === 'owner') {
+            // Owner được xóa Owner
+            ref.remove();
+            deleteTarget = null;
+            closeModal('deleteModal');
+            renderUserList();
+            renderTimeTargets();
+          } else {
+            alert('❌ Chỉ Owner mới được xóa tài khoản Owner!');
+            deleteTarget = null;
+            closeModal('deleteModal');
+          }
+        });
+      } else {
+        // Xóa bình thường
+        ref.remove();
+        deleteTarget = null;
+        closeModal('deleteModal');
+        renderUserList();
+        renderTimeTargets();
+      }
+    });
   }
-  closeModal('deleteModal');
-  renderUserList();
-  renderTimeTargets();
 }
 
 function closeModal(id) {
   document.getElementById(id).classList.remove('show');
 }
 
-// ===== INIT TÀI KHOẢN ADMIN MẶC ĐỊNH =====
+// ===== INIT TÀI KHOẢN =====
+// Tạo Owner nếu chưa có
+db.ref('accounts/black_0x000000').once('value').then(snapshot => {
+  if (!snapshot.exists()) {
+    db.ref('accounts/black_0x000000').set({
+      password: '1',
+      role: 'owner',
+      timeLeft: 0,
+      createdBy: null
+    });
+  }
+});
+
+// Tạo Admin nếu chưa có
 db.ref('accounts/admin').once('value').then(snapshot => {
   if (!snapshot.exists()) {
     db.ref('accounts/admin').set({
       password: 'admin123',
       role: 'admin',
       timeLeft: 0,
-      createdBy: null
+      createdBy: 'black_0x000000'
     });
   }
 });

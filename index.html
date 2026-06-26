@@ -1,14 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hệ thống quản lý tài khoản</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
 
-  /* ===== LOGIN SCREEN ===== */
   #loginScreen {
     display: flex; align-items: center; justify-content: center;
     min-height: 100vh;
@@ -36,7 +38,6 @@
   .btn-ok:hover { background: #3a56d4; }
   #loginError { color: #fc8181; font-size: 0.85rem; margin-top: 12px; text-align: center; min-height: 18px; }
 
-  /* ===== TOP BAR ===== */
   #topBar {
     display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     background: #1e2332; border-bottom: 1px solid #2d3548;
@@ -53,21 +54,17 @@
   }
   .btn-logout:hover { background: #e53e3e; border-color: #e53e3e; }
 
-  /* ===== MAIN CONTENT ===== */
   #mainContent { display: none; padding-top: 60px; }
   #mainContent.show { display: block; }
 
-  /* ===== USER PAGE ===== */
   #userPage {
     display: flex; align-items: center; justify-content: center;
     min-height: calc(100vh - 52px); background: #fff; color: #555;
   }
   #userPage .updating { font-size: 1.4rem; color: #888; }
 
-  /* ===== ADMIN PAGE ===== */
   #adminPage { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
-  /* Admin header với 2 nút chính */
   .admin-header {
     display: flex;
     align-items: center;
@@ -150,7 +147,6 @@
     color: #fff;
   }
 
-  /* ===== WEB VIEW ===== */
   #webView {
     display: none;
     background: #1e2332;
@@ -183,7 +179,6 @@
     color: #4a5568;
   }
 
-  /* ===== SETTINGS VIEW ===== */
   #settingsView {
     display: none;
   }
@@ -216,7 +211,6 @@
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  /* === Panel: Quản lý tài khoản === */
   .section-title { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #2d3548; }
   .sub-title { font-size: 0.95rem; color: #a0aec0; margin: 18px 0 10px; font-weight: 600; }
 
@@ -279,7 +273,6 @@
   .btn-del { background: #742a2a; color: #fc8181; }
   .btn-del:hover { background: #9b2c2c; }
 
-  /* === Panel: Tạo tài khoản === */
   .create-form { max-width: 380px; }
   .form-group { margin-bottom: 16px; }
   .form-group label {
@@ -318,7 +311,6 @@
   .form-msg.ok { color: #68d391; }
   .form-msg.err { color: #fc8181; }
 
-  /* === Panel: Thời gian === */
   .time-panel-form {
     background: #1e2332;
     border: 1px solid #2d3548;
@@ -383,7 +375,6 @@
     border-bottom: 1px solid #2d3548;
   }
 
-  /* Modal */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -435,13 +426,11 @@
     font-weight: 600;
   }
 
-  /* Timer danger */
   .timer-danger { color: #fc8181 !important; animation: blink 1s infinite; }
   @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 
   .empty-msg { color: #4a5568; font-size: 0.9rem; padding: 16px 0; }
 
-  /* Responsive */
   @media (max-width: 640px) {
     .admin-header {
       flex-direction: column;
@@ -504,7 +493,6 @@
   <!-- ADMIN PAGE -->
   <div id="adminPage" style="display:none;">
 
-    <!-- Admin Header -->
     <div class="admin-header">
       <div class="admin-header-left">
         <span class="greeting">👋 Xin chào, <strong id="adminName">Admin</strong></span>
@@ -517,7 +505,6 @@
       </div>
     </div>
 
-    <!-- WEB VIEW -->
     <div id="webView" class="show">
       <div class="web-placeholder">
         <div class="icon">🌐</div>
@@ -526,7 +513,6 @@
       </div>
     </div>
 
-    <!-- SETTINGS VIEW -->
     <div id="settingsView">
       <div class="settings-tabs">
         <button class="tab-btn active" onclick="switchTab('tabManage')">👥 Quản lý tài khoản</button>
@@ -534,13 +520,10 @@
         <button class="tab-btn" onclick="switchTab('tabTime')">⏱ Thời gian</button>
       </div>
 
-      <!-- Tab 1: Quản lý -->
       <div class="tab-panel active" id="tabManage">
         <div class="section-title">Quản lý tài khoản</div>
-
         <div class="sub-title">Tài khoản của bạn</div>
         <div id="myAccountCard" class="my-account-card"></div>
-
         <div class="sub-title">Tài khoản người dùng bạn quản lý</div>
         <table class="user-table" id="userListTable">
           <thead>
@@ -555,7 +538,6 @@
         </table>
       </div>
 
-      <!-- Tab 2: Tạo tài khoản -->
       <div class="tab-panel" id="tabCreate">
         <div class="section-title">Tạo tài khoản mới</div>
         <div class="create-form">
@@ -579,7 +561,6 @@
         </div>
       </div>
 
-      <!-- Tab 3: Thời gian -->
       <div class="tab-panel" id="tabTime">
         <div class="section-title">Nạp thời gian cho người dùng</div>
         <div class="time-panel-form">
@@ -611,8 +592,8 @@
       </div>
     </div>
 
-  </div><!-- /adminPage -->
-</div><!-- /mainContent -->
+  </div>
+</div>
 
 <!-- Edit Modal -->
 <div class="modal-overlay" id="editModal">
@@ -648,59 +629,62 @@
 </div>
 
 <script>
-// ===== DATA STORE =====
-let data = JSON.parse(localStorage.getItem('sysData') || 'null');
-if (!data) {
-  data = {
-    accounts: {
-      'admin': { password: 'admin123', role: 'admin', timeLeft: 0, createdBy: null }
-    },
-    timeLog: []
-  };
-  saveData();
-}
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyA06b7H_S6wvNsDrG0duZGyBiG-HhI13PU",
+  authDomain: "webblack-system.firebaseapp.com",
+  databaseURL: "https://webblack-system-default-rtdb.firebaseio.com",
+  projectId: "webblack-system",
+  storageBucket: "webblack-system.firebasestorage.app",
+  messagingSenderId: "14861249612",
+  appId: "1:14861249612:web:60b00f93d22d11dc6f18e9",
+  measurementId: "G-WN5Y283KWR"
+};
 
-function saveData() {
-  localStorage.setItem('sysData', JSON.stringify(data));
-}
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-// ===== SESSION =====
+// ===== GLOBAL =====
 let currentUser = null;
 let countdownInterval = null;
+let currentView = 'web';
 
-// ===== VIEW STATE =====
-let currentView = 'web'; // 'web' or 'settings'
-
-// ===== LOGIN =====
+// ===== LISTENERS =====
 document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 document.getElementById('loginUser').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
+// ===== LOGIN =====
 function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
   const err = document.getElementById('loginError');
   err.textContent = '';
 
-  if (!data.accounts[u]) { err.textContent = '❌ Tài khoản không tồn tại.'; return; }
-  const acc = data.accounts[u];
-  if (acc.password !== p) { err.textContent = '❌ Mật khẩu không đúng.'; return; }
+  if (!u || !p) { err.textContent = '❌ Vui lòng nhập đầy đủ.'; return; }
 
-  if (acc.role === 'user') {
-    if (acc.timeLeft <= 0) {
-      err.textContent = '⚠️ Tài khoản số dư không đủ. Vui lòng liên hệ admin để nạp thêm thời gian.';
+  const userRef = db.ref('accounts/' + u);
+  userRef.once('value').then(snapshot => {
+    const acc = snapshot.val();
+    if (!acc) { err.textContent = '❌ Tài khoản không tồn tại.'; return; }
+    if (acc.password !== p) { err.textContent = '❌ Mật khẩu không đúng.'; return; }
+
+    if (acc.role === 'user' && acc.timeLeft <= 0) {
+      err.textContent = '⚠️ Tài khoản hết thời gian. Liên hệ admin.';
       return;
     }
-  }
 
-  currentUser = u;
-  showApp(acc.role);
+    currentUser = u;
+    showApp(acc.role);
+  }).catch(e => {
+    err.textContent = '❌ Lỗi kết nối Firebase: ' + e.message;
+  });
 }
 
 function showApp(role) {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('topBar').classList.add('show');
   document.getElementById('mainContent').classList.add('show');
-  document.getElementById('topBarTitle').textContent = `👤 ${currentUser}`;
+  document.getElementById('topBarTitle').textContent = '👤 ' + currentUser;
 
   if (role === 'admin') {
     document.getElementById('adminPage').style.display = 'block';
@@ -716,6 +700,63 @@ function showApp(role) {
     startCountdown();
   }
 }
+
+// ===== LOGOUT =====
+function doLogout() {
+  stopCountdown();
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('topBar').classList.remove('show');
+  document.getElementById('mainContent').classList.remove('show');
+  document.getElementById('adminPage').style.display = 'none';
+  document.getElementById('userPage').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').textContent = '';
+}
+
+// ===== COUNTDOWN =====
+function startCountdown() {
+  stopCountdown();
+  updateTimerDisplay();
+  countdownInterval = setInterval(() => {
+    const userRef = db.ref('accounts/' + currentUser);
+    userRef.once('value').then(snapshot => {
+      const acc = snapshot.val();
+      if (!acc || acc.timeLeft <= 0) {
+        stopCountdown();
+        doLogout();
+        document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập.';
+        return;
+      }
+      const newTime = acc.timeLeft - 1;
+      userRef.update({ timeLeft: newTime });
+      updateTimerDisplay();
+    });
+  }, 1000);
+}
+
+function stopCountdown() {
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+}
+
+function updateTimerDisplay() {
+  const userRef = db.ref('accounts/' + currentUser);
+  userRef.once('value').then(snapshot => {
+    const acc = snapshot.val();
+    if (!acc) return;
+    const t = acc.timeLeft || 0;
+    const h = Math.floor(t / 3600);
+    const m = Math.floor((t % 3600) / 60);
+    const s = t % 60;
+    const str = '⏱ ' + pad(h) + ':' + pad(m) + ':' + pad(s);
+    const el = document.getElementById('timerDisplay');
+    el.textContent = str;
+    el.className = t <= 60 ? 'timer-danger' : '';
+  });
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
 
 // ===== SWITCH VIEW =====
 function switchView(view) {
@@ -741,56 +782,15 @@ function switchView(view) {
   }
 }
 
-// ===== LOGOUT =====
-function doLogout() {
-  stopCountdown();
-  currentUser = null;
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('topBar').classList.remove('show');
-  document.getElementById('mainContent').classList.remove('show');
-  document.getElementById('adminPage').style.display = 'none';
-  document.getElementById('userPage').style.display = 'none';
-  document.getElementById('loginUser').value = '';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('loginError').textContent = '';
+// ===== TABS =====
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.settings-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'tabManage') renderAdminPanel();
+  if (id === 'tabTime') { renderTimeTargets(); renderTimeLog(); }
 }
-
-// ===== COUNTDOWN =====
-function startCountdown() {
-  stopCountdown();
-  updateTimerDisplay();
-  countdownInterval = setInterval(() => {
-    const acc = data.accounts[currentUser];
-    if (!acc || acc.timeLeft <= 0) {
-      stopCountdown();
-      doLogout();
-      document.getElementById('loginError').textContent = '⏰ Hết thời gian truy cập. Vui lòng liên hệ admin.';
-      return;
-    }
-    acc.timeLeft--;
-    saveData();
-    updateTimerDisplay();
-  }, 1000);
-}
-
-function stopCountdown() {
-  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-}
-
-function updateTimerDisplay() {
-  const acc = data.accounts[currentUser];
-  if (!acc) return;
-  const t = acc.timeLeft;
-  const h = Math.floor(t / 3600);
-  const m = Math.floor((t % 3600) / 60);
-  const s = t % 60;
-  const str = `⏱ ${pad(h)}:${pad(m)}:${pad(s)}`;
-  const el = document.getElementById('timerDisplay');
-  el.textContent = str;
-  el.className = t <= 60 ? 'timer-danger' : '';
-}
-
-function pad(n) { return String(n).padStart(2, '0'); }
 
 // ===== ADMIN PANEL =====
 function renderAdminPanel() {
@@ -800,59 +800,78 @@ function renderAdminPanel() {
 }
 
 function renderMyAccount() {
-  const acc = data.accounts[currentUser];
-  document.getElementById('myAccountCard').innerHTML = `
-    <div class="info-row">
-      <strong>${currentUser}</strong>
-      <span class="badge admin">Admin</span>
-    </div>
-    <div style="font-size:0.85rem; color:#718096;">Tài khoản quản trị viên — toàn quyền quản lý hệ thống</div>
-  `;
+  const ref = db.ref('accounts/' + currentUser);
+  ref.once('value').then(snapshot => {
+    const acc = snapshot.val();
+    document.getElementById('myAccountCard').innerHTML = `
+      <div class="info-row">
+        <strong>${currentUser}</strong>
+        <span class="badge admin">Admin</span>
+      </div>
+      <div style="font-size:0.85rem; color:#718096;">Tài khoản quản trị viên — toàn quyền quản lý hệ thống</div>
+    `;
+  });
 }
 
 function renderUserList() {
   const tbody = document.getElementById('userListBody');
-  const others = Object.keys(data.accounts).filter(u => u !== currentUser);
-  if (others.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = others.map(u => {
-    const acc = data.accounts[u];
-    const t = acc.timeLeft || 0;
-    const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
-    const timeStr = acc.role === 'user' ? `${pad(h)}:${pad(m)}:${pad(s)}` : `—`;
-    const badge = acc.role === 'admin'
-      ? `<span class="badge admin">Admin</span>`
-      : `<span class="badge user">User</span>`;
-    return `<tr>
-      <td>${u}</td>
-      <td>${badge}</td>
-      <td class="time-cell">${timeStr}</td>
-      <td>
-        <button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>
-        <button class="btn-sm btn-del" onclick="openDelete('${u}')" style="margin-left:6px;">Xóa</button>
-      </td>
-    </tr>`;
-  }).join('');
+  const ref = db.ref('accounts');
+  ref.once('value').then(snapshot => {
+    const accounts = snapshot.val();
+    if (!accounts) { tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào.</td></tr>`; return; }
+    
+    const others = Object.keys(accounts).filter(u => u !== currentUser);
+    if (others.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = others.map(u => {
+      const acc = accounts[u];
+      const t = acc.timeLeft || 0;
+      const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
+      const timeStr = acc.role === 'user' ? `${pad(h)}:${pad(m)}:${pad(s)}` : '—';
+      const badge = acc.role === 'admin'
+        ? `<span class="badge admin">Admin</span>`
+        : `<span class="badge user">User</span>`;
+      return `<tr>
+        <td>${u}</td>
+        <td>${badge}</td>
+        <td class="time-cell">${timeStr}</td>
+        <td>
+          <button class="btn-sm btn-edit" onclick="openEdit('${u}')">Sửa</button>
+          <button class="btn-sm btn-del" onclick="openDelete('${u}')" style="margin-left:6px;">Xóa</button>
+        </td>
+      </tr>`;
+    }).join('');
+  });
 }
 
 function renderTimeTargets() {
   const sel = document.getElementById('addTarget');
-  const users = Object.keys(data.accounts).filter(u => data.accounts[u].role === 'user');
-  sel.innerHTML = users.length
-    ? users.map(u => `<option value="${u}">${u}</option>`).join('')
-    : `<option value="">-- Không có user nào --</option>`;
+  const ref = db.ref('accounts');
+  ref.once('value').then(snapshot => {
+    const accounts = snapshot.val();
+    if (!accounts) { sel.innerHTML = `<option value="">-- Không có user nào --</option>`; return; }
+    const users = Object.keys(accounts).filter(u => accounts[u].role === 'user');
+    sel.innerHTML = users.length
+      ? users.map(u => `<option value="${u}">${u}</option>`).join('')
+      : `<option value="">-- Không có user nào --</option>`;
+  });
 }
 
-// ===== TABS =====
-function switchTab(id) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.settings-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  event.currentTarget.classList.add('active');
-  if (id === 'tabManage') renderAdminPanel();
-  if (id === 'tabTime') { renderTimeTargets(); renderTimeLog(); }
+function renderTimeLog() {
+  const container = document.getElementById('timeLogEntries');
+  const ref = db.ref('timeLog');
+  ref.orderByKey().limitToLast(10).once('value').then(snapshot => {
+    const logs = snapshot.val();
+    if (!logs) { container.innerHTML = '<div class="empty-msg">Chưa có lịch sử nạp.</div>'; return; }
+    const entries = Object.values(logs).reverse();
+    container.innerHTML = entries.map(l => {
+      const h = Math.floor(l.added/3600), m = Math.floor((l.added%3600)/60), s = l.added%60;
+      return `<div class="log-entry">[${l.time}] <strong>${l.by}</strong> → <strong>${l.target}</strong>: +${pad(h)}:${pad(m)}:${pad(s)}</div>`;
+    }).join('');
+  });
 }
 
 // ===== CREATE ACCOUNT =====
@@ -864,15 +883,19 @@ function createAccount() {
 
   if (!uname) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập tên đăng nhập.'; return; }
   if (!pass) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập mật khẩu.'; return; }
-  if (data.accounts[uname]) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập đã tồn tại.'; return; }
 
-  data.accounts[uname] = { password: pass, role, timeLeft: 0, createdBy: currentUser };
-  saveData();
-  msg.className='form-msg ok'; msg.textContent=`✅ Tạo tài khoản "${uname}" (${role}) thành công!`;
-  document.getElementById('newUsername').value = '';
-  document.getElementById('newPassword').value = '';
-  renderUserList();
-  renderTimeTargets();
+  const ref = db.ref('accounts/' + uname);
+  ref.once('value').then(snapshot => {
+    if (snapshot.exists()) {
+      msg.className='form-msg err'; msg.textContent='Tên đăng nhập đã tồn tại.'; return;
+    }
+    ref.set({ password: pass, role: role, timeLeft: 0, createdBy: currentUser });
+    msg.className='form-msg ok'; msg.textContent='✅ Tạo tài khoản "' + uname + '" (' + role + ') thành công!';
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newPassword').value = '';
+    renderUserList();
+    renderTimeTargets();
+  });
 }
 
 // ===== ADD TIME =====
@@ -887,28 +910,25 @@ function addTime() {
   const total = h*3600 + m*60 + s;
   if (total <= 0) { msg.className='form-msg err'; msg.textContent='Vui lòng nhập thời gian hợp lệ.'; return; }
 
-  data.accounts[target].timeLeft = (data.accounts[target].timeLeft||0) + total;
-  const now = new Date().toLocaleString('vi-VN');
-  data.timeLog.unshift({ time: now, by: currentUser, target, added: total });
-  if (data.timeLog.length > 50) data.timeLog.pop();
-  saveData();
+  const ref = db.ref('accounts/' + target);
+  ref.once('value').then(snapshot => {
+    const acc = snapshot.val();
+    if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
+    const newTime = (acc.timeLeft || 0) + total;
+    ref.update({ timeLeft: newTime });
 
-  msg.className='form-msg ok';
-  msg.textContent=`✅ Đã nạp ${pad(h)}:${pad(m)}:${pad(s)} cho "${target}".`;
-  document.getElementById('addHour').value=0;
-  document.getElementById('addMin').value=0;
-  document.getElementById('addSec').value=0;
-  renderTimeLog();
-  renderUserList();
-}
+    const now = new Date().toLocaleString('vi-VN');
+    const logRef = db.ref('timeLog').push();
+    logRef.set({ time: now, by: currentUser, target: target, added: total });
 
-function renderTimeLog() {
-  const container = document.getElementById('timeLogEntries');
-  if (!data.timeLog.length) { container.innerHTML='<div class="empty-msg">Chưa có lịch sử nạp.</div>'; return; }
-  container.innerHTML = data.timeLog.slice(0,10).map(l => {
-    const h=Math.floor(l.added/3600), m=Math.floor((l.added%3600)/60), s=l.added%60;
-    return `<div class="log-entry">[${l.time}] <strong>${l.by}</strong> → <strong>${l.target}</strong>: +${pad(h)}:${pad(m)}:${pad(s)}</div>`;
-  }).join('');
+    msg.className='form-msg ok';
+    msg.textContent = '✅ Đã nạp ' + pad(h) + ':' + pad(m) + ':' + pad(s) + ' cho "' + target + '".';
+    document.getElementById('addHour').value=0;
+    document.getElementById('addMin').value=0;
+    document.getElementById('addSec').value=0;
+    renderTimeLog();
+    renderUserList();
+  });
 }
 
 // ===== EDIT MODAL =====
@@ -927,22 +947,34 @@ function saveEdit() {
   const msg = document.getElementById('editMsg');
 
   if (!newName) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập không được trống.'; return; }
-  if (newName !== oldName && data.accounts[newName]) { msg.className='form-msg err'; msg.textContent='Tên đã tồn tại.'; return; }
 
-  const acc = {...data.accounts[oldName]};
-  if (newPass) acc.password = newPass;
-  if (newName !== oldName) {
-    delete data.accounts[oldName];
-    data.accounts[newName] = acc;
-  } else {
-    data.accounts[oldName] = acc;
-  }
-  saveData();
-  closeModal('editModal');
-  renderUserList();
+  const oldRef = db.ref('accounts/' + oldName);
+  oldRef.once('value').then(snapshot => {
+    const acc = snapshot.val();
+    if (!acc) { msg.className='form-msg err'; msg.textContent='Tài khoản không tồn tại.'; return; }
+
+    if (newName !== oldName) {
+      const newRef = db.ref('accounts/' + newName);
+      newRef.once('value').then(s => {
+        if (s.exists()) {
+          msg.className='form-msg err'; msg.textContent='Tên đã tồn tại.'; return;
+        }
+        if (newPass) acc.password = newPass;
+        newRef.set(acc);
+        oldRef.remove();
+        closeModal('editModal');
+        renderUserList();
+      });
+    } else {
+      if (newPass) acc.password = newPass;
+      oldRef.update({ password: acc.password });
+      closeModal('editModal');
+      renderUserList();
+    }
+  });
 }
 
-// ===== DELETE MODAL =====
+// ===== DELETE =====
 let deleteTarget = null;
 function openDelete(u) {
   deleteTarget = u;
@@ -951,8 +983,7 @@ function openDelete(u) {
 }
 function confirmDelete() {
   if (deleteTarget) {
-    delete data.accounts[deleteTarget];
-    saveData();
+    db.ref('accounts/' + deleteTarget).remove();
     deleteTarget = null;
   }
   closeModal('deleteModal');
@@ -963,6 +994,18 @@ function confirmDelete() {
 function closeModal(id) {
   document.getElementById(id).classList.remove('show');
 }
+
+// ===== INIT TÀI KHOẢN ADMIN MẶC ĐỊNH =====
+db.ref('accounts/admin').once('value').then(snapshot => {
+  if (!snapshot.exists()) {
+    db.ref('accounts/admin').set({
+      password: 'admin123',
+      role: 'admin',
+      timeLeft: 0,
+      createdBy: null
+    });
+  }
+});
 </script>
 </body>
 </html>

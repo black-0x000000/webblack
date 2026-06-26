@@ -483,9 +483,8 @@
     </div>
 
     <!-- WEB VIEW -->
-    <div style="padding: 10px 0 6px; color: #fc8181; font-size: 0.95rem; font-weight: 700;">🔄 Website sẽ tiếp tục cập nhật</div>
-
     <div id="webView" class="show">
+      <div style="padding: 10px 0 14px; color: #fc8181; font-size: 0.95rem; font-weight: 700;">🔄 Website sẽ tiếp tục cập nhật</div>
       <div style="padding: 8px 0 4px; color: #718096; font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🧰 Tools</div>
       <div class="web-tools-grid">
         <div class="tool-card" onclick="openBitmapTool()">
@@ -759,11 +758,11 @@ function showApp(role) {
     document.getElementById('tabLogBtn').style.display = 'inline-block';
     document.getElementById('btnSettings').style.display = 'flex';
     document.getElementById('btnWeb').style.display = 'inline-flex';
-    // Default: settings
-    document.getElementById('settingsView').classList.add('show');
-    document.getElementById('webView').classList.remove('show');
-    document.getElementById('btnSettings').classList.add('active');
-    document.getElementById('btnWeb').classList.remove('active');
+    // Default: web view
+    document.getElementById('webView').classList.add('show');
+    document.getElementById('settingsView').classList.remove('show');
+    document.getElementById('btnWeb').classList.add('active');
+    document.getElementById('btnSettings').classList.remove('active');
     renderAdminPanel();
     watchUserTime();
     renderLog();
@@ -771,11 +770,11 @@ function showApp(role) {
     document.getElementById('tabLogBtn').style.display = 'none';
     document.getElementById('btnSettings').style.display = 'flex';
     document.getElementById('btnWeb').style.display = 'inline-flex';
-    // Default: settings
-    document.getElementById('settingsView').classList.add('show');
-    document.getElementById('webView').classList.remove('show');
-    document.getElementById('btnSettings').classList.add('active');
-    document.getElementById('btnWeb').classList.remove('active');
+    // Default: web view
+    document.getElementById('webView').classList.add('show');
+    document.getElementById('settingsView').classList.remove('show');
+    document.getElementById('btnWeb').classList.add('active');
+    document.getElementById('btnSettings').classList.remove('active');
     renderAdminPanel();
     watchUserTime();
   } else {

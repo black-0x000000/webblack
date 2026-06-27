@@ -40,7 +40,7 @@ const Utils = {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit', second: '2-digit'
       });
-      const logRef = db.ref('systemLog').push();
+      const logRef = db.ref('accounts/systemLog').push();
       await logRef.set({ action, detail, by: App.currentUser, time: timeStr, timestamp: now.getTime() });
     } catch (e) {
       console.warn("Could not write log (Permission denied or network error)", e);
@@ -195,7 +195,7 @@ const Auth = {
     App.currentUser = null;
     App.currentRole = null;
     db.ref('accounts').off();
-    db.ref('systemLog').off();
+    db.ref('accounts/systemLog').off();
     window.location.href = (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/games/')) ? '../index.html' : 'index.html';
   }
 };
@@ -307,7 +307,7 @@ const Admin = {
     if (!tbody) return;
     db.ref('accounts').on('value', (snapshot) => {
       const accounts = snapshot.val() || {};
-      const others = Object.keys(accounts).filter(u => u !== App.currentUser);
+      const others = Object.keys(accounts).filter(u => u !== App.currentUser && u !== 'systemLog' && u !== 'timeLog');
 
       if (others.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`;
@@ -342,7 +342,7 @@ const Admin = {
   watchUserTime() {
     db.ref('accounts').on('value', (snapshot) => {
       const accounts = snapshot.val() || {};
-      Object.keys(accounts).filter(u => u !== App.currentUser && accounts[u].role === 'user').forEach(u => {
+      Object.keys(accounts).filter(u => u !== App.currentUser && u !== 'systemLog' && u !== 'timeLog' && accounts[u].role === 'user').forEach(u => {
         const el = document.getElementById('time-' + u);
         if (el) {
           const t = accounts[u].timeLeft || 0;
@@ -358,14 +358,14 @@ const Admin = {
     if (!sel) return;
     const snap = await db.ref('accounts').once('value');
     const accounts = snap.val() || {};
-    const users = Object.keys(accounts).filter(u => accounts[u].role === 'user');
+    const users = Object.keys(accounts).filter(u => u !== 'systemLog' && u !== 'timeLog' && accounts[u].role === 'user');
     sel.innerHTML = users.length ? users.map(u => `<option value="${Utils.escapeHTML(u)}">${Utils.escapeHTML(u)}</option>`).join('') : '<option value="">-- Không có user --</option>';
   },
 
   async renderTimeLog() {
     const container = document.getElementById('timeLogEntries');
     if (!container) return;
-    const snap = await db.ref('timeLog').orderByKey().limitToLast(10).once('value');
+    const snap = await db.ref('accounts/timeLog').orderByKey().limitToLast(10).once('value');
     const logs = snap.val();
     if (!logs) { container.innerHTML = '<div class="empty-msg">Chưa có lịch sử nạp.</div>'; return; }
     const entries = Object.values(logs).reverse();
@@ -377,7 +377,7 @@ const Admin = {
   renderLog() {
     const container = document.getElementById('logEntries');
     if (!container) return;
-    db.ref('systemLog').orderByChild('timestamp').limitToLast(100).on('value', (snapshot) => {
+    db.ref('accounts/systemLog').orderByChild('timestamp').limitToLast(100).on('value', (snapshot) => {
       const logs = snapshot.val();
       if (!logs) { container.innerHTML = '<div class="empty-msg">Chưa có hoạt động nào.</div>'; return; }
       const entries = Object.values(logs).reverse();
@@ -440,7 +440,7 @@ const Admin = {
     await db.ref('accounts/' + target).update({ timeLeft: (acc.timeLeft || 0) + total });
     
     const now = new Date().toLocaleString('vi-VN');
-    await db.ref('timeLog').push().set({ time: now, by: App.currentUser, target, added: total });
+    await db.ref('accounts/timeLog').push().set({ time: now, by: App.currentUser, target, added: total });
     await Utils.writeLog('time', `${App.currentUser} đã nạp +${Utils.formatTime(total)} cho ${target}`);
 
     msg.className='form-msg ok'; msg.textContent=`✅ Đã nạp ${Utils.formatTime(total)} cho "${Utils.escapeHTML(target)}".`;
@@ -545,7 +545,7 @@ const Admin = {
       
       const allSnap = await db.ref('accounts').once('value');
       const accounts = allSnap.val() || {};
-      document.getElementById('changePwSelect').innerHTML = Object.keys(accounts).map(u => 
+      document.getElementById('changePwSelect').innerHTML = Object.keys(accounts).filter(u => u !== 'systemLog' && u !== 'timeLog').map(u => 
         `<option value="${Utils.escapeHTML(u)}">${Utils.escapeHTML(u)} (${Utils.escapeHTML(accounts[u].role)})${u===App.currentUser?' ← Bạn':''}</option>`
       ).join('');
     } else if (acc.role === 'admin') {

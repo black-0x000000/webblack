@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gán Hex Tự Động - Black</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='black'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+<div class="tool-container">
+  <div class="bt-topbar">
+    <div class="bt-title">
+      ⚙️ Gán Hex Tự Động
+    </div>
+    <button class="bt-home-btn" onclick="window.location.href='../dashboard.html'">🏠 Home</button>
+  </div>
+  
+  <div class="tool-main">
+    <div class="tool-box" style="flex: 1;">
+      <div class="box-header">Nhập chuỗi hex</div>
+      <textarea class="box-textarea" id="hexInput" placeholder="Ví dụ: 7E 94 30 30" style="min-height: 150px;"></textarea>
+      <div style="padding: 16px; display: flex; justify-content: center; background: rgba(0,0,0,0.2);">
+        <button class="btn-action" id="runBtn">Gán hex</button>
+      </div>
+    </div>
+    <div class="tool-box" style="flex: 1;">
+      <div class="box-header">Kết quả (dành cho fx580vnx)</div>
+      <pre id="outputText" class="box-textarea" style="color: var(--accent-green); overflow-y: auto;">Chưa có dữ liệu.</pre>
+      <p id="prbyte"></p>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+
+        const HEX_RE = /^[0-9A-Fa-f]{1,2}$/;
+        const byteTable = [
+            0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1,
+            2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2, 2, 2, 2,
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1,
+            2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        ];
+
+        function containsLetter(tok) {
+            return /[ABCDEF]/.test(tok);
+        }
+
+        function parseAndTransform(hexString) {
+            hexString = hexString.trim().replace(/\s+/g, "");
+            if (hexString.length % 2 !== 0)
+                return ["Chuỗi hex phải có số ký tự chẵn.", []];
+
+            const out = [];
+            for (let i = 0; i < hexString.length; i += 2)
+                out.push(hexString.slice(i, i + 2).toUpperCase());
+            const raw = out;
+
+            // ✅ Sửa lại phần check HEX hợp lệ
+            const toks = raw.map(t => t.trim().toUpperCase()).filter(t => t);
+            const invalids = toks.filter(t => !HEX_RE.test(t));
+            if (invalids.length > 0) {
+                return [`Byte không hợp lệ: ${invalids.join(", ")} (chỉ chấp nhận 0–9, A–F)`, []];
+            }
+
+            let normalized = toks.map(t => t.padStart(2, "0"));
+            const byte1 = [], checked = [];
+            let i = 0;
+            while (i < normalized.length) {
+                const t = normalized[i];
+                const val = parseInt(t, 16);
+
+                if (t.startsWith("F")) {
+                    if (i + 1 >= normalized.length) { i++; continue; }
+                    const next = normalized[i + 1];
+                    checked.push(t, next);
+                    byte1.push(t + next);
+                    i += 2;
+                    continue;
+                }
+
+                if (byteTable[val] === 0)
+                    return ["Chuỗi chứa byte 00 không hợp lệ", byte1];
+                else if (byteTable[val] === 1) { checked.push(t); byte1.push(t); }
+
+                i++;
+            }
+
+            normalized = checked;
+            const all = ["00", "00", ...normalized];
+
+            for (let j = 0; j < all.length; j++) {
+                if ((j % 8 === 5 || j % 8 === 7) && containsLetter(all[j])) {
+                    let pos = j;
+                    if (j > 0 && all[j - 1].startsWith("F")) pos = j - 1;
+                    all.splice(pos, 0, "30");
+                    j++;
+                }
+            }
+
+            let A = all.slice(0, 8);
+            let B = all.slice(8, 16);
+            let C = all.slice(16);
+
+            if (C.length) C.push("23");
+            else if (B.length) B.push("23");
+            else if (A.length) A.push("23");
+
+            let output;
+            if (A.length + B.length + C.length <= 24) {
+                if (A.length === 8 && (B.length || C.length))
+                    A = [...A.slice(0, -1), "", A.at(-1)];
+                if (B.length === 8 && C.length)
+                    B = [...B.slice(0, -1), "", B.at(-1)];
+                if (C.length === 8)
+                    C = [...C.slice(0, -1), "", C.at(-1)];
+
+                const names = ["A", "B", "C"];
+                const blocks = [A, B, C];
+                const parts = blocks
+                    .map((arr, idx) => (arr.length ? `${names[idx]} = 1. ${arr.join(" ")}` : ""))
+                    .filter(Boolean);
+                output = parts.join(":\n");
+            } else {
+                output = "Độ dài của chuỗi hex vượt quá 21 byte.";
+            }
+
+            return [output, byte1];
+        }
+
+        document.getElementById("runBtn").addEventListener("click", () => {
+            const hexInput = document.getElementById("hexInput").value.trim();
+            const output = document.getElementById("outputText");
+
+            if (!hexInput) {
+                output.textContent = "Vui lòng nhập chuỗi hex!";
+                return;
+            }
+
+            const [out, b1] = parseAndTransform(hexInput);
+            let finalText = out;
+
+            if (finalText === "Độ dài của chuỗi hex vượt quá 21 byte.") {
+                finalText += "";
+            } else if (b1.length) {
+                finalText += `\n\nCác byte cần gán: ${b1.join(" ")}`;
+            }
+
+            output.textContent = finalText;
+        });
+    
+</script>
+</body>
+</html>

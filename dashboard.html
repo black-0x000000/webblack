@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='black'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topBar" class="show">
+  <div id="timerDisplay"></div>
+  <div class="title" id="topBarTitle"></div>
+  <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+</div>
+
+<div id="mainContent" class="show">
+  <div id="adminPage" style="display:block;">
+    <div class="admin-header">
+      <div class="admin-header-left">
+        <span class="greeting">👋 Xin chào, <strong id="adminName">Admin</strong></span>
+      </div>
+      <div class="admin-actions">
+        <button class="btn-nav btn-web active" id="btnWeb">📱 Xem Web</button>
+        <button class="btn-settings" id="btnSettings" onclick="window.location.href='panel.html'" title="Quản lý hệ thống">⚙️</button>
+      </div>
+    </div>
+
+    <!-- WEB VIEW -->
+    <div id="webView" class="show">
+      <!-- Tab Navigation -->
+      <div class="web-tabs">
+        <button class="web-tab-btn active" onclick="switchWebTab('tools')">🛠️ TOOLS</button>
+        <button class="web-tab-btn" onclick="switchWebTab('game')">🎮 GAME</button>
+      </div>
+
+      <!-- TOOLS TAB -->
+      <div id="webTabTools" class="web-tab-content active">
+        <div style="padding: 10px 0 14px; color: var(--accent-red); font-size: 0.95rem; font-weight: 700;">🔄 Website sẽ tiếp tục cập nhật</div>
+        <div style="padding: 8px 0 4px; color: var(--text-muted); font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🧰 Tools</div>
+        <div class="web-tools-grid">
+          <div class="tool-card" onclick="window.location.href='tools/bitmap.html'">
+            <div class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+            <div class="tool-name">Tools chuyển bitmap</div>
+          </div>
+          <div class="tool-card" onclick="window.location.href='tools/translate-characters.html'">
+            <div class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></div>
+            <div class="tool-name">Dịch Hex Sang Token</div>
+          </div>
+          <div class="tool-card" onclick="window.location.href='tools/translate-rop.html'">
+            <div class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg></div>
+            <div class="tool-name">Dịch ROP</div>
+          </div>
+          <div class="tool-card" onclick="window.location.href='tools/hex-split.html'">
+            <div class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg></div>
+            <div class="tool-name">Gán Hex Tự Động</div>
+          </div>
+          <div class="tool-card" onclick="window.location.href='tools/find-gadgets.html'">
+            <div class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
+            <div class="tool-name">Tìm Gadgets</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAME TAB -->
+      <div id="webTabGame" class="web-tab-content">
+        <div style="padding: 8px 0 4px; color: var(--text-muted); font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">🕹️ Arcade</div>
+        <div class="web-tools-grid">
+          <div class="tool-card" onclick="window.location.href='games/snake.html'">
+            <div class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><rect width="20" height="12" x="2" y="6" rx="2"/></svg></div>
+            <div class="tool-name">Snake</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="errorModal">
+  <div class="modal-box">
+    <div class="error-icon">⛔</div>
+    <h3 class="error-title">Không có quyền!</h3>
+    <p class="error-msg" id="errorMessage"></p>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="closeModal('errorModal')">Đã hiểu</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

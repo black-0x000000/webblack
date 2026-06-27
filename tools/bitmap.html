@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='black'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+
+<!-- ===== BITMAP TOOL FULLSCREEN ===== -->
+<div id="bitmapTool" class="show" style="display:flex;">
+  <div class="bt-topbar">
+    <div class="bt-title">
+      🖼️ Dịch bitmap
+      <span class="dev-tag">| Dev: @Black &nbsp;[discord: black_0x000000]</span>
+    </div>
+    <button class="bt-home-btn" onclick="closeBitmapTool()">🏠 Home</button>
+  </div>
+
+  <div class="bt-controls">
+    <div class="bt-ctrl-group">
+      <label>Chiều dài (tối đa 192):</label>
+      <input type="number" id="btWidth" min="1" max="192" value="8">
+    </div>
+    <div class="bt-divider"></div>
+    <div class="bt-ctrl-group">
+      <label>Chiều rộng (tối đa 63):</label>
+      <input type="number" id="btHeight" min="1" max="63" value="8">
+    </div>
+    <div class="bt-divider"></div>
+    <div class="bt-state-group">
+      <span class="bt-state-label">Trạng thái:</span>
+      <span class="bt-state-indicator" id="btStateLabel">Tô</span>
+    </div>
+    <div class="bt-ctrl-group">
+      <button class="bt-btn bt-btn-fill active" id="btnFill" onclick="setMode('fill')">Tô</button>
+      <button class="bt-btn bt-btn-erase" id="btnErase" onclick="setMode('erase')">Xóa</button>
+    </div>
+    <div class="bt-divider"></div>
+    <div class="bt-ctrl-group">
+      <button class="bt-btn bt-btn-clear" onclick="clearPixels()">CLEAR</button>
+      <button class="bt-btn bt-btn-reset" onclick="resetBitmap()">RESET</button>
+    </div>
+  </div>
+
+  <div class="bt-canvas-area" id="btCanvasArea">
+    <div id="pixelGrid"></div>
+  </div>
+
+  <div class="bt-output-area">
+    <div class="bt-output-label">Hex:</div>
+    <div class="bt-hex-output" id="btHexOutput">—</div>
+  </div>
+</div>
+
+<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/app.js"></script>
+</body>
+</html>

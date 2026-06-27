@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dịch ROP - Black</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='black'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+<div class="tool-container">
+  <div class="bt-topbar">
+    <div class="bt-title">
+      🔄 Dịch ROP
+    </div>
+    <button class="bt-home-btn" onclick="window.location.href='../dashboard.html'">🏠 Home</button>
+  </div>
+  
+  <div class="tool-main">
+    <div class="tool-box" style="flex: 1;">
+      <div class="box-header">Cấu hình Dịch ROP</div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-weight: 600;">Chọn Model Dịch Từ</label>
+          <select id="modelFrom" onchange="checkTranslationPair()" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--text-main); font-size: 1rem; outline: none;">
+            <option value="../assets/data/fx991cnx.txt">fx991cnx</option>
+            <option value="../assets/data/fx580vnx.txt">fx580vnx</option>
+            <option value="../assets/data/fx880btg.asm">fx880btg</option>
+            <option value="../assets/data/fx991cncw.asm">fx991cncw</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-weight: 600;">Chọn Model Dịch Đến</label>
+          <select id="modelTo" onchange="checkTranslationPair()" style="width: 100%; padding: 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); border-radius: 8px; color: var(--text-main); font-size: 1rem; outline: none;">
+            <option value="../assets/data/fx580vnx.txt">fx580vnx</option>
+            <option value="../assets/data/fx991cnx.txt">fx991cnx</option>
+            <option value="../assets/data/fx880btg.asm">fx880btg</option>
+            <option value="../assets/data/fx991cncw.asm">fx991cncw</option>
+          </select>
+        </div>
+        <p id="fileStatus" style="color: var(--accent-cyan); font-weight: 600; font-size: 0.9rem;">Đang tải file, vui lòng đợi...</p>
+        <p id="pairError" style="display: none; color: var(--accent-red); font-size: 0.9rem; font-weight: 600;">Lỗi: Chỉ hỗ trợ fx880btg ↔ fx991cncw và fx580vnx ↔ fx991cnx.</p>
+      </div>
+      <div class="box-header" style="border-top: 1px solid var(--border-glass);">Nhập Dữ Liệu ROP</div>
+      <textarea class="box-textarea" id="gadgetInput" rows="5" placeholder="Ví dụ: 2:03D2H" style="min-height: 120px;"></textarea>
+      <div style="padding: 16px; display: flex; justify-content: center; background: rgba(0,0,0,0.2);">
+        <button class="btn-action decode" id="translateBtn" disabled>Dịch ROP</button>
+      </div>
+    </div>
+    
+    <div class="tool-box" style="flex: 1; display: none;" id="output">
+      <div class="box-header">Kết quả Dịch ROP</div>
+      <pre id="outputText" class="box-textarea" style="color: var(--accent-green); overflow-y: auto;"></pre>
+    </div>
+
+  </div>
+</div>
+
+<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+
+        let fileData = {};
+        const statusMessage = document.getElementById("fileStatus");
+        const pairErrorMessage = document.getElementById("pairError");
+        const translateButton = document.getElementById("translateBtn");
+
+        function checkTranslationPair() {
+            const sourceModel = document.getElementById("modelFrom").value;
+            const targetModel = document.getElementById("modelTo").value;
+
+            const validPairs = [
+                ["../assets/data/fx880btg.asm", "../assets/data/fx991cncw.asm"],
+                ["../assets/data/fx991cncw.asm", "../assets/data/fx880btg.asm"],
+                ["../assets/data/fx991cncw.asm", "../assets/data/fx991cncw.asm"],
+                ["../assets/data/fx880btg.asm", "../assets/data/fx880btg.asm"],
+                ["../assets/data/fx580vnx.txt", "../assets/data/fx991cnx.txt"],
+                ["../assets/data/fx580vnx.txt", "../assets/data/fx580vnx.txt"],
+                ["../assets/data/fx991cnx.txt", "../assets/data/fx991cnx.txt"],
+                ["../assets/data/fx991cnx.txt", "../assets/data/fx580vnx.txt"]
+            ];
+
+            const isValidPair = validPairs.some(pair =>
+                pair[0] === sourceModel && pair[1] === targetModel
+            );
+
+            if (!isValidPair) {
+                pairErrorMessage.style.display = "block";
+                translateButton.disabled = true;
+            } else {
+                pairErrorMessage.style.display = "none";
+                if (fileData[sourceModel] && fileData[targetModel]) {
+                    translateButton.disabled = false;
+                }
+            }
+        }
+
+        async function loadFiles() {
+            statusMessage.style.display = "block";
+            statusMessage.textContent = "Đang tải file, bạn tạm thời có thể dùng...";
+
+            try {
+                const [data991, data580, data880, data991cw] = await Promise.all([
+                    fetch("../assets/data/fx991cnx.txt").then(res => res.text()),
+                    fetch("../assets/data/fx580vnx.txt").then(res => res.text()),
+                    fetch("../assets/data/fx880btg.asm").then(res => res.text()),
+                    fetch("../assets/data/fx991cncw.asm").then(res => res.text())
+                ]);
+
+                fileData["../assets/data/fx991cnx.txt"] = data991.split("\n").filter(line => line.trim());
+                fileData["../assets/data/fx580vnx.txt"] = data580.split("\n").filter(line => line.trim());
+                fileData["../assets/data/fx880btg.asm"] = data880.split("\n").filter(line => line.trim());
+                fileData["../assets/data/fx991cncw.asm"] = data991cw.split("\n").filter(line => line.trim());
+
+                console.log("Dữ liệu fx991cnx.txt:", fileData["../assets/data/fx991cnx.txt"].slice(0, 5));
+                console.log("Dữ liệu fx580vnx.txt:", fileData["../assets/data/fx580vnx.txt"].slice(0, 5));
+                console.log("Dữ liệu fx880btg.asm:", fileData["../assets/data/fx880btg.asm"].slice(0, 5));
+                console.log("Dữ liệu fx991cncw.asm:", fileData["../assets/data/fx991cncw.asm"].slice(0, 5));
+
+                if (fileData["../assets/data/fx991cnx.txt"].length && fileData["../assets/data/fx580vnx.txt"].length &&
+                    fileData["../assets/data/fx880btg.asm"].length && fileData["../assets/data/fx991cncw.asm"].length) {
+                    statusMessage.style.display = "none";
+                    checkTranslationPair();
+                }
+            } catch (error) {
+                statusMessage.textContent = "Lỗi tải file!";
+                console.error("Lỗi tải file:", error);
+            }
+        }
+
+        window.onload = loadFiles;
+
+        function translateMain(targetModel, sourceModel, searchString) {
+            let sourceIndex = -1;
+            let targetIndex;
+
+            for (let sourceLine of sourceModel) {
+                sourceIndex++;
+                if (sourceLine.toLowerCase().includes(searchString.toLowerCase())) {
+                    targetIndex = -1;
+                    for (let targetLine of targetModel) {
+                        targetIndex++;
+                        try {
+                            const sourcePart = sourceModel[sourceIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                            const targetPart = targetModel[targetIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                            if (sourcePart === targetPart &&
+                                sourceModel[sourceIndex - 1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex - 1]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                sourceModel[sourceIndex + 1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex + 1]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                sourceModel[sourceIndex - 2]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex - 2]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                sourceModel[sourceIndex + 2]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex + 2]?.split(/\s+/)[1]?.slice(0, 4)) {
+                                return targetModel[targetIndex];
+                            }
+                        } catch (error) {
+                            console.log(`Lỗi so sánh tại dòng ${sourceIndex}:`, error, sourceLine);
+                        }
+                    }
+                }
+            }
+            return translateLessStrict(targetModel, sourceModel, searchString);
+        }
+
+        function translateLessStrict(targetModel, sourceModel, searchString) {
+            let sourceIndex = -1;
+            let targetIndex;
+
+            for (let sourceLine of sourceModel) {
+                sourceIndex++;
+                if (sourceLine.toLowerCase().includes(searchString.toLowerCase())) {
+                    targetIndex = -1;
+                    for (let targetLine of targetModel) {
+                        targetIndex++;
+                        try {
+                            const sourcePart = sourceModel[sourceIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                            const targetPart = targetModel[targetIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                            if (sourcePart === targetPart &&
+                                sourceModel[sourceIndex - 1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex - 1]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                sourceModel[sourceIndex + 1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex + 1]?.split(/\s+/)[1]?.slice(0, 4)) {
+                                return targetModel[targetIndex];
+                            }
+                        } catch (error) {
+                            console.log(`Lỗi so sánh tại dòng ${sourceIndex}:`, error, sourceLine);
+                        }
+                    }
+                }
+            }
+            return translateEvenLessStrict(targetModel, sourceModel, searchString);
+        }
+
+        function translateEvenLessStrict(targetModel, sourceModel, searchString) {
+            let sourceIndex = -1;
+            let targetIndex;
+
+            for (let sourceLine of sourceModel) {
+                sourceIndex++;
+                if (sourceLine.toLowerCase().includes(searchString.toLowerCase())) {
+                    targetIndex = -1;
+                    for (let targetLine of targetModel) {
+                        targetIndex++;
+                        try {
+                            const sourcePart = sourceModel[sourceIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                            const targetPart = targetModel[targetIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                            if (sourcePart === targetPart &&
+                                sourceModel[sourceIndex + 1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex + 1]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                sourceModel[sourceIndex + 2]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex + 2]?.split(/\s+/)[1]?.slice(0, 4)) {
+                                return targetModel[targetIndex];
+                            }
+                        } catch (error) {
+                            console.log(`Lỗi so sánh tại dòng ${sourceIndex}:`, error, sourceLine);
+                        }
+                    }
+                }
+            }
+            return translateMinimal(targetModel, sourceModel, searchString);
+        }
+
+        function translateMinimal(targetModel, sourceModel, searchString) {
+            let sourceIndex = -1;
+            let targetIndex;
+
+            for (let sourceLine of sourceModel) {
+                sourceIndex++;
+                if (sourceLine.toLowerCase().includes(searchString.toLowerCase())) {
+                    targetIndex = -1;
+                    for (let targetLine of targetModel) {
+                        targetIndex++;
+                        try {
+                            const sourcePart = sourceModel[sourceIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                            const targetPart = targetModel[targetIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                            if (sourcePart === targetPart &&
+                                sourceModel[sourceIndex + 1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex + 1]?.split(/\s+/)[1]?.slice(0, 4)) {
+                                return targetModel[targetIndex];
+                            }
+                        } catch (error) {
+                            console.log(`Lỗi so sánh tại dòng ${sourceIndex}:`, error, sourceLine);
+                        }
+                    }
+                }
+            }
+            return `Không tìm thấy bản dịch cho: ${searchString}`;
+        }
+
+        function translateLine(targetModel, sourceModel, inputLine) {
+            if (!inputLine || inputLine.trim() === "") return "";
+            if (inputLine.includes("#")) return inputLine;
+
+            if (inputLine.includes(":")) {
+                return translateMain(targetModel, sourceModel, inputLine);
+            }
+
+            const parts = inputLine.split(/\s+/);
+            if (parts.length < 3) return `Dòng không đúng định dạng: ${inputLine}`;
+
+            const [part1, part2, part3] = parts;
+            const secondChar = part3[1] || "";
+            const formattedLine = `${secondChar}:${part2}${part1}`;
+
+            const result = translateMain(targetModel, sourceModel, formattedLine);
+            if (result.includes("l")) return result;
+
+            const output = `${result.slice(4, 6)} ${result.slice(2, 4)} 3${result[0] || ""} 30`;
+            return output;
+        }
+
+        translateButton.addEventListener("click", () => {
+            const sourceModel = document.getElementById("modelFrom").value;
+            const targetModel = document.getElementById("modelTo").value;
+            const inputLines = document.getElementById("gadgetInput").value.split("\n").filter(line => line.trim());
+            const results = [];
+
+            if (!fileData[sourceModel] || !fileData[targetModel]) {
+                document.getElementById("outputText").textContent = "Lỗi: File chưa tải xong!";
+                document.getElementById("output").classList.remove("hidden");
+                return;
+            }
+
+            for (let line of inputLines) {
+                if (line === "end") break;
+                const translated = translateLine(fileData[targetModel], fileData[sourceModel], line);
+                if (translated) results.push(translated);
+                console.log(`Dòng gốc: ${line}, Kết quả: ${translated}`);
+            }
+
+            const outputDiv = document.getElementById("output");
+            const outputText = document.getElementById("outputText");
+            outputText.textContent = results.join("\n") || "Không có gì để dịch.";
+            outputDiv.style.display = "flex";
+        });
+    
+</script>
+</body>
+</html>

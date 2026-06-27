@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='black'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topBar" class="show">
+  <div id="timerDisplay"></div>
+  <div class="title" id="topBarTitle"></div>
+  <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+</div>
+
+<div id="mainContent" class="show">
+  <div id="adminPage" style="display:block;">
+    <div class="admin-header">
+      <div class="admin-header-left">
+        <span class="greeting">👋 Xin chào, <strong id="adminName">Admin</strong></span>
+      </div>
+      <div class="admin-actions">
+        <button class="btn-nav btn-web" id="btnWeb" onclick="window.location.href='dashboard.html'">📱 Xem Web</button>
+        <button class="btn-settings active" id="btnSettings" title="Quản lý hệ thống">⚙️</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div id="settingsView" class="show">
+      <div class="settings-tabs">
+        <button class="tab-btn active" onclick="switchTab('tabManage', event)">👥 Quản lý tài khoản</button>
+        <button class="tab-btn" onclick="switchTab('tabCreate', event)">➕ Tạo tài khoản mới</button>
+        <button class="tab-btn" onclick="switchTab('tabTime', event)">⏱ Thời gian</button>
+        <button class="tab-btn" onclick="switchTab('tabChangePw', event)">🔑 Đổi mật khẩu</button>
+        <button class="tab-btn" id="tabLogBtn" onclick="switchTab('tabLog', event)" style="display:none;">📋 Log</button>
+      </div>
+
+      <div class="tab-panel active" id="tabManage">
+        <div class="section-title">Quản lý tài khoản</div>
+        <div class="sub-title">Tài khoản của bạn</div>
+        <div id="myAccountCard" class="my-account-card"></div>
+        <div class="sub-title">Tài khoản người dùng bạn quản lý</div>
+        <table class="user-table" id="userListTable">
+          <thead><tr><th>Tên đăng nhập</th><th>Loại</th><th>Thời gian còn lại</th><th>Thao tác</th></tr></thead>
+          <tbody id="userListBody"></tbody>
+        </table>
+      </div>
+
+      <div class="tab-panel" id="tabCreate">
+        <div class="section-title">Tạo tài khoản mới</div>
+        <div class="create-form">
+          <div class="form-group">
+            <label>Loại tài khoản</label>
+            <select id="newRole">
+              <option value="user">Tài khoản người dùng</option>
+              <option value="admin">Tài khoản admin</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Tên đăng nhập</label><input type="text" id="newUsername" placeholder="Nhập tên đăng nhập" autocomplete="off"></div>
+          <div class="form-group"><label>Mật khẩu</label><input type="password" id="newPassword" placeholder="Nhập mật khẩu"></div>
+          <button class="btn-create" onclick="createAccount()">Tạo tài khoản</button>
+          <div class="form-msg" id="createMsg"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tabTime">
+        <div class="section-title">⏱ Nạp Thời Gian</div>
+        <div class="create-form">
+          <div class="form-group" style="display: flex; gap: 16px; align-items: flex-end;">
+            <div style="flex: 1;">
+              <label>Giờ</label>
+              <input type="number" id="addHour" min="0" value="0">
+            </div>
+            <div style="flex: 1;">
+              <label>Phút</label>
+              <input type="number" id="addMin" min="0" value="0">
+            </div>
+            <div style="flex: 1;">
+              <label>Giây</label>
+              <input type="number" id="addSec" min="0" value="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Tài khoản nhận</label>
+            <select id="addTarget"></select>
+          </div>
+          <button class="btn-save" style="width: 100%; margin-top: 10px;" onclick="addTime()">Nạp Thời Gian</button>
+          <div class="form-msg" id="timeMsg"></div>
+          
+          <div class="sub-title" style="margin-top: 24px; margin-bottom: 12px;"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử nạp gần đây</div>
+          <div id="timeLogEntries" class="log-container" style="max-height: 200px; border-radius: 8px;">
+            <div class="empty-msg">Chưa có lịch sử nạp.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tabChangePw">
+        <div class="section-title">🔑 Đổi mật khẩu</div>
+        <div id="changePwContainer"></div>
+      </div>
+
+      <div class="tab-panel" id="tabLog">
+        <div class="section-title">📋 Nhật ký hệ thống</div>
+        <div id="logContainer" class="log-container">
+          <div id="logEntries"><div class="empty-msg">Chưa có hoạt động nào.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <h3>✏️ Chỉnh sửa tài khoản</h3>
+    <input type="hidden" id="editTarget">
+    <div class="form-group"><label>Tên đăng nhập mới</label><input type="text" id="editUsername"></div>
+    <div class="form-group"><label>Mật khẩu mới (để trống = giữ nguyên)</label><input type="password" id="editPassword" placeholder="Không thay đổi nếu để trống"></div>
+    <div class="form-msg" id="editMsg"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('editModal')">Hủy</button>
+      <button class="btn-save" onclick="saveEdit()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <h3>🗑️ Xác nhận xóa</h3>
+    <p style="color:#a0aec0; font-size:0.95rem;">Bạn có chắc muốn xóa tài khoản <strong id="deleteTargetName" style="color:#fc8181;"></strong>?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('deleteModal')">Hủy</button>
+      <button class="btn-confirm-del" onclick="confirmDelete()">Xóa</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="changePwModal">
+  <div class="modal-box">
+    <h3>🔑 Đổi mật khẩu cho <span id="changePwTarget" style="color:#4f6ef7;"></span></h3>
+    <div class="form-group"><label>Mật khẩu mới</label><input type="password" id="changePwNew" placeholder="Nhập mật khẩu mới"></div>
+    <div class="form-group"><label>Xác nhận mật khẩu mới</label><input type="password" id="changePwConfirm" placeholder="Nhập lại mật khẩu mới"></div>
+    <div class="form-msg" id="changePwMsg"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('changePwModal')">Hủy</button>
+      <button class="btn-save" onclick="saveChangePw()">Đổi mật khẩu</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="errorModal">
+  <div class="modal-box">
+    <div class="error-icon">⛔</div>
+    <h3 class="error-title">Không có quyền!</h3>
+    <p class="error-msg" id="errorMessage"></p>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="closeModal('errorModal')">Đã hiểu</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/firebase-config.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

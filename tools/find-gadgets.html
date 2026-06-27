@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gadget Finder - Black</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='black'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+<div class="tool-container">
+  <div class="bt-topbar">
+    <div class="bt-title">
+      🔍 Gadget Finder
+    </div>
+    <button class="bt-home-btn" onclick="window.location.href='../dashboard.html'">🏠 Home</button>
+  </div>
+  
+  <div class="tool-main">
+    <div class="tool-box" style="flex: 1;">
+      <div class="box-header">1. Tải file Disassembly (.txt, .asm)</div>
+      <div style="padding: 20px;">
+        <input type="file" id="fileInput" accept=".txt,.asm,.s" style="color: var(--text-main); margin-bottom: 10px;">
+        <p id="fileStatus" style="color: var(--accent-green); font-size: 0.9rem; font-weight: 600;">Vui lòng chọn file để bắt đầu...</p>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 10px;">Lưu ý: chỉ nhận disas format:<br><code style="color: var(--accent-cyan);">instruction ; address | opcode</code></p>
+      </div>
+      <div class="box-header" style="border-top: 1px solid var(--border-glass);">2. Nhập Instructions (Mỗi lệnh một dòng)</div>
+      <textarea class="box-textarea" id="instrInput" rows="5" placeholder="Ví dụ:\nMOV er{a}, er{b}\nPOP PC" style="min-height: 150px;"></textarea>
+      <div style="padding: 16px; display: flex; justify-content: center; background: rgba(0,0,0,0.2);">
+        <button class="btn-action" id="findBtn" onclick="processGadgets()">Tìm Tất Cả Địa Chỉ</button>
+      </div>
+    </div>
+    <div class="tool-box" style="flex: 1;">
+      <div class="box-header">Kết quả (Địa chỉ tìm thấy)</div>
+      <pre id="outputText" class="box-textarea" style="color: var(--accent-cyan); overflow-y: auto;">Chưa có kết quả.</pre>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+
+        let fileContent = "";
+
+        // Xử lý nạp file
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                fileContent = e.target.result;
+                document.getElementById('fileStatus').innerHTML = `<i class="fa-solid fa-check"></i> Đã nạp: ${file.name}`;
+            };
+            reader.readAsText(file);
+        });
+
+        // Logic chuẩn hóa lệnh từ file Python
+        function normalizeInstruction(instr) {
+            return instr.toLowerCase().replace(/\s+/g, "");
+        }
+
+        // Logic mở rộng thanh ghi {r} từ file Python
+        function expandRegisterPattern(text, definedVars) {
+            return text.replace(/\{([^}]+)\}/g, (match, name) => {
+                let constraint = "(?:[0-9]|1[0-5])";
+                let varName = name;
+
+                if (name.includes("[")) {
+                    const m = name.match(/(\w+)\[(\d+)\]/);
+                    if (m && m[2] === "1") {
+                        varName = m[1];
+                        constraint = "[0-9]";
+                    }
+                }
+
+                if (definedVars.has(varName)) return `\\k<${varName}>`;
+                definedVars.add(varName);
+                return `(?<${varName}>${constraint})`;
+            });
+        }
+
+        function processGadgets() {
+            const instrRaw = document.getElementById('instrInput').value.trim();
+            const outputText = document.getElementById('outputText');
+
+            if (!fileContent) {
+                alert("Bạn chưa tải file disassembly!");
+                return;
+            }
+            if (!instrRaw) {
+                alert("Vui lòng nhập lệnh cần tìm!");
+                return;
+            }
+
+            const instructions = instrRaw.split("\n").filter(l => l.trim());
+            const linePrefix = "^\\s*";
+            const lineSuffix = "\\s*;\\s*([0-9a-fA-F]+)\\s*\\|\\s*[0-9a-fA-F]+";
+
+            let fullPattern = "";
+            let definedVars = new Set();
+
+            try {
+                // Build regex pattern
+                instructions.forEach((line, i) => {
+                    let instr = normalizeInstruction(line);
+                    instr = expandRegisterPattern(instr, definedVars);
+                    fullPattern += linePrefix + instr + lineSuffix;
+                    if (i !== instructions.length - 1) fullPattern += "\\r?\\n";
+                });
+
+                // Chuẩn hóa nội dung file
+                const normalizedContent = fileContent.split(/\r?\n/).map(line => {
+                    const parts = line.split(";");
+                    return parts.length >= 2 ? normalizeInstruction(parts[0]) + ";" + parts.slice(1).join(";") : line;
+                }).join("\n");
+
+                const regex = new RegExp(fullPattern, "gm");
+                const matches = [...normalizedContent.matchAll(regex)];
+
+                if (matches.length > 0) {
+                    // Chỉ lấy địa chỉ từ comment (phần sau dấu ;)
+                    const addresses = matches.map(m => {
+                        const firstLine = m[0].split("\n")[0];
+                        const addrMatch = firstLine.match(/;\s*([0-9a-fA-F]+)/);
+                        return addrMatch ? `0x${addrMatch[1].toUpperCase()}` : null;
+                    }).filter(a => a !== null);
+
+                    outputText.textContent = addresses.join("\n");
+                    outputText.style.color = "#0078d7";
+                } else {
+                    outputText.textContent = "Không tìm thấy gadget nào phù hợp.";
+                    outputText.style.color = "#e53935";
+                }
+
+            } catch (err) {
+                outputText.textContent = "Lỗi Regex: " + err.message;
+                outputText.style.color = "#e53935";
+            }
+        }
+    
+</script>
+</body>
+</html>

@@ -81,7 +81,7 @@
       <!-- RECHARGE TAB -->
       <div id="webTabRecharge" class="web-tab-content">
         <div style="padding: 8px 0 4px; color: var(--text-muted); font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">⏱️ Nạp thêm thời gian</div>
-        <div class="recharge-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 16px;">
+        <div class="recharge-grid">
           <button class="recharge-btn" onclick="requestRecharge(30)">30s</button>
           <button class="recharge-btn" onclick="requestRecharge(60)">1min</button>
           <button class="recharge-btn" onclick="requestRecharge(120)">2min</button>
@@ -93,7 +93,7 @@
           <button class="recharge-btn" onclick="requestRecharge(7200)">2hour</button>
           <button class="recharge-btn" onclick="requestRecharge(18000)">5hour</button>
         </div>
-        <div id="rechargeMsg" style="margin-top: 16px; color: #68d391; text-align: center;"></div>
+        <div id="rechargeMsg" style="margin-top: 16px; color: var(--accent-green); text-align: center;"></div>
       </div>
     </div>
   </div>

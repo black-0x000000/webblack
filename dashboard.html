@@ -36,6 +36,7 @@
       <div class="web-tabs">
         <button class="web-tab-btn active" onclick="switchWebTab('tools')">🛠️ TOOLS</button>
         <button class="web-tab-btn" onclick="switchWebTab('game')">🎮 GAME</button>
+        <button class="web-tab-btn" id="rechargeTabBtn" onclick="switchWebTab('recharge')" style="display:none;">⏱️ NẠP THỜI GIAN</button>
       </div>
 
       <!-- TOOLS TAB -->
@@ -75,6 +76,24 @@
             <div class="tool-name">Snake</div>
           </div>
         </div>
+      </div>
+
+      <!-- RECHARGE TAB -->
+      <div id="webTabRecharge" class="web-tab-content">
+        <div style="padding: 8px 0 4px; color: var(--text-muted); font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">⏱️ Nạp thêm thời gian</div>
+        <div class="recharge-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 16px;">
+          <button class="recharge-btn" onclick="requestRecharge(30)">30s</button>
+          <button class="recharge-btn" onclick="requestRecharge(60)">1min</button>
+          <button class="recharge-btn" onclick="requestRecharge(120)">2min</button>
+          <button class="recharge-btn" onclick="requestRecharge(300)">5min</button>
+          <button class="recharge-btn" onclick="requestRecharge(600)">10min</button>
+          <button class="recharge-btn" onclick="requestRecharge(1200)">20min</button>
+          <button class="recharge-btn" onclick="requestRecharge(3000)">50min</button>
+          <button class="recharge-btn" onclick="requestRecharge(3600)">1hour</button>
+          <button class="recharge-btn" onclick="requestRecharge(7200)">2hour</button>
+          <button class="recharge-btn" onclick="requestRecharge(18000)">5hour</button>
+        </div>
+        <div id="rechargeMsg" style="margin-top: 16px; color: #68d391; text-align: center;"></div>
       </div>
     </div>
   </div>

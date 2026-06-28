@@ -18,9 +18,23 @@ const Utils = {
     return '<span class="badge user">User</span>';
   },
 
-  showError: (message) => {
+  // HÀM showError ĐÃ ĐƯỢC SỬA
+  showError: (message, isSuccess = false) => {
     const errModal = document.getElementById('errorModal');
     if (errModal) {
+      const icon = document.getElementById('modalIcon');
+      const title = document.getElementById('modalTitle');
+      
+      if (isSuccess) {
+        icon.textContent = '✅';
+        title.textContent = 'Thành công!';
+        title.style.color = 'var(--accent-green)';
+      } else {
+        icon.textContent = '⛔';
+        title.textContent = 'Không có quyền!';
+        title.style.color = 'var(--accent-red)';
+      }
+      
       document.getElementById('errorMessage').textContent = message;
       errModal.classList.add('show');
     } else {
@@ -119,13 +133,11 @@ const App = {
           }
         } catch(e) {}
 
-        // Hiển thị tab Log cho Owner
         if (this.currentRole === 'owner') {
           const tabLogBtn = document.getElementById('tabLogBtn');
           if (tabLogBtn) tabLogBtn.style.display = 'inline-block';
         }
         
-        // Hiển thị tab Thông Báo cho cả Admin và Owner
         const tabNotifyBtn = document.getElementById('tabNotifyBtn');
         if (tabNotifyBtn) {
           tabNotifyBtn.style.display = 'inline-block';
@@ -916,7 +928,8 @@ const Recharge = {
         `${App.currentUser} đã nạp ${req.timeDisplay} cho ${req.user}`
       );
 
-      Utils.showError('✅ Đã nạp thời gian thành công!');
+      // ĐÃ SỬA: Thêm tham số true để hiển thị icon ✅
+      Utils.showError('Đã nạp thời gian thành công!', true);
       
     } catch (e) {
       console.error('Lỗi xử lý nạp:', e);

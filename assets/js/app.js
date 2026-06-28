@@ -119,13 +119,15 @@ const App = {
           }
         } catch(e) {}
 
+        // Hiển thị tab Log cho Owner
         if (this.currentRole === 'owner') {
           const tabLogBtn = document.getElementById('tabLogBtn');
           if (tabLogBtn) tabLogBtn.style.display = 'inline-block';
         }
         
+        // Hiển thị tab Thông Báo cho cả Admin và Owner
         const tabNotifyBtn = document.getElementById('tabNotifyBtn');
-        if (tabNotifyBtn && (this.currentRole === 'admin' || this.currentRole === 'owner')) {
+        if (tabNotifyBtn) {
           tabNotifyBtn.style.display = 'inline-block';
         }
         
@@ -396,7 +398,7 @@ const Admin = {
       const logs = snapshot.val();
       if (!logs) { container.innerHTML = '<div class="empty-msg">Chưa có hoạt động nào.</div>'; return; }
       const entries = Object.values(logs).reverse();
-      const badgeMap = { 'create':'create', 'delete':'delete', 'edit':'edit', 'time':'time', 'password':'pw', 'login':'login' };
+      const badgeMap = { 'create':'create', 'delete':'delete', 'edit':'edit', 'time':'time', 'password':'pw', 'login':'login', 'recharge_request':'time', 'recharge_completed':'time' };
       container.innerHTML = entries.map(l => {
         const badge = badgeMap[l.action] || 'create';
         return `<div class="log-item">
@@ -434,9 +436,9 @@ const Admin = {
   },
 
   async addTime() {
-    const btn = document.querySelector('.btn-nap');
+    const btn = document.querySelector('.btn-save');
     if (btn) { if (btn.disabled) return; btn.disabled = true; btn.textContent = 'Đang nạp...'; }
-    const restoreBtn = () => { if (btn) { btn.disabled = false; btn.textContent = 'Nạp'; } };
+    const restoreBtn = () => { if (btn) { btn.disabled = false; btn.textContent = 'Nạp Thời Gian'; } };
 
     const h = parseInt(document.getElementById('addHour').value) || 0;
     const m = parseInt(document.getElementById('addMin').value) || 0;

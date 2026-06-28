@@ -3,376 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bitmap Tool</title>
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  body {
-    background: #0a0a0a;
-    color: #fff;
-    font-family: Arial, sans-serif;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  #app {
-    background: #1a1a1a;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90vw;
-    max-width: 800px;
-  }
-  
-  .controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: #222;
-    border-radius: 6px;
-    align-items: center;
-  }
-  
-  .controls label {
-    color: #aaa;
-    font-size: 13px;
-  }
-  
-  .controls input[type="number"] {
-    width: 50px;
-    padding: 4px;
-    background: #333;
-    border: 1px solid #555;
-    color: #fff;
-    border-radius: 4px;
-    text-align: center;
-  }
-  
-  .btn {
-    padding: 5px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 13px;
-  }
-  
-  .btn-fill {
-    background: #2a2a2a;
-    color: #aaa;
-  }
-  .btn-fill.active {
-    background: #4caf50;
-    color: #fff;
-  }
-  
-  .btn-erase {
-    background: #2a2a2a;
-    color: #aaa;
-  }
-  .btn-erase.active {
-    background: #f44336;
-    color: #fff;
-  }
-  
-  .btn-clear {
-    background: #e67e22;
-    color: #fff;
-  }
-  .btn-reset {
-    background: #555;
-    color: #fff;
-  }
-  
-  .status {
-    color: #4caf50;
-    font-weight: bold;
-    min-width: 30px;
-  }
-  .status.erase {
-    color: #f44336;
-  }
-  
-  .canvas-wrapper {
-    background: #111;
-    padding: 15px;
-    border-radius: 6px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 400px;
-  }
-  
-  #grid {
-    display: grid;
-    gap: 2px;
-    background: #1a1a1a;
-  }
-  
-  .cell {
-    background: #2a2a2a;
-    border-radius: 2px;
-    cursor: pointer;
-    aspect-ratio: 1 / 1;
-    width: 100%;
-    min-width: 20px;
-    max-width: 60px;
-    transition: background 0.1s;
-  }
-  
-  .cell.filled {
-    background: #4caf50;
-  }
-  
-  .cell:hover {
-    opacity: 0.8;
-  }
-  
-  .output {
-    margin-top: 15px;
-    padding: 10px;
-    background: #222;
-    border-radius: 6px;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    color: #4caf50;
-    word-break: break-all;
-  }
-  
-  .output-label {
-    color: #aaa;
-    font-family: Arial, sans-serif;
-    margin-bottom: 5px;
-  }
-</style>
+<title>Black</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='black'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="../assets/css/styles.css">
 </head>
 <body>
 
-<div id="app">
-  <div class="controls">
-    <label>Chiều dài:</label>
-    <input type="number" id="widthInput" min="1" max="192" value="8">
-    
-    <label>Chiều rộng:</label>
-    <input type="number" id="heightInput" min="1" max="63" value="8">
-    
-    <span style="color:#aaa;">Trạng thái:</span>
-    <span class="status" id="statusLabel">Tô</span>
-    
-    <button class="btn btn-fill active" id="btnFill" onclick="setMode('fill')">Tô</button>
-    <button class="btn btn-erase" id="btnErase" onclick="setMode('erase')">Xóa</button>
-    
-    <button class="btn btn-clear" onclick="clearAll()">CLEAR</button>
-    <button class="btn btn-reset" onclick="resetAll()">RESET</button>
+<!-- ===== BITMAP TOOL FULLSCREEN ===== -->
+<div id="bitmapTool" class="show" style="display:flex;">
+  <div class="bt-topbar">
+    <div class="bt-title">
+      🖼️ Dịch bitmap
+      <span class="dev-tag">| Dev: @Black &nbsp;[discord: black_0x000000]</span>
+    </div>
+    <button class="bt-home-btn" onclick="closeBitmapTool()">🏠 Home</button>
   </div>
-  
-  <div class="canvas-wrapper">
-    <div id="grid"></div>
+
+  <div class="bt-controls">
+    <div class="bt-ctrl-group">
+      <label>Chiều dài (tối đa 192):</label>
+      <input type="number" id="btWidth" min="1" max="192" value="8">
+    </div>
+    <div class="bt-divider"></div>
+    <div class="bt-ctrl-group">
+      <label>Chiều rộng (tối đa 63):</label>
+      <input type="number" id="btHeight" min="1" max="63" value="8">
+    </div>
+    <div class="bt-divider"></div>
+    <div class="bt-state-group">
+      <span class="bt-state-label">Trạng thái:</span>
+      <span class="bt-state-indicator" id="btStateLabel">Tô</span>
+    </div>
+    <div class="bt-ctrl-group">
+      <button class="bt-btn bt-btn-fill active" id="btnFill" onclick="setMode('fill')">Tô</button>
+      <button class="bt-btn bt-btn-erase" id="btnErase" onclick="setMode('erase')">Xóa</button>
+    </div>
+    <div class="bt-divider"></div>
+    <div class="bt-ctrl-group">
+      <button class="bt-btn bt-btn-clear" onclick="clearPixels()">CLEAR</button>
+      <button class="bt-btn bt-btn-reset" onclick="resetBitmap()">RESET</button>
+    </div>
   </div>
-  
-  <div class="output">
-    <div class="output-label">HEX:</div>
-    <div id="hexOutput">—</div>
+
+  <div class="bt-canvas-area" id="btCanvasArea">
+    <div id="pixelGrid"></div>
+  </div>
+
+  <div class="bt-output-area">
+    <div class="bt-output-label">Hex:</div>
+    <div class="bt-hex-output" id="btHexOutput">—</div>
   </div>
 </div>
 
-<script>
-  let pixels = [];
-  let cols = 8;
-  let rows = 8;
-  let mode = 'fill';
-  
-  const gridEl = document.getElementById('grid');
-  const widthInput = document.getElementById('widthInput');
-  const heightInput = document.getElementById('heightInput');
-  const statusLabel = document.getElementById('statusLabel');
-  const hexOutput = document.getElementById('hexOutput');
-  const btnFill = document.getElementById('btnFill');
-  const btnErase = document.getElementById('btnErase');
-  
-  function init() {
-    cols = parseInt(widthInput.value) || 8;
-    rows = parseInt(heightInput.value) || 8;
-    
-    cols = Math.max(1, Math.min(192, cols));
-    rows = Math.max(1, Math.min(63, rows));
-    
-    widthInput.value = cols;
-    heightInput.value = rows;
-    
-    pixels = [];
-    for (let r = 0; r < rows; r++) {
-      pixels[r] = [];
-      for (let c = 0; c < cols; c++) {
-        pixels[r][c] = 0;
-      }
-    }
-    
-    render();
-    updateHex();
-  }
-  
-  function render() {
-    gridEl.innerHTML = '';
-    gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    gridEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-    
-    const wrapper = document.querySelector('.canvas-wrapper');
-    const rect = wrapper.getBoundingClientRect();
-    const padding = 30;
-    const gap = 2;
-    
-    let maxW = (rect.width - padding * 2 - (cols - 1) * gap) / cols;
-    let maxH = (rect.height - padding * 2 - (rows - 1) * gap) / rows;
-    let size = Math.min(maxW, maxH);
-    size = Math.max(16, Math.min(60, size));
-    
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell' + (pixels[r][c] ? ' filled' : '');
-        cell.style.width = size + 'px';
-        cell.style.height = size + 'px';
-        cell.dataset.row = r;
-        cell.dataset.col = c;
-        
-        cell.addEventListener('click', () => togglePixel(r, c));
-        cell.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          togglePixel(r, c);
-        });
-        cell.addEventListener('mouseenter', (e) => {
-          if (e.buttons === 1) togglePixel(r, c);
-        });
-        
-        gridEl.appendChild(cell);
-      }
-    }
-  }
-  
-  function togglePixel(row, col) {
-    if (row < 0 || row >= rows || col < 0 || col >= cols) return;
-    
-    if (mode === 'fill') {
-      if (pixels[row][col] === 0) {
-        pixels[row][col] = 1;
-        updateCell(row, col);
-        updateHex();
-      }
-    } else {
-      if (pixels[row][col] === 1) {
-        pixels[row][col] = 0;
-        updateCell(row, col);
-        updateHex();
-      }
-    }
-  }
-  
-  function updateCell(row, col) {
-    const index = row * cols + col;
-    const cell = gridEl.children[index];
-    if (cell) {
-      if (pixels[row][col]) {
-        cell.classList.add('filled');
-      } else {
-        cell.classList.remove('filled');
-      }
-    }
-  }
-  
-  function updateSize() {
-    let newCols = parseInt(widthInput.value) || 1;
-    let newRows = parseInt(heightInput.value) || 1;
-    
-    newCols = Math.max(1, Math.min(192, newCols));
-    newRows = Math.max(1, Math.min(63, newRows));
-    
-    widthInput.value = newCols;
-    heightInput.value = newRows;
-    
-    const newPixels = [];
-    for (let r = 0; r < newRows; r++) {
-      newPixels[r] = [];
-      for (let c = 0; c < newCols; c++) {
-        newPixels[r][c] = (r < rows && c < cols) ? pixels[r][c] : 0;
-      }
-    }
-    
-    rows = newRows;
-    cols = newCols;
-    pixels = newPixels;
-    
-    render();
-    updateHex();
-  }
-  
-  function setMode(newMode) {
-    mode = newMode;
-    if (mode === 'fill') {
-      btnFill.classList.add('active');
-      btnErase.classList.remove('active');
-      statusLabel.textContent = 'Tô';
-      statusLabel.className = 'status';
-    } else {
-      btnErase.classList.add('active');
-      btnFill.classList.remove('active');
-      statusLabel.textContent = 'Xóa';
-      statusLabel.className = 'status erase';
-    }
-  }
-  
-  function clearAll() {
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        pixels[r][c] = 0;
-      }
-    }
-    render();
-    updateHex();
-  }
-  
-  function resetAll() {
-    widthInput.value = 8;
-    heightInput.value = 8;
-    updateSize();
-  }
-  
-  function updateHex() {
-    let hex = '';
-    for (let r = 0; r < rows; r++) {
-      let byte = 0;
-      for (let c = 0; c < cols; c++) {
-        if (pixels[r][c]) {
-          byte |= (1 << (cols - 1 - c));
-        }
-      }
-      const bytesNeeded = Math.ceil(cols / 8);
-      for (let b = bytesNeeded - 1; b >= 0; b--) {
-        const val = (byte >> (b * 8)) & 0xFF;
-        hex += val.toString(16).padStart(2, '0').toUpperCase() + ' ';
-      }
-    }
-    hexOutput.textContent = hex.trim() || '—';
-  }
-  
-  widthInput.addEventListener('change', updateSize);
-  heightInput.addEventListener('change', updateSize);
-  
-  window.addEventListener('resize', () => {
-    setTimeout(render, 100);
-  });
-  
-  document.addEventListener('dragstart', (e) => e.preventDefault());
-  
-  init();
-</script>
-
+<script src="../assets/js/firebase-config.js"></script>
+<script src="../assets/js/app.js"></script>
 </body>
 </html>

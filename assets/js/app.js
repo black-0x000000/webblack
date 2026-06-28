@@ -59,6 +59,14 @@ const App = {
     await this.handleRouting();
     this.bindEvents();
     this.initDefaultAccounts();
+    this.showRechargeTabForUser();
+  },
+
+  showRechargeTabForUser() {
+    const rechargeTab = document.getElementById('rechargeTabBtn');
+    if (rechargeTab && this.currentRole === 'user') {
+      rechargeTab.style.display = 'inline-block';
+    }
   },
 
   async handleRouting() {
@@ -115,6 +123,12 @@ const App = {
           const tabLogBtn = document.getElementById('tabLogBtn');
           if (tabLogBtn) tabLogBtn.style.display = 'inline-block';
         }
+        
+        const tabNotifyBtn = document.getElementById('tabNotifyBtn');
+        if (tabNotifyBtn && (this.currentRole === 'admin' || this.currentRole === 'owner')) {
+          tabNotifyBtn.style.display = 'inline-block';
+        }
+        
         Admin.renderAll();
       }
 
@@ -196,6 +210,7 @@ const Auth = {
     App.currentRole = null;
     db.ref('accounts').off();
     db.ref('accounts/systemLog').off();
+    db.ref('rechargeRequests').off();
     window.location.href = (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/games/')) ? '../index.html' : 'index.html';
   }
 };
@@ -625,6 +640,14 @@ const UI = {
     } else if (tab === 'game') {
       btns[1].classList.add('active');
       document.getElementById('webTabGame').classList.add('active');
+    } else if (tab === 'recharge') {
+      for (let i = 0; i < btns.length; i++) {
+        if (btns[i].textContent.includes('NẠP THỜI GIAN')) {
+          btns[i].classList.add('active');
+          break;
+        }
+      }
+      document.getElementById('webTabRecharge').classList.add('active');
     }
   },
 
@@ -636,6 +659,7 @@ const UI = {
     
     if (id === 'tabTime') { Admin.renderTimeTargets(); Admin.renderTimeLog(); }
     if (id === 'tabChangePw') Admin.renderChangePwTab();
+    if (id === 'tabNotify') Recharge.renderNotifications();
   }
 };
 
@@ -763,6 +787,146 @@ const BitmapTool = {
   close() { window.location.href = (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/games/')) ? '../dashboard.html' : 'dashboard.html'; }
 };
 
+// ===== RECHARGE MODULE =====
+const Recharge = {
+  // User gửi yêu cầu nạp
+  async requestRecharge(seconds) {
+    if (!App.currentUser) {
+      Utils.showError('Vui lòng đăng nhập!');
+      return;
+    }
+
+    const user = App.currentUser;
+    const timeStr = Utils.formatTime(seconds);
+    
+    // Kiểm tra xem đã có yêu cầu đang chờ xử lý chưa
+    const snap = await db.ref('rechargeRequests').orderByChild('user').equalTo(user).once('value');
+    const requests = snap.val() || {};
+    const pending = Object.values(requests).some(r => r.status === 'pending');
+    
+    if (pending) {
+      document.getElementById('rechargeMsg').textContent = '⏳ Bạn đã có yêu cầu đang chờ xử lý!';
+      document.getElementById('rechargeMsg').style.color = '#fc8181';
+      return;
+    }
+
+    try {
+      const now = new Date();
+      const timeStr2 = now.toLocaleString('vi-VN', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+
+      await db.ref('rechargeRequests').push().set({
+        user: user,
+        seconds: seconds,
+        timeDisplay: timeStr,
+        status: 'pending',
+        requestTime: timeStr2,
+        timestamp: now.getTime()
+      });
+
+      document.getElementById('rechargeMsg').textContent = `✅ Đã gửi yêu cầu nạp ${timeStr}. Vui lòng chờ admin duyệt!`;
+      document.getElementById('rechargeMsg').style.color = '#68d391';
+      
+      await Utils.writeLog('recharge_request', `${user} yêu cầu nạp ${timeStr}`);
+    } catch (e) {
+      console.error('Lỗi gửi yêu cầu:', e);
+      document.getElementById('rechargeMsg').textContent = '❌ Lỗi gửi yêu cầu. Vui lòng thử lại!';
+      document.getElementById('rechargeMsg').style.color = '#fc8181';
+    }
+  },
+
+  // Admin/Owner xem danh sách yêu cầu
+  renderNotifications() {
+    const container = document.getElementById('notifyList');
+    if (!container) return;
+
+    db.ref('rechargeRequests').orderByChild('timestamp').on('value', (snapshot) => {
+      const requests = snapshot.val() || {};
+      const entries = Object.entries(requests).reverse();
+
+      if (entries.length === 0) {
+        container.innerHTML = '<div class="empty-msg">Chưa có yêu cầu nạp thời gian.</div>';
+        return;
+      }
+
+      container.innerHTML = entries.map(([key, req]) => {
+        const statusClass = req.status === 'pending' ? 'pending' : 'completed';
+        const statusText = req.status === 'pending' ? 'Chưa Nạp' : 'Đã Nạp';
+        const btnDisabled = req.status === 'completed' ? 'disabled' : '';
+        const btnText = req.status === 'pending' ? 'Nạp' : '✅ Đã nạp';
+
+        return `
+          <div class="notify-item" data-key="${key}">
+            <div class="notify-info">
+              <div class="notify-user">👤 Tài khoản: <strong>${Utils.escapeHTML(req.user)}</strong></div>
+              <div class="notify-time">⏱ Nạp thêm: ${req.timeDisplay} (${req.requestTime})</div>
+              <div><span class="notify-status ${statusClass}">${statusText}</span></div>
+            </div>
+            <div class="notify-actions">
+              <button class="btn-notify-recharge" onclick="Recharge.processRecharge('${key}')" ${btnDisabled}>
+                ${btnText}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    });
+  },
+
+  // Admin/Owner xử lý nạp
+  async processRecharge(key) {
+    try {
+      const snap = await db.ref(`rechargeRequests/${key}`).once('value');
+      const req = snap.val();
+      
+      if (!req || req.status === 'completed') {
+        Utils.showError('Yêu cầu đã được xử lý!');
+        return;
+      }
+
+      if (App.currentRole !== 'admin' && App.currentRole !== 'owner') {
+        Utils.showError('Bạn không có quyền thực hiện!');
+        return;
+      }
+
+      const userSnap = await db.ref(`accounts/${req.user}`).once('value');
+      const userAcc = userSnap.val();
+      
+      if (!userAcc) {
+        Utils.showError('Tài khoản không tồn tại!');
+        return;
+      }
+
+      const currentTime = userAcc.timeLeft || 0;
+      const newTime = currentTime + req.seconds;
+
+      await db.ref(`accounts/${req.user}`).update({ timeLeft: newTime });
+      
+      await db.ref(`rechargeRequests/${key}`).update({ 
+        status: 'completed',
+        processedBy: App.currentUser,
+        processedTime: new Date().toLocaleString('vi-VN')
+      });
+
+      await Utils.writeLog('recharge_completed', 
+        `${App.currentUser} đã nạp ${req.timeDisplay} cho ${req.user}`
+      );
+
+      Utils.showError('✅ Đã nạp thời gian thành công!');
+      
+    } catch (e) {
+      console.error('Lỗi xử lý nạp:', e);
+      Utils.showError('❌ Lỗi xử lý! Vui lòng thử lại.');
+    }
+  },
+
+  cleanup() {
+    db.ref('rechargeRequests').off();
+  }
+};
+
 // ===== EXPORTS FOR INLINE HTML ATTRIBUTES =====
 window.doLogin = () => Auth.login();
 window.doLogout = () => Auth.logout();
@@ -780,6 +944,8 @@ window.closeBitmapTool = () => BitmapTool.close();
 window.setMode = (m) => BitmapTool.setMode(m);
 window.clearPixels = () => BitmapTool.clear();
 window.resetBitmap = () => BitmapTool.reset();
+window.requestRecharge = (seconds) => Recharge.requestRecharge(seconds);
+window.processRecharge = (key) => Recharge.processRecharge(key);
 
 // ===== BOOTSTRAP =====
 document.addEventListener('DOMContentLoaded', () => App.init());

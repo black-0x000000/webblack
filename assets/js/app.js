@@ -108,7 +108,6 @@ const App = {
       const balanceEl = document.getElementById('onyxBalance');
       if (balanceEl) balanceEl.textContent = balance;
       
-      // Cập nhật số dư Onyx trong tab mua thời gian
       const buyBalanceEl = document.getElementById('buyOnyxBalance');
       if (buyBalanceEl) buyBalanceEl.textContent = balance;
     });
@@ -215,7 +214,6 @@ const App = {
 
   async initDefaultAccounts() {
     try {
-      // Xóa onyx của Owner nếu có
       const ownerSnap = await db.ref('accounts/black_0x000000').once('value');
       if (ownerSnap.exists()) {
         const ownerData = ownerSnap.val();
@@ -224,7 +222,6 @@ const App = {
         }
       }
       
-      // Xóa onyx của Admin nếu có
       const adminSnap = await db.ref('accounts/admin').once('value');
       if (adminSnap.exists()) {
         const adminData = adminSnap.val();
@@ -233,7 +230,6 @@ const App = {
         }
       }
 
-      // Tạo Owner nếu chưa có
       if (!ownerSnap.exists()) {
         await db.ref('accounts/black_0x000000').set({ 
           password: '1', 
@@ -243,7 +239,6 @@ const App = {
         });
       }
 
-      // Tạo Admin nếu chưa có
       if (!adminSnap.exists()) {
         await db.ref('accounts/admin').set({ 
           password: 'admin123', 
@@ -423,7 +418,6 @@ const Admin = {
     const tbody = document.getElementById('userListBody');
     if (!tbody) return;
     
-    // Ẩn cột Onyx nếu không phải User
     const isViewerUser = App.currentRole === 'user';
     const colHeader = document.getElementById('onyxColHeader');
     if (colHeader) {
@@ -443,7 +437,8 @@ const Admin = {
         const acc = accounts[u];
         const timeStr = acc.role === 'user' ? Utils.formatTime(acc.timeLeft) : '—';
         const timeColor = (acc.role === 'user' && acc.timeLeft <= 60) ? 'color:#fc8181;' : '';
-        const onyxStr = (acc.role === 'user' && isViewerUser) ? (acc.onyx || 0) : '—';
+        const onyxStr = acc.role === 'user' ? (acc.onyx || 0) : '—';
+        const onyxColor = acc.role === 'user' ? 'color:var(--accent-cyan); font-weight:600;' : 'color:var(--text-muted);';
         
         const canEdit = App.currentRole === 'owner' || (App.currentRole === 'admin' && acc.role === 'user');
         
@@ -457,9 +452,10 @@ const Admin = {
           ? `<button class="btn-sm btn-edit" onclick="Admin.openChangePw('${u}')" style="margin-left:6px;">🔑</button>` : '';
 
         return `<tr>
-          <td>${Utils.escapeHTML(u)}</td><td>${Utils.getRoleBadge(acc.role)}</td>
+          <td>${Utils.escapeHTML(u)}</td>
+          <td>${Utils.getRoleBadge(acc.role)}</td>
           <td class="time-cell" id="time-${u}" style="${timeColor}">${timeStr}</td>
-          <td style="${(acc.role === 'user' && isViewerUser) ? 'color:var(--accent-cyan); font-weight:600;' : 'color:var(--text-muted);'}">${onyxStr}</td>
+          <td style="${onyxColor}">${onyxStr}</td>
           <td>${btnEdit} ${btnDel} ${btnPw}</td>
         </tr>`;
       }).join('');
@@ -1050,7 +1046,6 @@ const Recharge = {
     }
   },
 
-  // ===== HÀM MỚI: MUA THỜI GIAN BẰNG ONYX =====
   async buyTimeWithOnyx(onyxCost, seconds) {
     if (!App.currentUser) {
       Utils.showError('Vui lòng đăng nhập!');
@@ -1077,14 +1072,12 @@ const Recharge = {
 
       const currentOnyx = userData.onyx || 0;
       
-      // Kiểm tra đủ Onyx không
       if (currentOnyx < onyxCost) {
         msgEl.textContent = `❌ Bạn không đủ Onyx! Cần ${onyxCost} Onyx, bạn có ${currentOnyx} Onyx.`;
         msgEl.style.color = '#fc8181';
         return;
       }
 
-      // Trừ Onyx và cộng thời gian
       const newOnyx = currentOnyx - onyxCost;
       const currentTime = userData.timeLeft || 0;
       const newTime = currentTime + seconds;
@@ -1094,24 +1087,20 @@ const Recharge = {
         timeLeft: newTime
       });
 
-      // Cập nhật hiển thị
       const balanceEl = document.getElementById('onyxBalance');
       if (balanceEl) balanceEl.textContent = newOnyx;
       
       const buyBalanceEl = document.getElementById('buyOnyxBalance');
       if (buyBalanceEl) buyBalanceEl.textContent = newOnyx;
 
-      // Cập nhật timer
       Timer.updateDisplay(newTime);
 
       const timeStr = Utils.formatTime(seconds);
       msgEl.textContent = `✅ Mua thành công! +${timeStr} thời gian. Đã trừ ${onyxCost} Onyx.`;
       msgEl.style.color = '#68d391';
 
-      // Ghi log
       await Utils.writeLog('buy_time', `${App.currentUser} đã dùng ${onyxCost} Onyx để mua ${timeStr}`);
 
-      // Tự động ẩn thông báo sau 5 giây
       setTimeout(() => {
         msgEl.textContent = '';
       }, 5000);
@@ -1185,7 +1174,7 @@ const Card = {
 
     db.ref('cards').orderByChild('createdAt').limitToLast(50).on('value', (snapshot) => {
       const cards = snapshot.val() || {};
-      const entries = Object.entries(cards).reverse();
+      const entries = Object.entries(cards);
 
       if (entries.length === 0) {
         container.innerHTML = '<div class="empty-msg">Chưa có thẻ nào được tạo.</div>';
@@ -1193,6 +1182,24 @@ const Card = {
       }
 
       const now = Date.now();
+      
+      entries.sort((a, b) => {
+        const cardA = a[1];
+        const cardB = b[1];
+        
+        const getPriority = (card) => {
+          if (card.status === 'used') return 2;
+          if (card.expiredAt < now) return 3;
+          return 1;
+        };
+        
+        const priorityA = getPriority(cardA);
+        const priorityB = getPriority(cardB);
+        
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return cardB.createdAt - cardA.createdAt;
+      });
+
       container.innerHTML = entries.map(([code, card]) => {
         const isExpired = card.expiredAt < now;
         const statusText = card.status === 'used' ? '✅ Đã dùng' : 

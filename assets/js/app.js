@@ -94,13 +94,11 @@ const App = {
     const el = document.getElementById('onyxDisplay');
     if (!el) return;
     
-    // Chỉ hiển thị Onyx cho User
     if (this.currentRole !== 'user') {
       el.style.display = 'none';
       return;
     }
     
-    // User thì hiển thị
     el.style.display = 'flex';
     
     db.ref('accounts/' + this.currentUser + '/onyx').on('value', (snap) => {
@@ -140,7 +138,6 @@ const App = {
       const adminNameEl = document.getElementById('adminName');
       if (adminNameEl) adminNameEl.textContent = this.currentUser;
 
-      // Dashboard logic
       if (path.includes('dashboard.html')) {
         const adminHeader = document.querySelector('.admin-header');
         if (this.currentRole === 'user' && adminHeader) {
@@ -155,7 +152,6 @@ const App = {
         }
       }
 
-      // Panel logic
       if (path.includes('panel.html')) {
         if (this.currentRole === 'user') {
           window.location.href = (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/games/')) ? '../dashboard.html' : 'dashboard.html';
@@ -421,7 +417,7 @@ const Admin = {
     const isViewerUser = App.currentRole === 'user';
     const colHeader = document.getElementById('onyxColHeader');
     if (colHeader) {
-      colHeader.style.display = isViewerUser ? '' : 'none';
+      colHeader.style.display = isViewerUser ? 'none' : '';
     }
     
     db.ref('accounts').on('value', (snapshot) => {
@@ -437,8 +433,10 @@ const Admin = {
         const acc = accounts[u];
         const timeStr = acc.role === 'user' ? Utils.formatTime(acc.timeLeft) : '—';
         const timeColor = (acc.role === 'user' && acc.timeLeft <= 60) ? 'color:#fc8181;' : '';
-        const onyxStr = acc.role === 'user' ? (acc.onyx || 0) : '—';
-        const onyxColor = acc.role === 'user' ? 'color:var(--accent-cyan); font-weight:600;' : 'color:var(--text-muted);';
+        
+        const showOnyx = acc.role === 'user' && !isViewerUser;
+        const onyxStr = showOnyx ? (acc.onyx || 0) : '—';
+        const onyxColor = showOnyx ? 'color:var(--accent-cyan); font-weight:600;' : 'color:var(--text-muted);';
         
         const canEdit = App.currentRole === 'owner' || (App.currentRole === 'admin' && acc.role === 'user');
         

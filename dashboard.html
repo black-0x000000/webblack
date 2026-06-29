@@ -13,7 +13,15 @@
 
 <!-- TOP BAR -->
 <div id="topBar" class="show">
-  <div id="timerDisplay"></div>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <div id="timerDisplay"></div>
+    <div id="onyxDisplay" style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); padding:4px 12px 4px 8px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); cursor:pointer;" onclick="openRechargeModal()">
+      <span style="font-size:1.1rem;">⚫</span>
+      <span id="onyxBalance" style="font-weight:700; color:var(--accent-cyan);">0</span>
+      <span style="color:var(--text-muted); font-size:0.8rem;">ONYX</span>
+      <span style="color:var(--accent-green); font-size:1.2rem; font-weight:700;">+</span>
+    </div>
+  </div>
   <div class="title" id="topBarTitle"></div>
   <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
 </div>
@@ -99,8 +107,41 @@
   </div>
 </div>
 
+<!-- MODAL NẠP ONYX -->
+<div class="modal-overlay" id="rechargeOnyxModal">
+  <div class="modal-box" style="max-width: 500px;">
+    <h3 style="display:flex; align-items:center; gap:10px;">⚫ Nạp Onyx</h3>
+    <div style="margin-bottom:16px;">
+      <label style="display:block; font-size:0.9rem; color:var(--text-muted); margin-bottom:6px;">Tài khoản</label>
+      <input type="text" id="rechargeUser" disabled style="width:100%; padding:10px 14px; background:rgba(0,0,0,0.2); border:1px solid var(--border-glass); border-radius:10px; color:var(--text-main); font-size:1rem;">
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="display:block; font-size:0.9rem; color:var(--text-muted); margin-bottom:6px;">Mã thẻ</label>
+      <input type="text" id="cardCodeInput" placeholder="Nhập mã thẻ 16 số" maxlength="16" style="width:100%; padding:12px 16px; background:rgba(0,0,0,0.2); border:1px solid var(--border-glass); border-radius:10px; color:var(--text-main); font-size:1rem; outline:none; text-transform:uppercase; letter-spacing:2px; font-family:monospace; font-size:1.1rem;">
+    </div>
+    <button class="btn-save" style="width:100%; padding:12px; font-size:1rem;" onclick="redeemCard()">Xác Nhận</button>
+    <div id="cardRedeemMsg" style="margin-top:12px; text-align:center; font-size:0.95rem;"></div>
+    
+    <!-- Bảng giá -->
+    <div style="margin-top:20px; border-top:1px solid var(--border-glass); padding-top:16px;">
+      <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px; text-align:center; font-weight:600;">💰 BẢNG GIÁ QUY ĐỔI</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.85rem;">
+        <div style="display:flex; justify-content:space-between; padding:6px 12px; background:rgba(255,255,255,0.03); border-radius:6px;"><span>5.000đ</span><span style="color:var(--accent-cyan); font-weight:600;">10 Onyx</span></div>
+        <div style="display:flex; justify-content:space-between; padding:6px 12px; background:rgba(255,255,255,0.03); border-radius:6px;"><span>10.000đ</span><span style="color:var(--accent-cyan); font-weight:600;">20 Onyx</span></div>
+        <div style="display:flex; justify-content:space-between; padding:6px 12px; background:rgba(255,255,255,0.03); border-radius:6px;"><span>20.000đ</span><span style="color:var(--accent-cyan); font-weight:600;">40 Onyx</span></div>
+        <div style="display:flex; justify-content:space-between; padding:6px 12px; background:rgba(255,255,255,0.03); border-radius:6px;"><span>50.000đ</span><span style="color:var(--accent-cyan); font-weight:600;">102 Onyx</span></div>
+        <div style="display:flex; justify-content:space-between; padding:6px 12px; background:rgba(255,255,255,0.03); border-radius:6px;"><span>100.000đ</span><span style="color:var(--accent-cyan); font-weight:600;">204 Onyx</span></div>
+        <div style="display:flex; justify-content:space-between; padding:6px 12px; background:rgba(255,255,255,0.03); border-radius:6px;"><span>200.000đ</span><span style="color:var(--accent-cyan); font-weight:600;">408 Onyx</span></div>
+        <div style="display:flex; justify-content:space-between; padding:6px 12px; background:rgba(255,255,255,0.03); border-radius:6px; grid-column:span 2;"><span>500.000đ</span><span style="color:var(--accent-cyan); font-weight:600;">1020 Onyx</span></div>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-cancel" onclick="closeModal('rechargeOnyxModal')">Đóng</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODALS -->
-<!-- ERROR MODAL ĐÃ SỬA -->
 <div class="modal-overlay" id="errorModal">
   <div class="modal-box">
     <div class="error-icon" id="modalIcon">✅</div>

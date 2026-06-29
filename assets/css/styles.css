@@ -228,6 +228,30 @@ body {
   box-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
 }
 
+/* ================= ONYX DISPLAY ================= */
+#onyxDisplay {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.05);
+  padding: 4px 12px 4px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+#onyxDisplay:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--accent-cyan);
+}
+
+#onyxBalance {
+  font-weight: 700;
+  color: var(--accent-cyan);
+  min-width: 20px;
+}
+
 /* ================= MAIN CONTENT ================= */
 #mainContent {
   display: none;
@@ -732,7 +756,75 @@ body {
   color: var(--text-dark);
 }
 
-/* Modals */
+/* ================= RECHARGE ONYX MODAL ================= */
+#rechargeOnyxModal .modal-box {
+  max-width: 500px;
+}
+
+#cardCodeInput {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: monospace;
+  font-size: 1.1rem;
+}
+
+#cardCodeInput:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
+}
+
+#cardCodeInput::placeholder {
+  letter-spacing: 0px;
+  font-family: 'Outfit', sans-serif;
+  text-transform: none;
+}
+
+/* ================= CARD LIST ================= */
+#cardListContainer .log-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  gap: 12px;
+  border-radius: 8px;
+  transition: background var(--transition-fast);
+}
+
+#cardListContainer .log-item:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+#cardListContainer .log-item:last-child {
+  border-bottom: none;
+}
+
+#cardListContainer .log-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+#cardListContainer .log-time {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* ================= CREATE CARD RESULT ================= */
+#createCardResult {
+  animation: fadeIn 0.4s ease;
+}
+
+#newCardCode {
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  word-break: break-all;
+}
+
+/* ================= MODALS ================= */
 .modal-overlay { 
   display: none; 
   position: fixed; 
@@ -798,7 +890,7 @@ body {
 
 .error-msg {
   text-align: center;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -1056,6 +1148,11 @@ canvas { background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); box
     font-size: 0.95rem;
   }
   
+  #onyxDisplay {
+    font-size: 0.9rem;
+    padding: 3px 10px 3px 6px;
+  }
+  
   .admin-header {
     flex-direction: column;
     align-items: flex-start;
@@ -1134,6 +1231,14 @@ canvas { background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); box
   .bt-state-group {
     justify-content: center;
   }
+  
+  #rechargeOnyxModal .modal-box {
+    padding: 20px;
+  }
+  
+  #rechargeOnyxModal .modal-box .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1199,5 +1304,14 @@ canvas { background: rgba(0,0,0,0.4); border: 1px solid var(--border-glass); box
   
   .modal-box h3 {
     font-size: 1.2rem;
+  }
+  
+  #onyxDisplay {
+    font-size: 0.8rem;
+    padding: 2px 8px 2px 4px;
+  }
+  
+  #onyxBalance {
+    font-size: 0.9rem;
   }
 }

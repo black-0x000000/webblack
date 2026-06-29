@@ -39,6 +39,8 @@
         <button class="tab-btn" onclick="switchTab('tabChangePw', event)">🔑 Đổi mật khẩu</button>
         <button class="tab-btn" id="tabLogBtn" onclick="switchTab('tabLog', event)" style="display:none;">📋 Log</button>
         <button class="tab-btn" id="tabNotifyBtn" onclick="switchTab('tabNotify', event)">🔔 Thông Báo</button>
+        <!-- TAB TẠO THẺ - CHỈ OWNER -->
+        <button class="tab-btn" id="tabCreateCardBtn" onclick="switchTab('tabCreateCard', event)" style="display:none;">🃏 Tạo Thẻ</button>
       </div>
 
       <div class="tab-panel active" id="tabManage">
@@ -47,7 +49,7 @@
         <div id="myAccountCard" class="my-account-card"></div>
         <div class="sub-title">Tài khoản người dùng bạn quản lý</div>
         <table class="user-table" id="userListTable">
-          <thead><tr><th>Tên đăng nhập</th><th>Loại</th><th>Thời gian còn lại</th><th>Thao tác</th></tr></thead>
+          <thead><tr><th>Tên đăng nhập</th><th>Loại</th><th>Thời gian còn lại</th><th>Onyx</th><th>Thao tác</th></tr></thead>
           <tbody id="userListBody"></tbody>
         </table>
       </div>
@@ -118,6 +120,41 @@
           <div class="empty-msg">Chưa có yêu cầu nạp thời gian.</div>
         </div>
       </div>
+
+      <!-- TAB TẠO THẺ - CHỈ OWNER -->
+      <div class="tab-panel" id="tabCreateCard">
+        <div class="section-title">🃏 Tạo thẻ Onyx</div>
+        <div class="create-form" style="max-width:500px;">
+          <div class="form-group">
+            <label>Giá thẻ (VNĐ)</label>
+            <select id="cardPrice" style="width:100%; padding:12px 16px; background:rgba(0,0,0,0.2); border:1px solid var(--border-glass); border-radius:10px; color:var(--text-main); font-size:1rem; outline:none;">
+              <option value="5000">5.000đ → 10 Onyx</option>
+              <option value="10000">10.000đ → 20 Onyx</option>
+              <option value="20000">20.000đ → 40 Onyx</option>
+              <option value="50000">50.000đ → 102 Onyx</option>
+              <option value="100000">100.000đ → 204 Onyx</option>
+              <option value="200000">200.000đ → 408 Onyx</option>
+              <option value="500000">500.000đ → 1020 Onyx</option>
+            </select>
+          </div>
+          <button class="btn-create" style="width:100%;" onclick="createCard()">🃏 Tạo thẻ</button>
+          <div id="createCardResult" style="margin-top:16px; display:none; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:10px; padding:16px; text-align:center;">
+            <div style="color:var(--accent-green); font-weight:700; font-size:1.1rem; margin-bottom:8px;">✅ Tạo thẻ thành công</div>
+            <div style="color:var(--text-muted); font-size:0.9rem;">Mã thẻ: <span id="newCardCode" style="color:var(--accent-cyan); font-weight:700; font-family:monospace; font-size:1.2rem; letter-spacing:2px;"></span></div>
+            <div style="color:var(--text-muted); font-size:0.9rem;">Giá tiền: <span id="newCardPrice" style="color:var(--accent-green); font-weight:600;"></span></div>
+            <div style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">⏳ Hết hạn sau 24 giờ</div>
+          </div>
+          <div id="createCardMsg" style="margin-top:12px; text-align:center;"></div>
+          
+          <!-- Danh sách thẻ đã tạo -->
+          <div style="margin-top:24px; border-top:1px solid var(--border-glass); padding-top:16px;">
+            <div class="sub-title">📋 Danh sách thẻ đã tạo</div>
+            <div id="cardListContainer" class="log-container" style="max-height:300px;">
+              <div class="empty-msg">Chưa có thẻ nào được tạo.</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -161,7 +198,6 @@
   </div>
 </div>
 
-<!-- ERROR MODAL ĐÃ SỬA -->
 <div class="modal-overlay" id="errorModal">
   <div class="modal-box">
     <div class="error-icon" id="modalIcon">✅</div>

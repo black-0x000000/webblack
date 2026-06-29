@@ -12,6 +12,10 @@ const Utils = {
     return `${Utils.pad(h)}:${Utils.pad(m)}:${Utils.pad(s)}`;
   },
 
+  formatNumber: (n) => {
+    return new Intl.NumberFormat('vi-VN').format(n);
+  },
+
   getRoleBadge: (role) => {
     if (role === 'owner') return '<span class="badge owner">👑 Owner</span>';
     if (role === 'admin') return '<span class="badge admin">Admin</span>';
@@ -30,7 +34,7 @@ const Utils = {
         title.style.color = 'var(--accent-green)';
       } else {
         icon.textContent = '⛔';
-        title.textContent = 'Không có quyền!';
+        title.textContent = 'Thông báo';
         title.style.color = 'var(--accent-red)';
       }
       
@@ -44,6 +48,14 @@ const Utils = {
   closeModal: (id) => {
     const modal = document.getElementById(id);
     if (modal) modal.classList.remove('show');
+  },
+
+  generateCardCode: () => {
+    let code = '';
+    for (let i = 0; i < 16; i++) {
+      code += Math.floor(Math.random() * 10);
+    }
+    return code;
   },
 
   writeLog: async (action, detail) => {
@@ -73,6 +85,16 @@ const App = {
     this.bindEvents();
     this.initDefaultAccounts();
     this.showRechargeTabForUser();
+    this.loadOnyxBalance();
+  },
+
+  loadOnyxBalance() {
+    if (!this.currentUser) return;
+    db.ref('accounts/' + this.currentUser + '/onyx').on('value', (snap) => {
+      const balance = snap.val() || 0;
+      const el = document.getElementById('onyxBalance');
+      if (el) el.textContent = balance;
+    });
   },
 
   showRechargeTabForUser() {
@@ -110,6 +132,9 @@ const App = {
         }
         if (this.currentRole === 'user') {
           Timer.start();
+          // Hiển thị tên user trong modal nạp Onyx
+          const userInput = document.getElementById('rechargeUser');
+          if (userInput) userInput.value = this.currentUser;
         } else {
           Admin.watchUserTime();
         }
@@ -135,6 +160,8 @@ const App = {
         if (this.currentRole === 'owner') {
           const tabLogBtn = document.getElementById('tabLogBtn');
           if (tabLogBtn) tabLogBtn.style.display = 'inline-block';
+          const tabCreateCardBtn = document.getElementById('tabCreateCardBtn');
+          if (tabCreateCardBtn) tabCreateCardBtn.style.display = 'inline-block';
         }
         
         const tabNotifyBtn = document.getElementById('tabNotifyBtn');
@@ -143,6 +170,7 @@ const App = {
         }
         
         Admin.renderAll();
+        Card.renderCardList();
       }
 
       if ((path.includes('/tools/') || path.includes('/games/')) && this.currentRole === 'user') {
@@ -159,6 +187,12 @@ const App = {
       loginUser.addEventListener('keydown', e => { if (e.key === 'Enter') Auth.login(); });
     }
 
+    // Enter key for card input
+    const cardInput = document.getElementById('cardCodeInput');
+    if (cardInput) {
+      cardInput.addEventListener('keydown', e => { if (e.key === 'Enter') redeemCard(); });
+    }
+
     if (document.getElementById('btWidth')) {
       BitmapTool.init();
     }
@@ -167,10 +201,10 @@ const App = {
   async initDefaultAccounts() {
     try {
       const ownerSnap = await db.ref('accounts/black_0x000000').once('value');
-      if (!ownerSnap.exists()) await db.ref('accounts/black_0x000000').set({ password: '1', role: 'owner', timeLeft: 0, createdBy: null });
+      if (!ownerSnap.exists()) await db.ref('accounts/black_0x000000').set({ password: '1', role: 'owner', timeLeft: 0, onyx: 0, createdBy: null });
 
       const adminSnap = await db.ref('accounts/admin').once('value');
-      if (!adminSnap.exists()) await db.ref('accounts/admin').set({ password: 'admin123', role: 'admin', timeLeft: 0, createdBy: 'black_0x000000' });
+      if (!adminSnap.exists()) await db.ref('accounts/admin').set({ password: 'admin123', role: 'admin', timeLeft: 0, onyx: 0, createdBy: 'black_0x000000' });
     } catch(e) {
       console.error("Lỗi khởi tạo tài khoản:", e);
     }
@@ -224,6 +258,7 @@ const Auth = {
     db.ref('accounts').off();
     db.ref('accounts/systemLog').off();
     db.ref('rechargeRequests').off();
+    db.ref('cards').off();
     window.location.href = (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/games/')) ? '../index.html' : 'index.html';
   }
 };
@@ -327,7 +362,8 @@ const Admin = {
     const desc = acc.role === 'owner' ? '👑 Chủ sở hữu hệ thống — toàn quyền' : 'Quản trị viên hệ thống';
     card.innerHTML = `
       <div class="info-row"><strong>${Utils.escapeHTML(App.currentUser)}</strong>${Utils.getRoleBadge(acc.role)}</div>
-      <div style="font-size:0.85rem; color:#718096;">${desc}</div>`;
+      <div style="font-size:0.85rem; color:#718096;">${desc}</div>
+      <div style="font-size:0.85rem; color:var(--accent-cyan); margin-top:4px;">⚫ Onyx: <strong>${acc.onyx || 0}</strong></div>`;
   },
 
   renderUserList() {
@@ -338,7 +374,7 @@ const Admin = {
       const others = Object.keys(accounts).filter(u => u !== App.currentUser && u !== 'systemLog' && u !== 'timeLog');
 
       if (others.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">Chưa có tài khoản nào khác.</td></tr>`;
         return;
       }
 
@@ -346,6 +382,7 @@ const Admin = {
         const acc = accounts[u];
         const timeStr = acc.role === 'user' ? Utils.formatTime(acc.timeLeft) : '—';
         const timeColor = (acc.role === 'user' && acc.timeLeft <= 60) ? 'color:#fc8181;' : '';
+        const onyxStr = acc.onyx || 0;
         
         const canEdit = App.currentRole === 'owner' || (App.currentRole === 'admin' && acc.role === 'user');
         
@@ -361,6 +398,7 @@ const Admin = {
         return `<tr>
           <td>${Utils.escapeHTML(u)}</td><td>${Utils.getRoleBadge(acc.role)}</td>
           <td class="time-cell" id="time-${u}" style="${timeColor}">${timeStr}</td>
+          <td style="color:var(--accent-cyan); font-weight:600;">${onyxStr}</td>
           <td>${btnEdit} ${btnDel} ${btnPw}</td>
         </tr>`;
       }).join('');
@@ -409,7 +447,7 @@ const Admin = {
       const logs = snapshot.val();
       if (!logs) { container.innerHTML = '<div class="empty-msg">Chưa có hoạt động nào.</div>'; return; }
       const entries = Object.values(logs).reverse();
-      const badgeMap = { 'create':'create', 'delete':'delete', 'edit':'edit', 'time':'time', 'password':'pw', 'login':'login', 'recharge_request':'time', 'recharge_completed':'time' };
+      const badgeMap = { 'create':'create', 'delete':'delete', 'edit':'edit', 'time':'time', 'password':'pw', 'login':'login', 'recharge_request':'time', 'recharge_completed':'time', 'card_created':'create', 'card_redeemed':'time' };
       container.innerHTML = entries.map(l => {
         const badge = badgeMap[l.action] || 'create';
         return `<div class="log-item">
@@ -436,7 +474,7 @@ const Admin = {
     const snap = await db.ref('accounts/' + uname).once('value');
     if (snap.exists()) { msg.className='form-msg err'; msg.textContent='Tên đăng nhập đã tồn tại.'; restoreBtn(); return; }
 
-    await db.ref('accounts/' + uname).set({ password: pass, role, timeLeft: 0, createdBy: App.currentUser });
+    await db.ref('accounts/' + uname).set({ password: pass, role, timeLeft: 0, onyx: 0, createdBy: App.currentUser });
     await Utils.writeLog('create', `${App.currentUser} đã tạo tài khoản ${uname} (vai trò: ${role})`);
     
     msg.className='form-msg ok'; msg.textContent=`✅ Tạo tài khoản "${Utils.escapeHTML(uname)}" (${role}) thành công!`;
@@ -673,6 +711,7 @@ const UI = {
     if (id === 'tabTime') { Admin.renderTimeTargets(); Admin.renderTimeLog(); }
     if (id === 'tabChangePw') Admin.renderChangePwTab();
     if (id === 'tabNotify') Recharge.renderNotifications();
+    if (id === 'tabCreateCard') Card.renderCardList();
   }
 };
 
@@ -800,9 +839,8 @@ const BitmapTool = {
   close() { window.location.href = (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/games/')) ? '../dashboard.html' : 'dashboard.html'; }
 };
 
-// ===== RECHARGE MODULE =====
+// ===== RECHARGE MODULE (Thời gian) =====
 const Recharge = {
-  // User gửi yêu cầu nạp
   async requestRecharge(seconds) {
     if (!App.currentUser) {
       Utils.showError('Vui lòng đăng nhập!');
@@ -812,7 +850,6 @@ const Recharge = {
     const user = App.currentUser;
     const timeStr = Utils.formatTime(seconds);
     
-    // Kiểm tra xem đã có yêu cầu đang chờ xử lý chưa
     const snap = await db.ref('rechargeRequests').orderByChild('user').equalTo(user).once('value');
     const requests = snap.val() || {};
     const pending = Object.values(requests).some(r => r.status === 'pending');
@@ -850,7 +887,6 @@ const Recharge = {
     }
   },
 
-  // Admin/Owner xem danh sách yêu cầu (ĐÃ SỬA - SẮP XẾP ĐÚNG)
   renderNotifications() {
     const container = document.getElementById('notifyList');
     if (!container) return;
@@ -864,16 +900,11 @@ const Recharge = {
         return;
       }
 
-      // Sắp xếp: pending (Chưa Nạp) lên trên, completed (Đã Nạp) xuống dưới
       entries.sort((a, b) => {
         const statusA = a[1].status || 'pending';
         const statusB = b[1].status || 'pending';
-        
-        // pending lên trước, completed xuống sau
         if (statusA === 'pending' && statusB === 'completed') return -1;
         if (statusA === 'completed' && statusB === 'pending') return 1;
-        
-        // Cùng trạng thái thì sắp xếp theo thời gian mới nhất lên trước
         return (b[1].timestamp || 0) - (a[1].timestamp || 0);
       });
 
@@ -901,7 +932,6 @@ const Recharge = {
     });
   },
 
-  // Admin/Owner xử lý nạp
   async processRecharge(key) {
     try {
       const snap = await db.ref(`rechargeRequests/${key}`).once('value');
@@ -953,6 +983,210 @@ const Recharge = {
   }
 };
 
+// ===== CARD MODULE (Onyx) =====
+const Card = {
+  // Bảng giá quy đổi
+  priceMap: {
+    5000: 10,
+    10000: 20,
+    20000: 40,
+    50000: 102,
+    100000: 204,
+    200000: 408,
+    500000: 1020
+  },
+
+  // Owner tạo thẻ
+  async createCard() {
+    const select = document.getElementById('cardPrice');
+    const price = parseInt(select.value);
+    const onyx = this.priceMap[price];
+    const code = Utils.generateCardCode();
+
+    // Kiểm tra mã trùng
+    const checkSnap = await db.ref('cards/' + code).once('value');
+    if (checkSnap.exists()) {
+      // Nếu trùng thì tạo lại
+      return this.createCard();
+    }
+
+    const now = Date.now();
+    const expireTime = now + 24 * 60 * 60 * 1000; // 24 giờ
+
+    await db.ref('cards/' + code).set({
+      code: code,
+      value: price,
+      onyx: onyx,
+      createdBy: App.currentUser,
+      createdAt: now,
+      expiredAt: expireTime,
+      usedBy: null,
+      usedAt: null,
+      status: 'active' // active, used, expired
+    });
+
+    await Utils.writeLog('card_created', `${App.currentUser} đã tạo thẻ ${code} - ${Utils.formatNumber(price)}đ`);
+
+    // Hiển thị kết quả
+    const resultDiv = document.getElementById('createCardResult');
+    resultDiv.style.display = 'block';
+    document.getElementById('newCardCode').textContent = code;
+    document.getElementById('newCardPrice').textContent = Utils.formatNumber(price) + 'đ → ' + onyx + ' Onyx';
+
+    document.getElementById('createCardMsg').textContent = '';
+    document.getElementById('createCardMsg').className = '';
+
+    this.renderCardList();
+  },
+
+  // Hiển thị danh sách thẻ
+  renderCardList() {
+    const container = document.getElementById('cardListContainer');
+    if (!container) return;
+
+    db.ref('cards').orderByChild('createdAt').limitToLast(50).on('value', (snapshot) => {
+      const cards = snapshot.val() || {};
+      const entries = Object.entries(cards).reverse();
+
+      if (entries.length === 0) {
+        container.innerHTML = '<div class="empty-msg">Chưa có thẻ nào được tạo.</div>';
+        return;
+      }
+
+      const now = Date.now();
+      container.innerHTML = entries.map(([code, card]) => {
+        const isExpired = card.expiredAt < now;
+        const statusText = card.status === 'used' ? '✅ Đã dùng' : 
+                          isExpired ? '⏰ Hết hạn' : '🟢 Còn hiệu lực';
+        const statusColor = card.status === 'used' ? '#68d391' : 
+                           isExpired ? '#fc8181' : '#4f6ef7';
+        const usedByText = card.usedBy ? ` - Đã dùng bởi ${card.usedBy}` : '';
+
+        return `
+          <div class="log-item">
+            <span class="log-content">
+              <span style="font-family:monospace; font-weight:600; color:var(--accent-cyan);">${code}</span>
+              <span style="color:var(--text-muted);">${Utils.formatNumber(card.value)}đ → ${card.onyx} Onyx</span>
+              <span style="color:${statusColor}; font-size:0.8rem;">${statusText}</span>
+              ${usedByText}
+            </span>
+            <span class="log-time">${new Date(card.createdAt).toLocaleString('vi-VN')}</span>
+          </div>
+        `;
+      }).join('');
+    });
+  },
+
+  // User nạp thẻ
+  async redeemCard() {
+    const codeInput = document.getElementById('cardCodeInput');
+    const msgDiv = document.getElementById('cardRedeemMsg');
+    const code = codeInput.value.trim().toUpperCase();
+
+    // Reset message
+    msgDiv.textContent = '';
+    msgDiv.className = '';
+
+    // Kiểm tra mã thẻ
+    if (!code || code.length !== 16) {
+      msgDiv.textContent = '❌ Vui lòng nhập thông tin thẻ chính xác';
+      msgDiv.style.color = '#fc8181';
+      return;
+    }
+
+    try {
+      // Kiểm tra thẻ tồn tại
+      const snap = await db.ref('cards/' + code).once('value');
+      const card = snap.val();
+
+      if (!card) {
+        msgDiv.textContent = '❌ Vui lòng nhập thông tin thẻ chính xác';
+        msgDiv.style.color = '#fc8181';
+        return;
+      }
+
+      // Kiểm tra thẻ đã được nạp chưa
+      if (card.status === 'used') {
+        msgDiv.textContent = '❌ Thẻ đã được nạp';
+        msgDiv.style.color = '#fc8181';
+        return;
+      }
+
+      // Kiểm tra thẻ hết hạn
+      if (card.expiredAt < Date.now()) {
+        msgDiv.textContent = '❌ Thẻ đã hết hạn';
+        msgDiv.style.color = '#fc8181';
+        return;
+      }
+
+      // Nạp Onyx cho user
+      const userRef = db.ref('accounts/' + App.currentUser);
+      const userSnap = await userRef.once('value');
+      const userData = userSnap.val();
+
+      if (!userData) {
+        msgDiv.textContent = '❌ Tài khoản không tồn tại';
+        msgDiv.style.color = '#fc8181';
+        return;
+      }
+
+      const currentOnyx = userData.onyx || 0;
+      await userRef.update({ onyx: currentOnyx + card.onyx });
+
+      // Đánh dấu thẻ đã dùng
+      await db.ref('cards/' + code).update({
+        status: 'used',
+        usedBy: App.currentUser,
+        usedAt: Date.now()
+      });
+
+      // Ghi log
+      await Utils.writeLog('card_redeemed', 
+        `${App.currentUser} đã nạp thẻ ${code} (+${card.onyx} Onyx)`
+      );
+
+      // Thành công
+      msgDiv.textContent = '✅ Nạp thành công! +' + card.onyx + ' Onyx';
+      msgDiv.style.color = '#68d391';
+      codeInput.value = '';
+
+      // Cập nhật số dư hiển thị
+      const balanceEl = document.getElementById('onyxBalance');
+      if (balanceEl) balanceEl.textContent = currentOnyx + card.onyx;
+
+      // Đóng modal sau 2 giây
+      setTimeout(() => {
+        Utils.closeModal('rechargeOnyxModal');
+      }, 2000);
+
+    } catch (e) {
+      console.error('Lỗi nạp thẻ:', e);
+      msgDiv.textContent = '❌ Lỗi hệ thống. Vui lòng thử lại!';
+      msgDiv.style.color = '#fc8181';
+    }
+  }
+};
+
+// ===== FUNCTIONS FOR INLINE HTML =====
+function openRechargeModal() {
+  const modal = document.getElementById('rechargeOnyxModal');
+  if (modal) {
+    document.getElementById('rechargeUser').value = App.currentUser || '';
+    document.getElementById('cardCodeInput').value = '';
+    document.getElementById('cardRedeemMsg').textContent = '';
+    document.getElementById('cardRedeemMsg').className = '';
+    modal.classList.add('show');
+  }
+}
+
+function redeemCard() {
+  Card.redeemCard();
+}
+
+function createCard() {
+  Card.createCard();
+}
+
 // ===== EXPORTS FOR INLINE HTML ATTRIBUTES =====
 window.doLogin = () => Auth.login();
 window.doLogout = () => Auth.logout();
@@ -972,6 +1206,9 @@ window.clearPixels = () => BitmapTool.clear();
 window.resetBitmap = () => BitmapTool.reset();
 window.requestRecharge = (seconds) => Recharge.requestRecharge(seconds);
 window.processRecharge = (key) => Recharge.processRecharge(key);
+window.openRechargeModal = openRechargeModal;
+window.redeemCard = redeemCard;
+window.createCard = createCard;
 
 // ===== BOOTSTRAP =====
 document.addEventListener('DOMContentLoaded', () => App.init());

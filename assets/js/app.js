@@ -18,7 +18,6 @@ const Utils = {
     return '<span class="badge user">User</span>';
   },
 
-  // HÀM showError ĐÃ ĐƯỢC SỬA
   showError: (message, isSuccess = false) => {
     const errModal = document.getElementById('errorModal');
     if (errModal) {
@@ -851,19 +850,32 @@ const Recharge = {
     }
   },
 
-  // Admin/Owner xem danh sách yêu cầu
+  // Admin/Owner xem danh sách yêu cầu (ĐÃ SỬA - SẮP XẾP ĐÚNG)
   renderNotifications() {
     const container = document.getElementById('notifyList');
     if (!container) return;
 
     db.ref('rechargeRequests').orderByChild('timestamp').on('value', (snapshot) => {
       const requests = snapshot.val() || {};
-      const entries = Object.entries(requests).reverse();
+      const entries = Object.entries(requests);
 
       if (entries.length === 0) {
         container.innerHTML = '<div class="empty-msg">Chưa có yêu cầu nạp thời gian.</div>';
         return;
       }
+
+      // Sắp xếp: pending (Chưa Nạp) lên trên, completed (Đã Nạp) xuống dưới
+      entries.sort((a, b) => {
+        const statusA = a[1].status || 'pending';
+        const statusB = b[1].status || 'pending';
+        
+        // pending lên trước, completed xuống sau
+        if (statusA === 'pending' && statusB === 'completed') return -1;
+        if (statusA === 'completed' && statusB === 'pending') return 1;
+        
+        // Cùng trạng thái thì sắp xếp theo thời gian mới nhất lên trước
+        return (b[1].timestamp || 0) - (a[1].timestamp || 0);
+      });
 
       container.innerHTML = entries.map(([key, req]) => {
         const statusClass = req.status === 'pending' ? 'pending' : 'completed';
@@ -928,7 +940,6 @@ const Recharge = {
         `${App.currentUser} đã nạp ${req.timeDisplay} cho ${req.user}`
       );
 
-      // ĐÃ SỬA: Thêm tham số true để hiển thị icon ✅
       Utils.showError('Đã nạp thời gian thành công!', true);
       
     } catch (e) {

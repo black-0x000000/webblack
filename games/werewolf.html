@@ -266,6 +266,7 @@
             flex-wrap: wrap;
             margin: 12px 0;
         }
+        .game-controls .btn { min-width: auto; flex: none; }
 
         .status-msg {
             padding: 12px 16px;
@@ -1335,8 +1336,12 @@
             this.isReady = newReady;
         },
 
+        // ===== START GAME - ĐÃ SỬA =====
         async startGame() {
-            if (!this.isHost) return;
+            if (!this.isHost) {
+                this.showStatus('gameStatusMsg', '⚠️ Chỉ chủ phòng mới có thể bắt đầu!', 'error');
+                return;
+            }
 
             const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
             const snap = await lobbyRef.once('value');
@@ -1344,9 +1349,19 @@
             if (!lobby) return;
 
             const players = Object.keys(lobby.players);
-            if (players.length < 5 || players.length > 10) return;
+            if (players.length < 5 || players.length > 10) {
+                this.showStatus('gameStatusMsg', `⚠️ Cần 5-10 người chơi! Hiện có ${players.length} người.`, 'error');
+                return;
+            }
 
-            // Assign roles
+            // Kiểm tra tất cả đã sẵn sàng chưa
+            const allReady = Object.values(lobby.players).every(p => p.ready);
+            if (!allReady) {
+                this.showStatus('gameStatusMsg', '⏳ Chờ mọi người sẵn sàng!', 'error');
+                return;
+            }
+
+            // Phân vai ngẫu nhiên
             const roles = this.assignRoles(players.length);
             const shuffled = this.shuffleArray(players);
             const assignments = {};
@@ -1355,6 +1370,7 @@
                 assignments[name] = roles[index % roles.length];
             });
 
+            // Cập nhật vai trò vào database
             const updates = {};
             Object.entries(assignments).forEach(([name, role]) => {
                 updates['players/' + name + '/role'] = role;
@@ -1375,7 +1391,15 @@
 
             await lobbyRef.update(updates);
 
+            this.showStatus('gameStatusMsg', '🎮 Game bắt đầu! Vai trò đã được phân phát.', 'success');
+
+            // Bắt đầu timer
             this.startPhaseTimer();
+
+            // Ẩn thông báo sau 3s
+            setTimeout(() => {
+                this.hideStatus('gameStatusMsg');
+            }, 3000);
         },
 
         assignRoles(playerCount) {

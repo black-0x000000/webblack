@@ -709,8 +709,9 @@
             this.lobbyListener = db.ref('gameLobbies/' + this.lobbyId).on('value', (snapshot) => {
                 const lobby = snapshot.val();
                 if (!lobby) {
-                    alert('Phòng đã bị xóa!');
-                    this.leaveLobby();
+                    // KHÔNG HIỆN ALERT, CHUYỂN THẲNG VỀ DASHBOARD
+                    this.lobbyId = null;
+                    window.location.href = '../dashboard.html';
                     return;
                 }
 

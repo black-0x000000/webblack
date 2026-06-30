@@ -1,1864 +1,1236 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐺 Ma Sói - Black</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='black'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="../assets/css/styles.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: #0d1117;
-            color: #e6edf3;
-            min-height: 100vh;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐺 Ma Sói - Black</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='black'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='white' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link rel="stylesheet" href="../assets/css/styles.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Outfit', sans-serif; background:#0d1117; color:#e6edf3; min-height:100vh; }
 
-        #topBar {
-            position: fixed;
-            top: 0; left: 0; right: 0; z-index: 100;
-            height: 60px;
-            background: rgba(22, 27, 38, 0.85);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
-        }
-        #topBar .btn-back {
-            padding: 8px 16px;
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #94a3b8;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 0.9rem;
-        }
-        #topBar .btn-back:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #f8fafc;
-        }
-        #topBar .title { font-size: 1.1rem; font-weight: 700; color: #f8fafc; }
-        #topBar .btn-logout {
-            padding: 8px 20px;
-            background: rgba(244, 63, 94, 0.1);
-            border: 1px solid rgba(244, 63, 94, 0.2);
-            color: #f43f5e;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        #topBar .btn-logout:hover { background: #f43f5e; color: #fff; }
-        #topBar #timerDisplay { display: none; }
+  #wwTopBar {
+    position:fixed; top:0; left:0; right:0; z-index:100; height:60px;
+    background:rgba(22,27,38,0.85); backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    display:flex; align-items:center; justify-content:space-between; padding:0 16px;
+  }
+  #wwTopBar .btn-back {
+    padding:8px 16px; background:transparent; border:1px solid rgba(255,255,255,0.1);
+    color:#94a3b8; border-radius:8px; font-weight:600; cursor:pointer; font-size:0.9rem;
+  }
+  #wwTopBar .btn-back:hover { background:rgba(255,255,255,0.05); color:#f8fafc; }
+  #wwTopBar .title { font-size:1.1rem; font-weight:700; color:#f8fafc; }
+  #wwTopBar .btn-logout {
+    padding:8px 20px; background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.2);
+    color:#f43f5e; border-radius:8px; font-weight:600; cursor:pointer;
+  }
+  #wwTopBar .btn-logout:hover { background:#f43f5e; color:#fff; }
 
-        .container {
-            display: flex;
-            height: calc(100vh - 60px);
-            padding-top: 60px;
-            background: #0d1117;
-        }
-        .main {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-        }
+  .ww-container { display:flex; min-height:calc(100vh - 60px); padding-top:60px; background:#0d1117; }
+  .ww-main { flex:1; padding:24px; display:flex; flex-direction:column; align-items:center; }
 
-        /* LOBBY SELECTOR */
-        #lobbySelector {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            width: 100%;
-            max-width: 500px;
-            margin-top: 40px;
-        }
-        #lobbySelector h1 { font-size: 2.5rem; color: #f8fafc; }
-        #lobbySelector .subtitle { color: #94a3b8; font-size: 1.1rem; }
+  #lobbySelector { display:flex; flex-direction:column; align-items:center; gap:20px; width:100%; max-width:500px; margin-top:40px; }
+  #lobbySelector h1 { font-size:2.5rem; }
+  #lobbySelector .subtitle { color:#94a3b8; font-size:1.1rem; }
 
-        .btn-group {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
-            width: 100%;
-        }
-        .btn {
-            padding: 14px 36px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            min-width: 160px;
-            flex: 1;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #00f0ff, #3b82f6);
-            color: #0f172a;
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 240, 255, 0.3); }
-        .btn-secondary {
-            background: rgba(22, 27, 38, 0.65);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #f8fafc;
-        }
-        .btn-secondary:hover { background: rgba(30, 37, 51, 0.85); transform: translateY(-2px); }
-        .btn-danger { background: #f43f5e; color: #fff; }
-        .btn-danger:hover { background: #e06060; }
-        .btn-success { background: #10b981; color: #0f172a; }
-        .btn-success:hover { background: #059669; }
-        .btn-cancel {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #94a3b8;
-            padding: 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 8px;
-            font-weight: 600;
-        }
-        .btn-cancel:hover { background: rgba(255, 255, 255, 0.05); }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+  .btn-group { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; width:100%; }
+  .btn { padding:14px 36px; border:none; border-radius:12px; font-size:1rem; font-weight:700; cursor:pointer; min-width:160px; flex:1; transition:0.2s; }
+  .btn-primary { background:linear-gradient(135deg,#00f0ff,#3b82f6); color:#0f172a; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(0,240,255,0.3); }
+  .btn-secondary { background:rgba(22,27,38,0.65); border:1px solid rgba(255,255,255,0.08); color:#f8fafc; }
+  .btn-secondary:hover { background:rgba(30,37,51,0.85); }
+  .btn-danger { background:#f43f5e; color:#fff; }
+  .btn-success { background:#10b981; color:#0f172a; }
+  .btn:disabled { opacity:0.4; cursor:not-allowed; transform:none !important; }
+  .btn-cancel { background:transparent; border:1px solid rgba(255,255,255,0.08); color:#94a3b8; padding:12px; border-radius:10px; cursor:pointer; width:100%; margin-top:8px; font-weight:600; }
 
-        .form-group {
-            margin-bottom: 16px;
-            width: 100%;
-        }
-        .form-group label {
-            display: block;
-            color: #94a3b8;
-            margin-bottom: 6px;
-            font-size: 0.9rem;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 12px 16px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            color: #f8fafc;
-            font-size: 1rem;
-            outline: none;
-        }
-        .form-group input:focus {
-            border-color: #00f0ff;
-            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
-        }
-        .join-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .join-row input {
-            flex: 1;
-            padding: 12px 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            color: #f8fafc;
-            font-size: 1.1rem;
-            text-align: center;
-            letter-spacing: 4px;
-            font-family: monospace;
-            outline: none;
-            text-transform: uppercase;
-            min-width: 150px;
-        }
-        .join-row input:focus { border-color: #00f0ff; }
+  .form-group { margin-bottom:16px; width:100%; }
+  .form-group label { display:block; color:#94a3b8; margin-bottom:6px; font-size:0.9rem; }
+  .form-group input {
+    width:100%; padding:12px 16px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08);
+    border-radius:10px; color:#f8fafc; font-size:1rem; outline:none;
+  }
+  .form-group input:focus { border-color:#00f0ff; }
+  .join-row { display:flex; gap:12px; flex-wrap:wrap; }
+  .join-row input { flex:1; text-align:center; letter-spacing:4px; font-family:monospace; text-transform:uppercase; min-width:150px; }
 
-        .hidden { display: none !important; }
+  .hidden { display:none !important; }
 
-        /* GAME CONTENT */
-        #gameContent {
-            display: none;
-            width: 100%;
-            max-width: 900px;
-        }
-        #gameContent.active { display: block; }
+  #gameContent { display:none; width:100%; max-width:900px; }
+  #gameContent.active { display:block; }
 
-        .game-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .game-title { font-size: 1.3rem; font-weight: 700; }
-        .lobby-id {
-            font-family: monospace;
-            font-size: 1.2rem;
-            color: #00f0ff;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 4px 16px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            letter-spacing: 3px;
-        }
-        .game-status {
-            padding: 4px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        .game-status.waiting { background: rgba(234, 179, 8, 0.2); color: #eab308; }
-        .game-status.playing { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .game-status.ended { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+  .game-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08); flex-wrap:wrap; gap:8px; }
+  .game-title { font-size:1.3rem; font-weight:700; }
+  .lobby-id { font-family:monospace; font-size:1.2rem; color:#00f0ff; background:rgba(0,0,0,0.3); padding:4px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); letter-spacing:3px; }
+  .game-status { padding:4px 16px; border-radius:20px; font-size:0.8rem; font-weight:600; }
+  .game-status.waiting { background:rgba(234,179,8,0.2); color:#eab308; }
+  .game-status.playing { background:rgba(16,185,129,0.2); color:#10b981; }
+  .game-status.ended { background:rgba(244,63,94,0.2); color:#f43f5e; }
 
-        .phase-display {
-            text-align: center;
-            padding: 16px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            margin-bottom: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .phase-display .phase-icon { font-size: 2rem; }
-        .phase-display .phase-name { font-size: 1.2rem; font-weight: 700; }
-        .phase-display .phase-timer { font-size: 1.5rem; font-weight: 700; color: #00f0ff; }
+  .phase-display { text-align:center; padding:16px; background:rgba(0,0,0,0.3); border-radius:12px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.08); }
+  .phase-display .phase-icon { font-size:2rem; }
+  .phase-display .phase-name { font-size:1.2rem; font-weight:700; }
+  .phase-display .phase-timer { font-size:1.5rem; font-weight:700; color:#00f0ff; }
 
-        .players-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
-            margin: 16px 0;
-        }
-        .player-card {
-            background: rgba(22, 27, 38, 0.65);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 12px 16px;
-            text-align: center;
-            transition: all 0.3s;
-        }
-        .player-card .p-name { font-weight: 600; font-size: 0.95rem; }
-        .player-card .p-role { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
-        .player-card.host { border-color: #00f0ff; }
-        .player-card.dead { opacity: 0.4; border-color: #f43f5e; }
-        .player-card .host-badge {
-            font-size: 0.65rem;
-            color: #00f0ff;
-            background: rgba(0, 240, 255, 0.1);
-            padding: 2px 8px;
-            border-radius: 10px;
-        }
+  .players-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px; margin:16px 0; }
+  .player-card { background:rgba(22,27,38,0.65); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 16px; text-align:center; }
+  .player-card .p-name { font-weight:600; font-size:0.95rem; }
+  .player-card .p-role { font-size:0.8rem; color:#94a3b8; margin-top:4px; }
+  .player-card.host { border-color:#00f0ff; }
+  .player-card.dead { opacity:0.4; border-color:#f43f5e; }
+  .player-card .host-badge { font-size:0.65rem; color:#00f0ff; background:rgba(0,240,255,0.1); padding:2px 8px; border-radius:10px; }
 
-        .game-controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin: 12px 0;
-        }
+  .game-controls { display:flex; gap:10px; flex-wrap:wrap; margin:12px 0; }
 
-        .status-msg {
-            padding: 12px 16px;
-            border-radius: 10px;
-            text-align: center;
-            margin-top: 12px;
-            font-weight: 600;
-        }
-        .status-msg.success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .status-msg.error { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3); }
-        .status-msg.info { background: rgba(0, 240, 255, 0.1); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.2); }
+  .status-msg { padding:12px 16px; border-radius:10px; text-align:center; margin-top:12px; font-weight:600; }
+  .status-msg.success { background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); }
+  .status-msg.error { background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3); }
 
-        /* ROLE REVEAL */
-        .role-reveal {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            text-align: center;
-            border: 1px solid #00f0ff;
-            display: none;
-        }
-        .role-reveal.active { display: block; }
-        .role-reveal .role-name { font-size: 1.5rem; font-weight: 700; color: #00f0ff; }
+  .role-reveal { background:rgba(0,0,0,0.4); border-radius:12px; padding:16px; margin-bottom:12px; text-align:center; border:1px solid #00f0ff; display:none; }
+  .role-reveal.active { display:block; }
+  .role-reveal .role-name { font-size:1.5rem; font-weight:700; color:#00f0ff; }
 
-        /* NIGHT ACTION */
-        .night-action-area {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 12px;
-            border: 1px solid #8b5cf6;
-            display: none;
-        }
-        .night-action-area.active { display: block; }
-        .night-action-area .action-label { font-weight: 600; color: #94a3b8; margin-bottom: 8px; }
-        .night-action-area .action-options { display: flex; flex-wrap: wrap; gap: 8px; }
-        .night-action-btn {
-            padding: 8px 16px;
-            background: rgba(22, 27, 38, 0.65);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            color: #f8fafc;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .night-action-btn:hover:not(:disabled) { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.2); }
-        .night-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .action-area { background:rgba(0,0,0,0.3); border-radius:12px; padding:16px; margin-top:12px; border:1px solid #8b5cf6; display:none; }
+  .action-area.active { display:block; }
+  .action-area .action-label { font-weight:600; color:#94a3b8; margin-bottom:8px; }
+  .action-options { display:flex; flex-wrap:wrap; gap:8px; }
+  .action-btn { padding:8px 16px; background:rgba(22,27,38,0.65); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#f8fafc; cursor:pointer; }
+  .action-btn:hover:not(:disabled) { border-color:#8b5cf6; background:rgba(139,92,246,0.2); }
+  .action-btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .action-btn.selected { border-color:#10b981; background:rgba(16,185,129,0.2); }
 
-        /* VOTING */
-        .voting-area {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            display: none;
-        }
-        .voting-area.active { display: block; }
-        .vote-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .vote-btn {
-            padding: 8px 16px;
-            background: rgba(22, 27, 38, 0.65);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            color: #f8fafc;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .vote-btn:hover:not(:disabled) { border-color: #00f0ff; background: rgba(0, 240, 255, 0.1); }
-        .vote-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .vote-btn.selected { border-color: #10b981; background: rgba(16, 185, 129, 0.2); }
+  .voting-area { background:rgba(0,0,0,0.3); border-radius:12px; padding:16px; margin-top:12px; border:1px solid rgba(255,255,255,0.08); display:none; }
+  .voting-area.active { display:block; }
 
-        /* RESULT BANNER */
-        .result-banner {
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            margin: 12px 0;
-            border: 2px solid #00f0ff;
-            display: none;
-        }
-        .result-banner.active { display: block; }
-        .result-banner .result-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
-        .result-banner .result-title.win { color: #10b981; }
-        .result-banner .result-title.lose { color: #f43f5e; }
-        .result-banner .result-detail { color: #94a3b8; font-size: 0.95rem; }
+  .result-banner { background:rgba(0,0,0,0.5); border-radius:12px; padding:20px; text-align:center; margin:12px 0; border:2px solid #00f0ff; display:none; }
+  .result-banner.active { display:block; }
+  .result-banner .result-title { font-size:1.8rem; font-weight:800; margin-bottom:8px; }
+  .result-banner .result-title.win { color:#10b981; }
+  .result-banner .result-title.lose { color:#f43f5e; }
+  .result-banner .result-detail { color:#94a3b8; font-size:0.95rem; }
 
-        /* GAME LOG */
-        .game-log {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-top: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            max-height: 180px;
-            overflow-y: auto;
-        }
-        .game-log .log-title { font-weight: 700; color: #94a3b8; margin-bottom: 8px; font-size: 0.9rem; }
-        .game-log .log-entry {
-            font-size: 0.85rem;
-            color: #cbd5e1;
-            padding: 4px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        }
-        .game-log .log-entry:last-child { border-bottom: none; }
+  .game-log { background:rgba(0,0,0,0.3); border-radius:12px; padding:12px 16px; margin-top:12px; border:1px solid rgba(255,255,255,0.08); max-height:180px; overflow-y:auto; }
+  .game-log .log-title { font-weight:700; color:#94a3b8; margin-bottom:8px; font-size:0.9rem; }
+  .game-log .log-entry { font-size:0.85rem; color:#cbd5e1; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .game-log .log-entry:last-child { border-bottom:none; }
 
-        .sidebar {
-            width: 320px;
-            background: rgba(22, 27, 38, 0.65);
-            border-left: 1px solid rgba(255, 255, 255, 0.08);
-            display: none;
-            flex-direction: column;
-            padding: 16px;
-            height: 100%;
-        }
-        .sidebar.active { display: flex; }
+  .sidebar { width:320px; background:rgba(22,27,38,0.65); border-left:1px solid rgba(255,255,255,0.08); display:none; flex-direction:column; padding:16px; }
+  .sidebar.active { display:flex; }
+  .chat-container { flex:1; display:flex; flex-direction:column; background:rgba(0,0,0,0.2); border-radius:12px; border:1px solid rgba(255,255,255,0.08); overflow:hidden; min-height:200px; }
+  .chat-messages { flex:1; padding:12px; overflow-y:auto; max-height:400px; }
+  .chat-message { padding:6px 10px; margin-bottom:4px; border-radius:8px; font-size:0.9rem; }
+  .chat-message .msg-user { font-weight:600; color:#00f0ff; }
+  .chat-message .msg-time { font-size:0.7rem; color:#94a3b8; margin-left:8px; }
+  .chat-input-area { display:flex; gap:8px; padding:10px; border-top:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.2); }
+  .chat-input-area input { flex:1; padding:8px 14px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#f8fafc; outline:none; }
+  .chat-input-area button { padding:8px 16px; background:#3b82f6; border:none; border-radius:8px; color:#fff; font-weight:600; cursor:pointer; }
 
-        .chat-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            overflow: hidden;
-            min-height: 200px;
-        }
-        .chat-messages {
-            flex: 1;
-            padding: 12px;
-            overflow-y: auto;
-            max-height: 400px;
-        }
-        .chat-message {
-            padding: 6px 10px;
-            margin-bottom: 4px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-        }
-        .chat-message .msg-user { font-weight: 600; color: #00f0ff; }
-        .chat-message .msg-time { font-size: 0.7rem; color: #94a3b8; margin-left: 8px; }
-        .chat-input-area {
-            display: flex;
-            gap: 8px;
-            padding: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(0, 0, 0, 0.2);
-        }
-        .chat-input-area input {
-            flex: 1;
-            padding: 8px 14px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            color: #f8fafc;
-            outline: none;
-        }
-        .chat-input-area input:focus { border-color: #00f0ff; }
-        .chat-input-area button {
-            padding: 8px 16px;
-            background: #3b82f6;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-        }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:999; }
+  .modal-overlay.hidden { display:none; }
+  .modal-box { background:#1a1f2e; border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:40px 48px; max-width:420px; width:90%; text-align:center; box-shadow:0 25px 50px rgba(0,0,0,0.5); }
+  .modal-icon { font-size:3rem; margin-bottom:12px; }
+  .modal-title { font-size:1.5rem; font-weight:700; margin-bottom:8px; }
+  .modal-desc { color:#94a3b8; font-size:1rem; margin-bottom:24px; }
+  .modal-actions { display:flex; gap:12px; justify-content:center; }
+  .btn-modal { padding:12px 32px; border:none; border-radius:12px; font-size:1rem; font-weight:700; cursor:pointer; min-width:100px; }
+  .btn-modal-cancel { background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.08); }
+  .btn-modal-confirm { background:#f43f5e; color:#fff; }
 
-        /* MODAL */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            animation: fadeIn 0.2s ease;
-        }
-        .modal-overlay.hidden { display: none; }
-
-        .modal-box {
-            background: #1a1f2e;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 40px 48px;
-            max-width: 420px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-        }
-        .modal-icon { font-size: 3rem; margin-bottom: 12px; }
-        .modal-title { font-size: 1.5rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
-        .modal-desc { color: #94a3b8; font-size: 1rem; margin-bottom: 24px; }
-
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-        }
-        .btn-modal {
-            padding: 12px 32px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            min-width: 100px;
-        }
-        .btn-modal-cancel {
-            background: rgba(255, 255, 255, 0.05);
-            color: #94a3b8;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .btn-modal-cancel:hover { background: rgba(255, 255, 255, 0.1); }
-        .btn-modal-confirm {
-            background: #f43f5e;
-            color: #fff;
-        }
-        .btn-modal-confirm:hover {
-            background: #e06060;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(244, 63, 94, 0.3);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .sidebar { width: 100%; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.08); max-height: 300px; }
-            .btn { min-width: 120px; padding: 12px 20px; }
-            .join-row { flex-direction: column; }
-            .join-row input { width: 100%; }
-            .modal-box { padding: 30px 24px; }
-            #topBar .btn-back { padding: 6px 12px; font-size: 0.8rem; }
-        }
-    </style>
+  @media (max-width:768px) {
+    .ww-container { flex-direction:column; }
+    .sidebar { width:100%; border-left:none; border-top:1px solid rgba(255,255,255,0.08); max-height:300px; }
+    .btn { min-width:120px; padding:12px 20px; }
+    .join-row { flex-direction:column; }
+    .modal-box { padding:30px 24px; }
+  }
+</style>
 </head>
 <body>
 
-<!-- TOP BAR -->
-<div id="topBar">
-    <button class="btn-back" id="btnBack">← Thoát</button>
-    <div id="timerDisplay">⏱ 00:00:00</div>
-    <div class="title">🐺 Ma Sói</div>
-    <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+<div id="wwTopBar">
+  <button class="btn-back" id="wwBtnBack">← Thoát</button>
+  <div class="title">🐺 Ma Sói</div>
+  <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
 </div>
 
-<div class="container">
-    <!-- MAIN CONTENT -->
-    <div class="main">
-        <!-- LOBBY SELECTOR -->
-        <div id="lobbySelector">
-            <h1>🐺 Ma Sói</h1>
-            <p class="subtitle">Chọn hành động để bắt đầu</p>
-            <div class="btn-group">
-                <button class="btn btn-primary" id="btnShowCreate">🆕 Tạo Phòng</button>
-                <button class="btn btn-secondary" id="btnShowJoin">🔗 Tham gia phòng</button>
-            </div>
+<div class="ww-container">
+  <div class="ww-main">
+    <div id="lobbySelector">
+      <h1>🐺 Ma Sói</h1>
+      <p class="subtitle">Chọn hành động để bắt đầu</p>
+      <div class="btn-group">
+        <button class="btn btn-primary" id="wwBtnShowCreate">🆕 Tạo Phòng</button>
+        <button class="btn btn-secondary" id="wwBtnShowJoin">🔗 Tham gia phòng</button>
+      </div>
 
-            <div id="createForm" class="hidden" style="width:100%;">
-                <div class="form-group">
-                    <label>Tên phòng</label>
-                    <input type="text" id="lobbyNameInput" placeholder="Nhập tên phòng...">
-                </div>
-                <button class="btn btn-success" id="btnCreate" style="width:100%;">✅ Tạo phòng</button>
-                <button class="btn-cancel" id="btnCancelCreate">❌ Hủy</button>
-                <div id="createStatus" class="status-msg hidden"></div>
-            </div>
-
-            <div id="joinForm" class="hidden" style="width:100%;">
-                <div class="form-group">
-                    <label>Nhập mã phòng (6 ký tự)</label>
-                    <div class="join-row">
-                        <input type="text" id="lobbyIdInput" placeholder="VD: A1B2C3" maxlength="6">
-                        <button class="btn btn-primary" id="btnJoin" style="flex:0;">🔗 Tham gia</button>
-                    </div>
-                </div>
-                <button class="btn-cancel" id="btnCancelJoin">❌ Hủy</button>
-                <div id="joinStatus" class="status-msg hidden"></div>
-            </div>
+      <div id="wwCreateForm" class="hidden" style="width:100%;">
+        <div class="form-group">
+          <label>Tên phòng</label>
+          <input type="text" id="wwLobbyNameInput" placeholder="Nhập tên phòng...">
         </div>
+        <button class="btn btn-success" id="wwBtnCreate" style="width:100%;">✅ Tạo phòng</button>
+        <button class="btn-cancel" id="wwBtnCancelCreate">❌ Hủy</button>
+        <div id="wwCreateStatus" class="status-msg hidden"></div>
+      </div>
 
-        <!-- GAME CONTENT -->
-        <div id="gameContent">
-            <div class="game-header">
-                <div class="game-title" id="lobbyName">Phòng chơi</div>
-                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                    <span class="lobby-id" id="lobbyIdDisplay">🆔 ------</span>
-                    <span class="game-status waiting" id="gameStatus">⏳ Đang chờ</span>
-                </div>
-            </div>
-
-            <!-- PHASE DISPLAY -->
-            <div class="phase-display" id="phaseDisplay">
-                <div class="phase-icon" id="phaseIcon">⏳</div>
-                <div class="phase-name" id="phaseName">Đang chờ người chơi</div>
-                <div class="phase-timer" id="phaseTimer">--:--</div>
-            </div>
-
-            <!-- RESULT BANNER -->
-            <div class="result-banner" id="resultBanner">
-                <div class="result-title" id="resultTitle">🏆 Chiến thắng!</div>
-                <div class="result-detail" id="resultDetail">Phe Dân Làng đã chiến thắng!</div>
-            </div>
-
-            <!-- ROLE REVEAL -->
-            <div class="role-reveal" id="roleReveal">
-                <div style="font-size:0.9rem; color:#94a3b8;">Vai trò của bạn là</div>
-                <div class="role-name" id="myRole">🐺 Ma Sói</div>
-                <div style="font-size:0.85rem; color:#94a3b8; margin-top:8px;" id="roleDescription">Mỗi đêm cùng đồng bọn chọn một nạn nhân để giết</div>
-            </div>
-
-            <!-- NIGHT ACTION -->
-            <div class="night-action-area" id="nightActionArea">
-                <div class="action-label" id="nightActionLabel">🌙 Chọn hành động ban đêm:</div>
-                <div class="action-options" id="nightActionOptions"></div>
-                <div id="nightActionResult" style="margin-top:8px; font-size:0.9rem; color:#94a3b8;"></div>
-            </div>
-
-            <!-- HUNTER REVENGE (shown when hunter just died) -->
-            <div class="night-action-area" id="hunterRevengeArea">
-                <div class="action-label">🏹 Bạn đã bị giết! Hãy bắn một người trước khi chết hẳn:</div>
-                <div class="action-options" id="hunterRevengeOptions"></div>
-                <div id="hunterRevengeResult" style="margin-top:8px; font-size:0.9rem; color:#94a3b8;"></div>
-            </div>
-
-            <!-- PLAYERS -->
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <span style="color:#94a3b8; font-size:0.9rem;">Người chơi: <span id="playerCount">0</span>/10</span>
-            </div>
-            <div class="players-grid" id="playersGrid"></div>
-
-            <!-- CONTROLS -->
-            <div class="game-controls">
-                <button class="btn btn-secondary btn-sm" id="btnReady">✅ Sẵn sàng</button>
-                <button class="btn btn-success btn-sm" id="btnStart" disabled>▶ Bắt đầu</button>
-                <button class="btn btn-danger btn-sm" id="btnLeave">🚪 Rời phòng</button>
-            </div>
-
-            <!-- VOTING -->
-            <div class="voting-area" id="votingArea">
-                <div style="font-weight:700; margin-bottom:8px;">🗳️ Bạn vote ai là sói?</div>
-                <div class="vote-options" id="voteOptions"></div>
-                <div id="voteResult" style="margin-top:10px; font-size:0.9rem; color:#94a3b8;"></div>
-            </div>
-
-            <!-- GAME LOG -->
-            <div class="game-log" id="gameLogArea">
-                <div class="log-title">📜 Diễn biến ván chơi</div>
-                <div id="gameLogList"><div class="log-entry" style="color:#64748b;">Chưa có sự kiện nào</div></div>
-            </div>
-
-            <div id="gameStatusMsg" class="status-msg hidden"></div>
+      <div id="wwJoinForm" class="hidden" style="width:100%;">
+        <div class="form-group">
+          <label>Nhập mã phòng (6 ký tự)</label>
+          <div class="join-row">
+            <input type="text" id="wwLobbyIdInput" placeholder="VD: A1B2C3" maxlength="6">
+            <button class="btn btn-primary" id="wwBtnJoin" style="flex:0;">🔗 Tham gia</button>
+          </div>
         </div>
+        <button class="btn-cancel" id="wwBtnCancelJoin">❌ Hủy</button>
+        <div id="wwJoinStatus" class="status-msg hidden"></div>
+      </div>
     </div>
 
-    <!-- SIDEBAR - CHAT -->
-    <div class="sidebar" id="gameSidebar">
-        <div style="font-weight:600; color:#94a3b8; margin-bottom:8px;">💬 Trò chuyện</div>
-        <div class="chat-container">
-            <div class="chat-messages" id="chatMessages">
-                <div style="color:#94a3b8; text-align:center; padding:20px; font-size:0.9rem;">Chưa có tin nhắn</div>
-            </div>
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="Nhập tin nhắn...">
-                <button id="btnSendChat">Gửi</button>
-            </div>
+    <div id="gameContent">
+      <div class="game-header">
+        <div class="game-title" id="wwLobbyName">Phòng chơi</div>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <span class="lobby-id" id="wwLobbyIdDisplay">🆔 ------</span>
+          <span class="game-status waiting" id="wwGameStatus">⏳ Đang chờ</span>
         </div>
+      </div>
+
+      <div class="phase-display" id="wwPhaseDisplay">
+        <div class="phase-icon" id="wwPhaseIcon">⏳</div>
+        <div class="phase-name" id="wwPhaseName">Đang chờ người chơi</div>
+        <div class="phase-timer" id="wwPhaseTimer">--:--</div>
+      </div>
+
+      <div class="result-banner" id="wwResultBanner">
+        <div class="result-title" id="wwResultTitle">🏆 Chiến thắng!</div>
+        <div class="result-detail" id="wwResultDetail"></div>
+      </div>
+
+      <div class="role-reveal" id="wwRoleReveal">
+        <div style="font-size:0.9rem; color:#94a3b8;">Vai trò của bạn là</div>
+        <div class="role-name" id="wwMyRole">🐺 Ma Sói</div>
+        <div style="font-size:0.85rem; color:#94a3b8; margin-top:8px;" id="wwRoleDesc"></div>
+      </div>
+
+      <div class="action-area" id="wwNightArea">
+        <div class="action-label" id="wwNightLabel">🌙 Chọn hành động ban đêm:</div>
+        <div class="action-options" id="wwNightOptions"></div>
+        <div id="wwNightResult" style="margin-top:8px; font-size:0.9rem; color:#94a3b8;"></div>
+      </div>
+
+      <div class="action-area" id="wwHunterArea">
+        <div class="action-label">🏹 Bạn vừa bị giết! Hãy bắn một người trước khi chết hẳn:</div>
+        <div class="action-options" id="wwHunterOptions"></div>
+        <div id="wwHunterResult" style="margin-top:8px; font-size:0.9rem; color:#94a3b8;"></div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="color:#94a3b8; font-size:0.9rem;">Người chơi: <span id="wwPlayerCount">0</span>/10</span>
+      </div>
+      <div class="players-grid" id="wwPlayersGrid"></div>
+
+      <div class="game-controls">
+        <button class="btn btn-secondary" id="wwBtnReady">✅ Sẵn sàng</button>
+        <button class="btn btn-success" id="wwBtnStart" disabled>▶ Bắt đầu</button>
+        <button class="btn btn-danger" id="wwBtnLeave">🚪 Rời phòng</button>
+      </div>
+
+      <div class="voting-area" id="wwVotingArea">
+        <div style="font-weight:700; margin-bottom:8px;">🗳️ Bạn vote ai bị treo cổ?</div>
+        <div class="action-options" id="wwVoteOptions"></div>
+        <div id="wwVoteResult" style="margin-top:10px; font-size:0.9rem; color:#94a3b8;"></div>
+      </div>
+
+      <div class="game-log" id="wwLogArea">
+        <div class="log-title">📜 Diễn biến ván chơi</div>
+        <div id="wwLogList"><div class="log-entry" style="color:#64748b;">Chưa có sự kiện nào</div></div>
+      </div>
+
+      <div id="wwStatusMsg" class="status-msg hidden"></div>
     </div>
+  </div>
+
+  <div class="sidebar" id="wwSidebar">
+    <div style="font-weight:600; color:#94a3b8; margin-bottom:8px;">💬 Trò chuyện</div>
+    <div class="chat-container">
+      <div class="chat-messages" id="wwChatMessages">
+        <div style="color:#94a3b8; text-align:center; padding:20px; font-size:0.9rem;">Chưa có tin nhắn</div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="wwChatInput" placeholder="Nhập tin nhắn...">
+        <button id="wwBtnSendChat">Gửi</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- MODAL XÁC NHẬN RỜI PHÒNG -->
-<div id="leaveModal" class="modal-overlay hidden">
-    <div class="modal-box">
-        <div class="modal-icon">🚪</div>
-        <h3 class="modal-title">Rời phòng?</h3>
-        <p class="modal-desc">Bạn có chắc chắn muốn rời phòng chơi?</p>
-        <div class="modal-actions">
-            <button class="btn-modal btn-modal-cancel" id="btnStay">Ở lại</button>
-            <button class="btn-modal btn-modal-confirm" id="btnConfirmLeave">Rời</button>
-        </div>
+<div id="wwLeaveModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-icon">🚪</div>
+    <h3 class="modal-title">Rời phòng?</h3>
+    <p class="modal-desc">Bạn có chắc chắn muốn rời phòng chơi?</p>
+    <div class="modal-actions">
+      <button class="btn-modal btn-modal-cancel" id="wwBtnStay">Ở lại</button>
+      <button class="btn-modal btn-modal-confirm" id="wwBtnConfirmLeave">Rời</button>
     </div>
+  </div>
 </div>
 
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/app.js"></script>
 <script>
-    // ===== WEREWOLF GAME - FULL LOGIC =====
-    const Game = {
-        currentUser: null,
-        currentRole: null,
-        lobbyId: null,
-        isHost: false,
-        isReady: false,
-        timerInterval: null,
-        lobbyListener: null,
-        chatListener: null,
-        myRole: null,
-        nightActionDone: false,
-        hunterRevengeDone: false,
-        lastSeenLogCount: 0,
-        phaseAdvancing: false,
+(function () {
+  "use strict";
 
-        // ROLE CONFIG
-        roles: {
-            werewolf: { name: 'Ma Sói', emoji: '🐺', desc: 'Mỗi đêm cùng đồng bọn chọn một nạn nhân để giết' },
-            seer: { name: 'Tiên Tri', emoji: '🔮', desc: 'Mỗi đêm có thể kiểm tra danh tính của một người chơi' },
-            witch: { name: 'Phù Thủy', emoji: '🧙', desc: 'Có thuốc cứu và thuốc độc, mỗi loại dùng một lần' },
-            guard: { name: 'Bảo Vệ', emoji: '🛡️', desc: 'Mỗi đêm bảo vệ một người khỏi bị sói giết' },
-            hunter: { name: 'Thợ Săn', emoji: '🏹', desc: 'Khi chết có thể bắn chết thêm một người' },
-            villager: { name: 'Dân Làng', emoji: '👤', desc: 'Không có khả năng đặc biệt' }
-        },
+  var ROLES = {
+    werewolf: { name: 'Ma Sói', emoji: '🐺', desc: 'Mỗi đêm cùng đồng bọn chọn một nạn nhân để giết.' },
+    seer:     { name: 'Tiên Tri', emoji: '🔮', desc: 'Mỗi đêm có thể kiểm tra danh tính của một người chơi.' },
+    witch:    { name: 'Phù Thủy', emoji: '🧙', desc: 'Có 1 thuốc cứu và 1 thuốc độc, mỗi loại chỉ dùng được 1 lần trong cả ván.' },
+    guard:    { name: 'Bảo Vệ', emoji: '🛡️', desc: 'Mỗi đêm bảo vệ một người khỏi bị sói giết (không được bảo vệ trùng người 2 đêm liên tiếp).' },
+    hunter:   { name: 'Thợ Săn', emoji: '🏹', desc: 'Khi chết (vì bất kỳ lý do gì) được bắn chết thêm một người.' },
+    villager: { name: 'Dân Làng', emoji: '👤', desc: 'Không có khả năng đặc biệt, dùng lý luận để tìm sói.' }
+  };
 
-        init() {
-            this.currentUser = sessionStorage.getItem('currentUser');
-            this.currentRole = sessionStorage.getItem('currentRole');
+  function esc(s) { return Utils.escapeHTML(s); }
 
-            if (!this.currentUser) {
-                window.location.href = '../index.html';
-                return;
-            }
+  var Game = {
+    lobbyId: null,
+    isHost: false,
+    isReady: false,
+    timerInterval: null,
+    lobbyListener: null,
+    chatListener: null,
+    nightActionDone: false,
+    hunterDone: false,
+    phaseAdvancing: false,
 
-            this.bindEvents();
+    get user() { return App.currentUser; },
 
-            const params = new URLSearchParams(window.location.search);
-            const lobbyId = params.get('lobby');
-            if (lobbyId) {
-                this.lobbyId = lobbyId;
-                this.joinLobbyById(lobbyId);
-            }
-        },
+    init: function () {
+      if (!App.currentUser) {
+        window.location.href = '../index.html';
+        return;
+      }
+      this.bindEvents();
 
-        bindEvents() {
-            document.getElementById('btnBack').addEventListener('click', () => {
-                window.location.href = '../dashboard.html';
-            });
+      var params = new URLSearchParams(window.location.search);
+      var lobbyId = params.get('lobby');
+      if (lobbyId) {
+        this.joinLobbyById(lobbyId);
+      }
+    },
 
-            document.getElementById('btnShowCreate').addEventListener('click', () => this.showCreateForm());
-            document.getElementById('btnShowJoin').addEventListener('click', () => this.showJoinForm());
-            document.getElementById('btnCancelCreate').addEventListener('click', () => this.hideCreateForm());
-            document.getElementById('btnCancelJoin').addEventListener('click', () => this.hideJoinForm());
-            document.getElementById('btnCreate').addEventListener('click', () => this.createLobby());
-            document.getElementById('btnJoin').addEventListener('click', () => this.joinLobby());
-            document.getElementById('btnReady').addEventListener('click', () => this.toggleReady());
-            document.getElementById('btnStart').addEventListener('click', () => this.startGame());
-            document.getElementById('btnLeave').addEventListener('click', () => this.leaveLobby());
-            document.getElementById('btnSendChat').addEventListener('click', () => this.sendChat());
+    bindEvents: function () {
+      var self = this;
+      document.getElementById('wwBtnBack').addEventListener('click', function () {
+        window.location.href = '../dashboard.html';
+      });
+      document.getElementById('wwBtnShowCreate').addEventListener('click', function () { self.showCreateForm(); });
+      document.getElementById('wwBtnShowJoin').addEventListener('click', function () { self.showJoinForm(); });
+      document.getElementById('wwBtnCancelCreate').addEventListener('click', function () { self.hideCreateForm(); });
+      document.getElementById('wwBtnCancelJoin').addEventListener('click', function () { self.hideJoinForm(); });
+      document.getElementById('wwBtnCreate').addEventListener('click', function () { self.createLobby(); });
+      document.getElementById('wwBtnJoin').addEventListener('click', function () { self.joinLobby(); });
+      document.getElementById('wwBtnReady').addEventListener('click', function () { self.toggleReady(); });
+      document.getElementById('wwBtnStart').addEventListener('click', function () { self.startGame(); });
+      document.getElementById('wwBtnLeave').addEventListener('click', function () { self.leaveLobby(); });
+      document.getElementById('wwBtnSendChat').addEventListener('click', function () { self.sendChat(); });
+      document.getElementById('wwBtnStay').addEventListener('click', function () { self.cancelLeave(); });
+      document.getElementById('wwBtnConfirmLeave').addEventListener('click', function () { self.confirmLeave(); });
+      document.getElementById('wwLeaveModal').addEventListener('click', function (e) {
+        if (e.target.id === 'wwLeaveModal') self.cancelLeave();
+      });
+      document.getElementById('wwLobbyNameInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') self.createLobby(); });
+      document.getElementById('wwLobbyIdInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') self.joinLobby(); });
+      document.getElementById('wwChatInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') self.sendChat(); });
+    },
 
-            document.getElementById('btnStay').addEventListener('click', () => this.cancelLeave());
-            document.getElementById('btnConfirmLeave').addEventListener('click', () => this.confirmLeave());
-            document.getElementById('leaveModal').addEventListener('click', (e) => {
-                if (e.target === document.getElementById('leaveModal')) this.cancelLeave();
-            });
+    showCreateForm: function () {
+      document.getElementById('wwCreateForm').classList.remove('hidden');
+      document.getElementById('wwJoinForm').classList.add('hidden');
+      document.getElementById('wwCreateStatus').classList.add('hidden');
+    },
+    hideCreateForm: function () { document.getElementById('wwCreateForm').classList.add('hidden'); },
+    showJoinForm: function () {
+      document.getElementById('wwJoinForm').classList.remove('hidden');
+      document.getElementById('wwCreateForm').classList.add('hidden');
+      document.getElementById('wwJoinStatus').classList.add('hidden');
+    },
+    hideJoinForm: function () { document.getElementById('wwJoinForm').classList.add('hidden'); },
 
-            document.getElementById('lobbyNameInput').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') this.createLobby();
-            });
-            document.getElementById('lobbyIdInput').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') this.joinLobby();
-            });
-            document.getElementById('chatInput').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') this.sendChat();
-            });
-        },
+    generateLobbyId: function () {
+      var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      var id = '';
+      for (var i = 0; i < 6; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
+      return id;
+    },
 
-        showCreateForm() {
-            document.getElementById('createForm').classList.remove('hidden');
-            document.getElementById('joinForm').classList.add('hidden');
-            document.getElementById('createStatus').classList.add('hidden');
-            document.getElementById('lobbyNameInput').focus();
-        },
+    showStatus: function (id, msg, type) {
+      var el = document.getElementById(id);
+      el.textContent = msg;
+      el.className = 'status-msg ' + type;
+      el.classList.remove('hidden');
+    },
 
-        hideCreateForm() {
-            document.getElementById('createForm').classList.add('hidden');
-        },
+    checkPurchase: function () {
+      if (App.currentRole !== 'user') return Promise.resolve(true);
+      return db.ref('accounts/' + this.user + '/games/werewolf').once('value').then(function (snap) {
+        return !!snap.val();
+      });
+    },
 
-        showJoinForm() {
-            document.getElementById('joinForm').classList.remove('hidden');
-            document.getElementById('createForm').classList.add('hidden');
-            document.getElementById('joinStatus').classList.add('hidden');
-            document.getElementById('lobbyIdInput').focus();
-        },
+    createLobby: function () {
+      var self = this;
+      var nameInput = document.getElementById('wwLobbyNameInput');
+      var lobbyName = nameInput.value.trim() || ('Phòng của ' + this.user);
 
-        hideJoinForm() {
-            document.getElementById('joinForm').classList.add('hidden');
-        },
+      this.checkPurchase().then(function (ok) {
+        if (!ok) {
+          self.showStatus('wwCreateStatus', '❌ Bạn chưa mua game Ma Sói! Quay lại trang chủ để mua.', 'error');
+          return;
+        }
 
-        generateLobbyId() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let id = '';
-            for (let i = 0; i < 6; i++) {
-                id += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return id;
-        },
+        var lobbyId = self.generateLobbyId();
+        db.ref('gameLobbies/' + lobbyId).once('value').then(function (checkSnap) {
+          if (checkSnap.exists()) { self.createLobby(); return; }
 
-        showStatus(elementId, message, type) {
-            const el = document.getElementById(elementId);
-            el.textContent = message;
-            el.className = 'status-msg ' + type;
-            el.classList.remove('hidden');
-        },
+          var players = {};
+          players[self.user] = { role: null, alive: true, ready: false, isHost: true };
 
-        hideStatus(elementId) {
-            document.getElementById(elementId).classList.add('hidden');
-        },
+          var lobbyData = {
+            name: lobbyName,
+            host: self.user,
+            status: 'waiting',
+            phase: 'waiting',
+            phaseEndTime: null,
+            players: players,
+            nightKill: null,
+            nightSaved: false,
+            nightPoisonTarget: null,
+            votes: {},
+            chat: {},
+            createdAt: Date.now(),
+            startedAt: null,
+            currentRound: 0,
+            gameLog: [],
+            witchUsedSave: false,
+            witchUsedPoison: false,
+            protectedPlayer: null,
+            lastProtectedPlayer: null,
+            lastNightAction: null,
+            pendingHunterRevenge: null,
+            phaseLock: null
+          };
 
-        async createLobby() {
-            const nameInput = document.getElementById('lobbyNameInput');
-            const lobbyName = nameInput.value.trim() || 'Phòng của ' + this.currentUser;
-
-            if (this.currentRole === 'user') {
-                const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
-                if (!snap.val()) {
-                    this.showStatus('createStatus', '❌ Bạn chưa mua game Ma Sói! Quay lại trang chủ để mua.', 'error');
-                    return;
-                }
-            }
-
-            const lobbyId = this.generateLobbyId();
-            const checkSnap = await db.ref('gameLobbies/' + lobbyId).once('value');
-            if (checkSnap.exists()) {
-                this.createLobby();
-                return;
-            }
-
-            const lobbyData = {
-                name: lobbyName,
-                host: this.currentUser,
-                status: 'waiting',
-                phase: 'waiting',
-                phaseTimer: 0,
-                phaseEndTime: null,
-                players: {
-                    [this.currentUser]: {
-                        role: null,
-                        alive: true,
-                        ready: false,
-                        isHost: true
-                    }
-                },
-                nightKill: null,
-                votes: {},
-                chat: {},
-                createdAt: Date.now(),
-                startedAt: null,
-                endedAt: null,
-                currentRound: 0,
-                gameLog: [],
-                witchUsedSave: false,
-                witchUsedPoison: false,
-                protectedPlayer: null,
-                lastNightAction: null,
-                werewolfVotes: {},
-                pendingHunterRevenge: null,
-                phaseLock: null
-            };
-
-            await db.ref('gameLobbies/' + lobbyId).set(lobbyData);
-
-            this.lobbyId = lobbyId;
-            this.isHost = true;
+          db.ref('gameLobbies/' + lobbyId).set(lobbyData).then(function () {
+            self.lobbyId = lobbyId;
+            self.isHost = true;
             window.history.pushState({}, '', '?lobby=' + lobbyId);
+            self.showGameContent();
+            self.listenLobby();
+            self.showStatus('wwCreateStatus', '✅ Tạo phòng thành công! Mã phòng: ' + lobbyId, 'success');
+            setTimeout(function () { self.hideCreateForm(); document.getElementById('wwCreateStatus').classList.add('hidden'); }, 2000);
+          });
+        });
+      });
+    },
 
-            this.showGameContent();
-            this.listenLobby();
+    joinLobby: function () {
+      var input = document.getElementById('wwLobbyIdInput');
+      var lobbyId = input.value.trim().toUpperCase();
+      if (!lobbyId || lobbyId.length !== 6) {
+        this.showStatus('wwJoinStatus', '❌ Vui lòng nhập mã phòng 6 ký tự!', 'error');
+        return;
+      }
+      this.joinLobbyById(lobbyId);
+    },
 
-            this.showStatus('createStatus', '✅ Tạo phòng thành công! Mã phòng: ' + lobbyId, 'success');
+    joinLobbyById: function (lobbyId) {
+      var self = this;
+      db.ref('gameLobbies/' + lobbyId).once('value').then(function (lobbySnap) {
+        if (!lobbySnap.exists()) {
+          self.showStatus('wwJoinStatus', '❌ Không tìm thấy phòng với mã: ' + lobbyId, 'error');
+          return;
+        }
+        var lobby = lobbySnap.val();
+        if (lobby.status === 'ended') {
+          self.showStatus('wwJoinStatus', '❌ Phòng đã kết thúc!', 'error');
+          return;
+        }
+        var players = lobby.players || {};
+        var alreadyIn = !!players[self.user];
 
-            setTimeout(() => {
-                this.hideCreateForm();
-                this.hideStatus('createStatus');
-            }, 2000);
-        },
+        if (!alreadyIn && Object.keys(players).length >= 10) {
+          self.showStatus('wwJoinStatus', '❌ Phòng đã đầy! (Tối đa 10 người)', 'error');
+          return;
+        }
 
-        async joinLobby() {
-            const input = document.getElementById('lobbyIdInput');
-            const lobbyId = input.value.trim().toUpperCase();
+        self.checkPurchase().then(function (ok) {
+          if (!ok) {
+            self.showStatus('wwJoinStatus', '❌ Bạn chưa mua game Ma Sói! Quay lại trang chủ để mua.', 'error');
+            return;
+          }
 
-            if (!lobbyId || lobbyId.length !== 6) {
-                this.showStatus('joinStatus', '❌ Vui lòng nhập mã phòng 6 ký tự!', 'error');
-                return;
-            }
-
-            await this.joinLobbyById(lobbyId);
-        },
-
-        async joinLobbyById(lobbyId) {
-            const lobbySnap = await db.ref('gameLobbies/' + lobbyId).once('value');
-            if (!lobbySnap.exists()) {
-                this.showStatus('joinStatus', '❌ Không tìm thấy phòng với mã: ' + lobbyId, 'error');
-                return;
-            }
-
-            const lobby = lobbySnap.val();
-            if (lobby.status === 'ended') {
-                this.showStatus('joinStatus', '❌ Phòng đã kết thúc!', 'error');
-                return;
-            }
-
-            if (Object.keys(lobby.players).length >= 10 && !lobby.players[this.currentUser]) {
-                this.showStatus('joinStatus', '❌ Phòng đã đầy! (Tối đa 10 người)', 'error');
-                return;
-            }
-
-            if (this.currentRole === 'user') {
-                const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
-                if (!snap.val()) {
-                    this.showStatus('joinStatus', '❌ Bạn chưa mua game Ma Sói! Quay lại trang chủ để mua.', 'error');
-                    return;
-                }
-            }
-
-            if (!lobby.players[this.currentUser]) {
-                await db.ref('gameLobbies/' + lobbyId + '/players/' + this.currentUser).set({
-                    role: null,
-                    alive: true,
-                    ready: false,
-                    isHost: false
-                });
-            }
-
-            this.lobbyId = lobbyId;
-            this.isHost = (lobby.host === this.currentUser);
+          var proceed = function () {
+            self.lobbyId = lobbyId;
+            self.isHost = (lobby.host === self.user);
             window.history.pushState({}, '', '?lobby=' + lobbyId);
+            self.showGameContent();
+            self.listenLobby();
+            self.hideJoinForm();
+            document.getElementById('wwJoinStatus').classList.add('hidden');
+          };
 
-            this.showGameContent();
-            this.listenLobby();
+          if (!alreadyIn) {
+            db.ref('gameLobbies/' + lobbyId + '/players/' + self.user).set({
+              role: null, alive: true, ready: false, isHost: false
+            }).then(proceed);
+          } else {
+            proceed();
+          }
+        });
+      });
+    },
 
-            this.hideJoinForm();
-            this.hideStatus('joinStatus');
-        },
+    showGameContent: function () {
+      document.getElementById('lobbySelector').style.display = 'none';
+      document.getElementById('gameContent').classList.add('active');
+      document.getElementById('wwSidebar').classList.add('active');
+      document.getElementById('wwLobbyIdDisplay').textContent = '🆔 ' + this.lobbyId;
+    },
 
-        showGameContent() {
-            document.getElementById('lobbySelector').style.display = 'none';
-            document.getElementById('gameContent').classList.add('active');
-            document.getElementById('gameSidebar').classList.add('active');
-            document.getElementById('lobbyIdDisplay').textContent = '🆔 ' + this.lobbyId;
+    listenLobby: function () {
+      var self = this;
+      if (this.lobbyListener) this.lobbyListener();
+      this.lobbyListener = db.ref('gameLobbies/' + this.lobbyId).on('value', function (snapshot) {
+        var lobby = snapshot.val();
+        if (!lobby) {
+          self.lobbyId = null;
+          window.location.href = '../dashboard.html';
+          return;
+        }
+        self.isHost = (lobby.host === self.user);
+        document.getElementById('wwLobbyName').textContent = lobby.name || 'Phòng chơi';
 
-            db.ref('gameLobbies/' + this.lobbyId + '/name').once('value', (snap) => {
-                document.getElementById('lobbyName').textContent = snap.val() || 'Phòng chơi';
-            });
-        },
+        self.renderPlayers(lobby);
+        self.updateGameStatus(lobby);
+        self.updatePhase(lobby);
+        self.updateControls(lobby);
+        self.updateVoting(lobby);
+        self.updateNightActions(lobby);
+        self.updateHunterRevenge(lobby);
+        self.updateChat(lobby);
+        self.updateLog(lobby);
+        self.watchTimer(lobby);
+      });
+    },
 
-        listenLobby() {
-            if (this.lobbyListener) this.lobbyListener();
-            this.lobbyListener = db.ref('gameLobbies/' + this.lobbyId).on('value', (snapshot) => {
-                const lobby = snapshot.val();
-                if (!lobby) {
-                    this.lobbyId = null;
-                    window.location.href = '../dashboard.html';
-                    return;
-                }
+    renderPlayers: function (lobby) {
+      var grid = document.getElementById('wwPlayersGrid');
+      var players = lobby.players || {};
+      var names = Object.keys(players);
+      document.getElementById('wwPlayerCount').textContent = names.length;
 
-                this.isHost = (lobby.host === this.currentUser);
+      if (names.length === 0) {
+        grid.innerHTML = '<div style="grid-column:span 3; text-align:center; color:#94a3b8; padding:20px;">Chưa có người chơi</div>';
+        return;
+      }
 
-                this.renderPlayers(lobby);
-                this.updatePlayerCount(lobby);
-                this.updateGameStatus(lobby);
-                this.updatePhase(lobby);
-                this.updateControls(lobby);
-                this.updateVoting(lobby);
-                this.updateNightActions(lobby);
-                this.updateHunterRevenge(lobby);
-                this.updateResultBanner(lobby);
-                this.updateChat(lobby);
-                this.updateGameLog(lobby);
-                this.watchPhaseTimer(lobby);
-            });
-        },
+      var self = this;
+      grid.innerHTML = names.map(function (name) {
+        var data = players[name];
+        var isHost = data.isHost;
+        var isMe = name === self.user;
+        var isDead = !data.alive;
+        var displayRole = '❓';
+        if ((isMe && data.role) || (lobby.status === 'ended' && data.role)) {
+          var ri = ROLES[data.role];
+          displayRole = ri ? (ri.emoji + ' ' + ri.name) : '❓';
+        }
+        var html = '<div class="player-card ' + (isHost ? 'host' : '') + ' ' + (isDead ? 'dead' : '') + '">';
+        html += '<div class="p-name">' + (isMe ? '⭐ ' : '') + esc(name) + '</div>';
+        html += '<div class="p-role">' + displayRole + '</div>';
+        if (isHost) html += '<div class="host-badge">👑 Chủ phòng</div>';
+        if (data.ready) html += '<div style="color:#10b981; font-size:0.7rem;">✅ Sẵn sàng</div>';
+        html += '</div>';
+        return html;
+      }).join('');
+    },
 
-        // ===== RENDER =====
-        renderPlayers(lobby) {
-            const grid = document.getElementById('playersGrid');
-            const players = lobby.players || {};
+    updateGameStatus: function (lobby) {
+      var el = document.getElementById('wwGameStatus');
+      var map = { waiting: '⏳ Đang chờ', playing: '🔄 Đang chơi', ended: '🏁 Đã kết thúc' };
+      el.textContent = map[lobby.status] || lobby.status;
+      el.className = 'game-status ' + lobby.status;
+    },
 
-            if (Object.keys(players).length === 0) {
-                grid.innerHTML = '<div style="grid-column:span 3; text-align:center; color:#94a3b8; padding:20px;">Chưa có người chơi</div>';
-                return;
-            }
+    updatePhase: function (lobby) {
+      var icon = document.getElementById('wwPhaseIcon');
+      var name = document.getElementById('wwPhaseName');
+      var map = {
+        waiting: { icon: '⏳', name: 'Đang chờ người chơi' },
+        night: { icon: '🌙', name: '🌙 Ban đêm - Hãy làm nhiệm vụ của bạn' },
+        day: { icon: '☀️', name: '☀️ Ban ngày - Thảo luận' },
+        voting: { icon: '🗳️', name: '🗳️ Đang vote - Hãy bỏ phiếu!' },
+        ended: { icon: '🏁', name: '🏁 Trò chơi đã kết thúc' }
+      };
+      var p = map[lobby.phase] || map.waiting;
+      icon.textContent = p.icon;
+      name.textContent = p.name;
 
-            grid.innerHTML = Object.entries(players).map(([name, data]) => {
-                const isHost = data.isHost;
-                const isMe = name === this.currentUser;
-                const isDead = !data.alive;
-                const roleName = data.role ? this.roles[data.role]?.name || '❓' : '❓';
-                const roleEmoji = data.role ? this.roles[data.role]?.emoji || '❓' : '❓';
+      var roleReveal = document.getElementById('wwRoleReveal');
+      if (lobby.phase === 'waiting' || lobby.phase === 'ended') {
+        roleReveal.classList.remove('active');
+      } else if (lobby.players[this.user]) {
+        var myData = lobby.players[this.user];
+        if (myData.role) {
+          var ri = ROLES[myData.role];
+          roleReveal.classList.add('active');
+          document.getElementById('wwMyRole').textContent = (ri ? ri.emoji + ' ' + ri.name : myData.role);
+          document.getElementById('wwRoleDesc').textContent = ri ? ri.desc : '';
+        }
+      }
 
-                let displayRole = '❓';
-                if (isMe && data.role) {
-                    displayRole = roleEmoji + ' ' + roleName;
-                } else if (lobby.status === 'ended' && data.role) {
-                    displayRole = roleEmoji + ' ' + roleName;
-                }
+      var banner = document.getElementById('wwResultBanner');
+      if (lobby.status === 'ended') {
+        banner.classList.add('active');
+        var log = lobby.gameLog ? Object.values(lobby.gameLog) : [];
+        var winLog = null;
+        for (var i = 0; i < log.length; i++) { if (log[i].event === 'win') winLog = log[i]; }
+        var title = document.getElementById('wwResultTitle');
+        var detail = document.getElementById('wwResultDetail');
+        if (winLog) {
+          if (winLog.winner === 'werewolves') {
+            title.textContent = '🐺 Ma Sói chiến thắng!';
+            title.className = 'result-title lose';
+            detail.textContent = 'Số lượng Ma Sói còn lại đã bằng hoặc vượt số Dân Làng.';
+          } else {
+            title.textContent = '👨‍🌾 Dân Làng chiến thắng!';
+            title.className = 'result-title win';
+            detail.textContent = 'Toàn bộ Ma Sói đã bị tiêu diệt.';
+          }
+        }
+      } else {
+        banner.classList.remove('active');
+      }
+    },
 
-                return `
-                    <div class="player-card ${isHost ? 'host' : ''} ${isDead ? 'dead' : ''}">
-                        <div class="p-name">${isMe ? '⭐ ' : ''}${name}</div>
-                        <div class="p-role">${displayRole}</div>
-                        ${isHost ? '<div class="host-badge">👑 Chủ phòng</div>' : ''}
-                        ${data.ready ? '<div style="color:#10b981; font-size:0.7rem;">✅ Sẵn sàng</div>' : ''}
-                    </div>
-                `;
-            }).join('');
-        },
+    watchTimer: function (lobby) {
+      var self = this;
+      var timerEl = document.getElementById('wwPhaseTimer');
+      if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
 
-        updatePlayerCount(lobby) {
-            const count = Object.keys(lobby.players || {}).length;
-            document.getElementById('playerCount').textContent = count;
-        },
+      if (lobby.status !== 'playing' || !lobby.phaseEndTime) {
+        timerEl.textContent = '--:--';
+        return;
+      }
 
-        updateGameStatus(lobby) {
-            const el = document.getElementById('gameStatus');
-            const statusMap = {
-                'waiting': '⏳ Đang chờ',
-                'playing': '🔄 Đang chơi',
-                'ended': '🏁 Đã kết thúc'
-            };
-            el.textContent = statusMap[lobby.status] || lobby.status;
-            el.className = 'game-status ' + lobby.status;
-        },
+      var tick = function () {
+        var remainingMs = lobby.phaseEndTime - Date.now();
+        var remaining = Math.max(0, Math.ceil(remainingMs / 1000));
+        var mins = Math.floor(remaining / 60);
+        var secs = remaining % 60;
+        timerEl.textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+        if (remaining <= 0 && !self.phaseAdvancing) self.tryAdvancePhase();
+      };
+      tick();
+      this.timerInterval = setInterval(tick, 1000);
+    },
 
-        updatePhase(lobby) {
-            const icon = document.getElementById('phaseIcon');
-            const name = document.getElementById('phaseName');
+    // Any connected client can attempt to advance the phase; a Firebase transaction
+    // lock guarantees only one of them actually performs it. This keeps the game
+    // moving even if the host's tab is closed.
+    tryAdvancePhase: function () {
+      var self = this;
+      this.phaseAdvancing = true;
+      var lockRef = db.ref('gameLobbies/' + this.lobbyId + '/phaseLock');
+      lockRef.transaction(function (current) {
+        var now = Date.now();
+        if (current && now - current < 5000) return; // someone else handling it
+        return now;
+      }).then(function (result) {
+        if (result.committed) return self.nextPhase();
+      }).catch(function (e) {
+        console.error('Lỗi chuyển phase:', e);
+      }).then(function () {
+        self.phaseAdvancing = false;
+      });
+    },
 
-            const phaseMap = {
-                'waiting': { icon: '⏳', name: 'Đang chờ người chơi' },
-                'night': { icon: '🌙', name: '🌙 Ban đêm - Hãy làm nhiệm vụ của bạn' },
-                'day': { icon: '☀️', name: '☀️ Ban ngày - Thảo luận và vote' },
-                'voting': { icon: '🗳️', name: '🗳️ Đang vote - Hãy bỏ phiếu!' },
-                'ended': { icon: '🏁', name: '🏁 Trò chơi đã kết thúc' }
-            };
+    updateControls: function (lobby) {
+      var btnReady = document.getElementById('wwBtnReady');
+      var btnStart = document.getElementById('wwBtnStart');
+      var myData = lobby.players[this.user];
+      if (!myData) return;
 
-            const phase = phaseMap[lobby.phase] || phaseMap.waiting;
-            icon.textContent = phase.icon;
-            name.textContent = phase.name;
+      if (!myData.alive && lobby.status === 'playing') {
+        btnReady.disabled = true; btnStart.disabled = true; btnReady.textContent = '💀 Đã chết';
+        return;
+      }
 
-            // Role reveal
-            const roleReveal = document.getElementById('roleReveal');
-            const myRoleEl = document.getElementById('myRole');
-            const roleDesc = document.getElementById('roleDescription');
+      btnReady.disabled = false;
+      this.isReady = !!myData.ready;
+      btnReady.textContent = this.isReady ? '❌ Hủy sẵn sàng' : '✅ Sẵn sàng';
 
-            if (lobby.phase === 'waiting' || lobby.phase === 'ended') {
-                roleReveal.classList.remove('active');
-            } else if (lobby.players[this.currentUser]) {
-                const myData = lobby.players[this.currentUser];
-                if (myData.role) {
-                    this.myRole = myData.role;
-                    const roleInfo = this.roles[myData.role];
-                    roleReveal.classList.add('active');
-                    myRoleEl.textContent = (roleInfo?.emoji || '❓') + ' ' + (roleInfo?.name || myData.role);
-                    roleDesc.textContent = roleInfo?.desc || '';
-                }
-            }
+      if (this.isHost && lobby.status === 'waiting') {
+        var names = Object.keys(lobby.players);
+        var count = names.length;
+        var allReady = names.every(function (n) { return lobby.players[n].ready; });
+        if (count < 5 || count > 10) {
+          btnStart.textContent = '⚠️ Cần 5-10 người (' + count + '/10)';
+          btnStart.disabled = true;
+        } else if (!allReady) {
+          btnStart.textContent = '⏳ Chờ mọi người sẵn sàng';
+          btnStart.disabled = true;
+        } else {
+          btnStart.textContent = '▶ Bắt đầu';
+          btnStart.disabled = false;
+        }
+      } else {
+        btnStart.disabled = true;
+        btnStart.textContent = lobby.status === 'playing' ? '⏳ Đang chơi...' : (this.isHost ? '⏳ Đang chờ...' : '👑 Chờ chủ phòng bắt đầu');
+      }
 
-            // Result banner
-            const banner = document.getElementById('resultBanner');
-            if (lobby.status === 'ended') {
-                banner.classList.add('active');
-                const title = document.getElementById('resultTitle');
-                const detail = document.getElementById('resultDetail');
-                const log = lobby.gameLog ? Object.values(lobby.gameLog) : [];
-                const winLog = log.find(l => l.event === 'win');
-                if (winLog) {
-                    if (winLog.winner === 'werewolves') {
-                        title.textContent = '🐺 Ma Sói chiến thắng!';
-                        title.className = 'result-title lose';
-                        detail.textContent = 'Ma Sói đã tiêu diệt hết Dân Làng!';
-                    } else {
-                        title.textContent = '👨‍🌾 Dân Làng chiến thắng!';
-                        title.className = 'result-title win';
-                        detail.textContent = 'Dân Làng đã tiêu diệt hết Ma Sói!';
-                    }
-                }
-            } else {
-                banner.classList.remove('active');
-            }
-        },
+      btnReady.style.display = (lobby.status === 'playing') ? 'none' : 'block';
+    },
 
-        // Drives the countdown display locally from an absolute end time stored in Firebase,
-        // so the timer stays correct even if the page reloads. Any connected client (not just
-        // the host) can trigger the phase advance once time is up, guarded by a transaction
-        // lock so only one client actually executes it.
-        watchPhaseTimer(lobby) {
-            const timerEl = document.getElementById('phaseTimer');
+    updateVoting: function (lobby) {
+      var area = document.getElementById('wwVotingArea');
+      var myData = lobby.players[this.user];
+      if (lobby.phase === 'voting' && myData && myData.alive) {
+        area.classList.add('active');
+        this.renderVoteOptions(lobby);
+      } else {
+        area.classList.remove('active');
+      }
+    },
 
-            if (this.timerInterval) {
-                clearInterval(this.timerInterval);
-                this.timerInterval = null;
-            }
+    renderVoteOptions: function (lobby) {
+      var self = this;
+      var container = document.getElementById('wwVoteOptions');
+      var names = Object.keys(lobby.players).filter(function (n) { return n !== self.user && lobby.players[n].alive; });
+      if (names.length === 0) { container.innerHTML = '<div style="color:#94a3b8;">Không có ai để vote</div>'; return; }
 
-            if (lobby.status !== 'playing' || !lobby.phaseEndTime) {
-                timerEl.textContent = '--:--';
-                return;
-            }
+      var voted = (lobby.votes && lobby.votes[this.user]) || null;
+      container.innerHTML = names.map(function (name) {
+        return '<button class="action-btn ' + (voted === name ? 'selected' : '') + '" onclick="WW.castVote(\'' + name.replace(/'/g, "\\'") + '\')" ' + (voted ? 'disabled' : '') + '>' + esc(name) + '</button>';
+      }).join('');
 
-            const tick = async () => {
-                const remainingMs = lobby.phaseEndTime - Date.now();
-                const remaining = Math.max(0, Math.ceil(remainingMs / 1000));
-                const mins = Math.floor(remaining / 60);
-                const secs = remaining % 60;
-                timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      document.getElementById('wwVoteResult').textContent = voted ? ('✅ Bạn đã vote treo cổ ' + voted) : '';
+    },
 
-                if (remaining <= 0 && !this.phaseAdvancing) {
-                    this.tryAdvancePhase();
-                }
-            };
+    updateNightActions: function (lobby) {
+      var area = document.getElementById('wwNightArea');
+      var myData = lobby.players[this.user];
+      if (!myData || !myData.alive || lobby.phase !== 'night') { area.classList.remove('active'); return; }
+      var role = myData.role;
+      if (!role || role === 'villager' || role === 'hunter') { area.classList.remove('active'); return; }
+      area.classList.add('active');
+      this.renderNightActions(lobby, role, myData);
+    },
 
-            tick();
-            this.timerInterval = setInterval(tick, 1000);
-        },
+    renderNightActions: function (lobby, role, myData) {
+      var self = this;
+      var container = document.getElementById('wwNightOptions');
+      var label = document.getElementById('wwNightLabel');
+      var result = document.getElementById('wwNightResult');
+      container.innerHTML = '';
+      result.textContent = '';
 
-        // Any client can call this; the transaction lock ensures only one of them
-        // actually performs the phase transition, so the game never gets stuck even
-        // if the host disconnects.
-        async tryAdvancePhase() {
-            this.phaseAdvancing = true;
-            const lockRef = db.ref('gameLobbies/' + this.lobbyId + '/phaseLock');
-            try {
-                const result = await lockRef.transaction((current) => {
-                    const now = Date.now();
-                    if (current && now - current < 5000) {
-                        return; // someone else is already handling it
-                    }
-                    return now;
-                });
-                if (result.committed) {
-                    await this.nextPhase();
-                }
-            } catch (e) {
-                console.error('Lỗi chuyển phase:', e);
-            } finally {
-                this.phaseAdvancing = false;
-            }
-        },
+      var others = function (excludeRoleFilter) {
+        return Object.keys(lobby.players).filter(function (n) {
+          if (n === self.user) return false;
+          if (!lobby.players[n].alive) return false;
+          if (excludeRoleFilter && lobby.players[n].role === excludeRoleFilter) return false;
+          return true;
+        });
+      };
 
-        updateControls(lobby) {
-            const btnReady = document.getElementById('btnReady');
-            const btnStart = document.getElementById('btnStart');
-            const myData = lobby.players[this.currentUser];
+      if (role === 'werewolf') {
+        label.textContent = '🐺 Chọn nạn nhân để giết:';
+        var targets = others('werewolf');
+        if (targets.length === 0) { container.innerHTML = '<div style="color:#94a3b8;">Không có ai để giết</div>'; return; }
+        var chosen = (lobby.lastNightAction && lobby.lastNightAction.action === 'kill') ? lobby.lastNightAction.target : null;
+        container.innerHTML = targets.map(function (name) {
+          return '<button class="action-btn ' + (chosen === name ? 'selected' : '') + '" onclick="WW.nightAction(\'kill\', \'' + name.replace(/'/g, "\\'") + '\')" ' + (self.nightActionDone ? 'disabled' : '') + '>' + esc(name) + '</button>';
+        }).join('');
+      } else if (role === 'seer') {
+        label.textContent = '🔮 Chọn người để soi:';
+        var t2 = others();
+        if (t2.length === 0) { container.innerHTML = '<div style="color:#94a3b8;">Không có ai để soi</div>'; return; }
+        container.innerHTML = t2.map(function (name) {
+          return '<button class="action-btn" onclick="WW.nightAction(\'seer\', \'' + name.replace(/'/g, "\\'") + '\')" ' + (self.nightActionDone ? 'disabled' : '') + '>' + esc(name) + '</button>';
+        }).join('');
+      } else if (role === 'witch') {
+        label.textContent = '🧙 Chọn hành động (mỗi loại dùng 1 lần cho cả ván):';
+        var saveDisabled = lobby.witchUsedSave ? 'disabled' : '';
+        var poisonDisabled = lobby.witchUsedPoison ? 'disabled' : '';
+        var killName = lobby.nightKill || 'không ai bị giết';
+        var html = '<div style="display:flex; gap:8px; flex-wrap:wrap;">';
+        html += '<button class="action-btn" onclick="WW.nightAction(\'save\', \'' + (lobby.nightKill || '').replace(/'/g, "\\'") + '\')" ' + saveDisabled + '>💚 Cứu người (' + esc(killName) + ')</button>';
+        html += '<button class="action-btn" id="wwTogglePoison" ' + poisonDisabled + '>☠️ Đầu độc</button>';
+        html += '</div><div id="wwPoisonTargets" style="margin-top:8px; display:none; flex-wrap:wrap; gap:8px;"></div>';
+        html += '<div style="margin-top:8px; font-size:0.8rem; color:#94a3b8;">' + (lobby.witchUsedSave ? '✅ Đã dùng thuốc cứu' : '💚 Còn thuốc cứu') + '<span style="margin-left:12px;">' + (lobby.witchUsedPoison ? '✅ Đã dùng thuốc độc' : '☠️ Còn thuốc độc') + '</span></div>';
+        container.innerHTML = html;
 
-            if (!myData) return;
-
-            if (!myData.alive && lobby.status === 'playing') {
-                btnReady.disabled = true;
-                btnStart.disabled = true;
-                btnReady.textContent = '💀 Đã chết';
-                return;
-            }
-
-            btnReady.disabled = false;
-            this.isReady = myData.ready || false;
-            btnReady.textContent = this.isReady ? '❌ Hủy sẵn sàng' : '✅ Sẵn sàng';
-            btnReady.classList.toggle('active', this.isReady);
-
-            if (this.isHost && lobby.status === 'waiting') {
-                const count = Object.keys(lobby.players).length;
-                const allReady = Object.values(lobby.players).every(p => p.ready);
-                if (count < 5 || count > 10) {
-                    btnStart.textContent = `⚠️ Cần 5-10 người (${count}/10)`;
-                    btnStart.disabled = true;
-                } else if (!allReady) {
-                    btnStart.textContent = '⏳ Chờ mọi người sẵn sàng';
-                    btnStart.disabled = true;
-                } else {
-                    btnStart.textContent = '▶ Bắt đầu';
-                    btnStart.disabled = false;
-                }
-            } else {
-                btnStart.disabled = true;
-                btnStart.textContent = lobby.status === 'playing' ? '⏳ Đang chơi...' : (this.isHost ? '⏳ Đang chờ...' : '👑 Chờ chủ phòng bắt đầu');
-            }
-
-            if (lobby.status === 'playing') {
-                btnReady.style.display = 'none';
-            } else {
-                btnReady.style.display = 'block';
-            }
-        },
-
-        updateVoting(lobby) {
-            const area = document.getElementById('votingArea');
-            if (lobby.phase === 'voting' && lobby.players[this.currentUser] && lobby.players[this.currentUser].alive) {
-                area.classList.add('active');
-                this.renderVoteOptions(lobby);
-            } else {
-                area.classList.remove('active');
-            }
-        },
-
-        renderVoteOptions(lobby) {
-            const container = document.getElementById('voteOptions');
-            const players = Object.keys(lobby.players).filter(name =>
-                name !== this.currentUser && lobby.players[name].alive
-            );
-
-            if (players.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;">Không có ai để vote</div>';
-                return;
-            }
-
-            const voted = (lobby.votes && lobby.votes[this.currentUser]) || null;
-
-            container.innerHTML = players.map(name => `
-                <button class="vote-btn ${voted === name ? 'selected' : ''}"
-                        onclick="Game.castVote('${name}')"
-                        ${voted ? 'disabled' : ''}>
-                    ${name}
-                </button>
-            `).join('');
-
-            document.getElementById('voteResult').textContent = voted ?
-                `✅ Bạn đã vote cho ${voted}` : '';
-        },
-
-        updateNightActions(lobby) {
-            const area = document.getElementById('nightActionArea');
-            const myData = lobby.players[this.currentUser];
-
-            if (!myData || !myData.alive || lobby.phase !== 'night') {
-                area.classList.remove('active');
-                return;
-            }
-
-            const role = myData.role;
-            if (!role || role === 'villager') {
-                area.classList.remove('active');
-                return;
-            }
-
-            area.classList.add('active');
-            this.renderNightActions(lobby);
-        },
-
-        renderNightActions(lobby) {
-            const container = document.getElementById('nightActionOptions');
-            const label = document.getElementById('nightActionLabel');
-            const result = document.getElementById('nightActionResult');
-            const myData = lobby.players[this.currentUser];
-            const role = myData.role;
-
-            container.innerHTML = '';
-            result.textContent = '';
-
-            if (role === 'werewolf') {
-                label.textContent = '🐺 Chọn nạn nhân để giết:';
-                const targets = Object.keys(lobby.players).filter(name =>
-                    name !== this.currentUser && lobby.players[name].alive && lobby.players[name].role !== 'werewolf'
-                );
-                if (targets.length === 0) {
-                    container.innerHTML = '<div style="color:#94a3b8;">Không có ai để giết</div>';
-                    return;
-                }
-                const chosen = lobby.lastNightAction && lobby.lastNightAction.action === 'kill' ? lobby.lastNightAction.target : null;
-                container.innerHTML = targets.map(name => `
-                    <button class="night-action-btn ${chosen === name ? 'selected' : ''}" onclick="Game.nightAction('kill', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
-                        ${name}
-                    </button>
-                `).join('');
-            } else if (role === 'seer') {
-                label.textContent = '🔮 Chọn người để soi:';
-                const targets = Object.keys(lobby.players).filter(name => name !== this.currentUser && lobby.players[name].alive);
-                if (targets.length === 0) {
-                    container.innerHTML = '<div style="color:#94a3b8;">Không có ai để soi</div>';
-                    return;
-                }
-                container.innerHTML = targets.map(name => `
-                    <button class="night-action-btn" onclick="Game.nightAction('seer', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
-                        ${name}
-                    </button>
-                `).join('');
-            } else if (role === 'witch') {
-                label.textContent = '🧙 Chọn hành động (mỗi loại dùng 1 lần):';
-                const saveDisabled = lobby.witchUsedSave ? 'disabled' : '';
-                const poisonDisabled = lobby.witchUsedPoison ? 'disabled' : '';
-
-                let html = `<div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <button class="night-action-btn" onclick="Game.nightAction('save', '${lobby.nightKill || ''}')" ${saveDisabled}>
-                            💚 Cứu người (${lobby.nightKill || 'không ai bị giết'})
-                        </button>
-                        <button class="night-action-btn" id="btnTogglePoison" ${poisonDisabled}>
-                            ☠️ Đầu độc
-                        </button>
-                    </div>
-                    <div id="poisonTargets" style="margin-top:8px; display:none; flex-wrap:wrap; gap:8px;"></div>
-                    <div style="margin-top:8px; font-size:0.8rem; color:#94a3b8;">
-                        ${lobby.witchUsedSave ? '✅ Đã dùng thuốc cứu' : '💚 Còn thuốc cứu'}
-                        <span style="margin-left:12px;">${lobby.witchUsedPoison ? '✅ Đã dùng thuốc độc' : '☠️ Còn thuốc độc'}</span>
-                    </div>`;
-                container.innerHTML = html;
-
-                const toggleBtn = document.getElementById('btnTogglePoison');
-                if (toggleBtn) {
-                    toggleBtn.addEventListener('click', () => {
-                        const targetsEl = document.getElementById('poisonTargets');
-                        const targets = Object.keys(lobby.players).filter(name =>
-                            name !== this.currentUser && lobby.players[name].alive
-                        );
-                        if (targets.length === 0) {
-                            targetsEl.style.display = 'flex';
-                            targetsEl.innerHTML = '<div style="color:#94a3b8;">Không có ai để đầu độc</div>';
-                            return;
-                        }
-                        targetsEl.style.display = 'flex';
-                        targetsEl.innerHTML = targets.map(name => `
-                            <button class="night-action-btn" onclick="Game.nightAction('poison', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
-                                ${name}
-                            </button>
-                        `).join('');
-                    });
-                }
-            } else if (role === 'guard') {
-                label.textContent = '🛡️ Chọn người để bảo vệ:';
-                const targets = Object.keys(lobby.players).filter(name => name !== this.currentUser && lobby.players[name].alive);
-                if (targets.length === 0) {
-                    container.innerHTML = '<div style="color:#94a3b8;">Không có ai để bảo vệ</div>';
-                    return;
-                }
-                container.innerHTML = targets.map(name => `
-                    <button class="night-action-btn" onclick="Game.nightAction('guard', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
-                        ${name}
-                    </button>
-                `).join('');
-            } else if (role === 'hunter') {
-                label.textContent = '🏹 Bạn là Thợ săn! Nếu bị giết, bạn sẽ được chọn người để bắn.';
-                container.innerHTML = '<div style="color:#94a3b8;">Chờ khi bị giết để sử dụng kỹ năng</div>';
-            }
-        },
-
-        // ===== HUNTER REVENGE (player-driven) =====
-        updateHunterRevenge(lobby) {
-            const area = document.getElementById('hunterRevengeArea');
-            const pending = lobby.pendingHunterRevenge;
-
-            if (pending && pending === this.currentUser && !this.hunterRevengeDone) {
-                area.classList.add('active');
-                this.renderHunterRevenge(lobby);
-            } else {
-                area.classList.remove('active');
-            }
-        },
-
-        renderHunterRevenge(lobby) {
-            const container = document.getElementById('hunterRevengeOptions');
-            const result = document.getElementById('hunterRevengeResult');
-            result.textContent = '';
-
-            const targets = Object.keys(lobby.players).filter(name =>
-                name !== this.currentUser && lobby.players[name].alive
-            );
-
+        var toggleBtn = document.getElementById('wwTogglePoison');
+        if (toggleBtn) {
+          toggleBtn.addEventListener('click', function () {
+            var targetsEl = document.getElementById('wwPoisonTargets');
+            var targets = others();
+            targetsEl.style.display = 'flex';
             if (targets.length === 0) {
-                container.innerHTML = '<div style="color:#94a3b8;">Không còn ai để bắn</div>';
-                return;
+              targetsEl.innerHTML = '<div style="color:#94a3b8;">Không có ai để đầu độc</div>';
+              return;
             }
-
-            container.innerHTML = targets.map(name => `
-                <button class="night-action-btn" onclick="Game.hunterShoot('${name}')" ${this.hunterRevengeDone ? 'disabled' : ''}>
-                    ${name}
-                </button>
-            `).join('');
-        },
-
-        async hunterShoot(target) {
-            if (this.hunterRevengeDone) return;
-            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
-            const snap = await lobbyRef.once('value');
-            const lobby = snap.val();
-            if (!lobby || lobby.pendingHunterRevenge !== this.currentUser) return;
-
-            this.hunterRevengeDone = true;
-            await lobbyRef.update({
-                ['players/' + target + '/alive']: false,
-                pendingHunterRevenge: null
-            });
-            await lobbyRef.child('gameLog').push({
-                round: lobby.currentRound || 1,
-                event: 'hunter_shot',
-                target: target,
-                shooter: this.currentUser,
-                time: new Date().toLocaleString('vi-VN')
-            });
-
-            document.getElementById('hunterRevengeResult').textContent = `🏹 Bạn đã bắn ${target}!`;
-        },
-
-        // ===== NIGHT ACTIONS =====
-        async nightAction(action, target) {
-            if (this.nightActionDone) return;
-
-            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
-            const snap = await lobbyRef.once('value');
-            const lobby = snap.val();
-
-            if (!lobby || lobby.phase !== 'night') return;
-            if (!lobby.players[this.currentUser] || !lobby.players[this.currentUser].alive) return;
-
-            const result = document.getElementById('nightActionResult');
-
-            if (action === 'kill') {
-                await lobbyRef.update({
-                    'nightKill': target,
-                    'lastNightAction': { user: this.currentUser, action: 'kill', target: target }
-                });
-                result.textContent = `✅ Đã chọn ${target} làm nạn nhân`;
-                result.style.color = '#10b981';
-                this.nightActionDone = true;
-            } else if (action === 'seer') {
-                const targetRole = lobby.players[target]?.role || 'unknown';
-                const isWerewolf = targetRole === 'werewolf';
-                result.textContent = `🔮 ${target} là ${isWerewolf ? '🐺 Ma Sói' : '👤 Dân Làng'}`;
-                result.style.color = isWerewolf ? '#f43f5e' : '#10b981';
-                this.nightActionDone = true;
-                await lobbyRef.update({
-                    'lastNightAction': { user: this.currentUser, action: 'seer', target: target, result: targetRole }
-                });
-            } else if (action === 'save') {
-                if (lobby.witchUsedSave) {
-                    result.textContent = '❌ Bạn đã dùng thuốc cứu rồi!';
-                    result.style.color = '#f43f5e';
-                    return;
-                }
-                if (!lobby.nightKill) {
-                    result.textContent = '💚 Đêm nay không có ai bị giết, không cần cứu.';
-                    result.style.color = '#94a3b8';
-                    return;
-                }
-                await lobbyRef.update({
-                    'witchUsedSave': true,
-                    'nightSaved': true,
-                    'lastNightAction': { user: this.currentUser, action: 'save', target: lobby.nightKill }
-                });
-                result.textContent = `💚 Đã cứu ${lobby.nightKill}!`;
-                result.style.color = '#10b981';
-                this.nightActionDone = true;
-            } else if (action === 'poison') {
-                if (lobby.witchUsedPoison) {
-                    result.textContent = '❌ Bạn đã dùng thuốc độc rồi!';
-                    result.style.color = '#f43f5e';
-                    return;
-                }
-                if (!target || !lobby.players[target] || !lobby.players[target].alive) {
-                    result.textContent = '❌ Mục tiêu không hợp lệ';
-                    result.style.color = '#f43f5e';
-                    return;
-                }
-                await lobbyRef.update({
-                    'witchUsedPoison': true,
-                    'nightPoisonTarget': target,
-                    'lastNightAction': { user: this.currentUser, action: 'poison', target: target }
-                });
-                result.textContent = `☠️ Đã đầu độc ${target}!`;
-                result.style.color = '#f43f5e';
-                this.nightActionDone = true;
-            } else if (action === 'guard') {
-                await lobbyRef.update({
-                    'protectedPlayer': target,
-                    'lastNightAction': { user: this.currentUser, action: 'guard', target: target }
-                });
-                result.textContent = `🛡️ Đã bảo vệ ${target}`;
-                result.style.color = '#10b981';
-                this.nightActionDone = true;
-            }
-
-            if (this.nightActionDone) {
-                setTimeout(() => { this.nightActionDone = false; }, 1000);
-            }
-        },
-
-        updateResultBanner(lobby) {
-            // Handled in updatePhase
-        },
-
-        // ===== GAME LOG =====
-        updateGameLog(lobby) {
-            const listEl = document.getElementById('gameLogList');
-            const log = lobby.gameLog ? Object.values(lobby.gameLog) : [];
-
-            if (log.length === 0) {
-                listEl.innerHTML = '<div class="log-entry" style="color:#64748b;">Chưa có sự kiện nào</div>';
-                return;
-            }
-
-            const labels = {
-                kill: (l) => `🌙 Đêm ${l.round || ''}: ${l.target} đã bị Ma Sói cắn chết`,
-                poison: (l) => `☠️ Đêm ${l.round || ''}: ${l.target} đã bị đầu độc`,
-                hunter_shot: (l) => `🏹 ${l.target} đã bị Thợ Săn bắn chết`,
-                vote_out: (l) => `🗳️ Ngày ${l.round || ''}: ${l.target} đã bị dân làng treo cổ`,
-                win: (l) => l.winner === 'werewolves' ? '🐺 Ma Sói đã chiến thắng!' : '👨‍🌾 Dân Làng đã chiến thắng!'
-            };
-
-            listEl.innerHTML = log.slice(-30).map(l => {
-                const fn = labels[l.event];
-                const text = fn ? fn(l) : (l.event || '');
-                return `<div class="log-entry">${text}</div>`;
+            targetsEl.innerHTML = targets.map(function (name) {
+              return '<button class="action-btn" onclick="WW.nightAction(\'poison\', \'' + name.replace(/'/g, "\\'") + '\')" ' + (self.nightActionDone ? 'disabled' : '') + '>' + esc(name) + '</button>';
             }).join('');
+          });
+        }
+      } else if (role === 'guard') {
+        label.textContent = '🛡️ Chọn người để bảo vệ (không trùng người đêm trước):';
+        var t3 = others().filter(function (n) { return n !== lobby.lastProtectedPlayer; });
+        if (t3.length === 0) { container.innerHTML = '<div style="color:#94a3b8;">Không có ai để bảo vệ</div>'; return; }
+        container.innerHTML = t3.map(function (name) {
+          return '<button class="action-btn" onclick="WW.nightAction(\'guard\', \'' + name.replace(/'/g, "\\'") + '\')" ' + (self.nightActionDone ? 'disabled' : '') + '>' + esc(name) + '</button>';
+        }).join('');
+      }
+    },
 
-            const container = document.getElementById('gameLogArea');
-            container.scrollTop = container.scrollHeight;
-        },
+    nightAction: function (action, target) {
+      if (this.nightActionDone) return;
+      var self = this;
+      var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
 
-        // ===== CHAT =====
-        updateChat(lobby) {
-            if (this.chatListener) this.chatListener();
-            this.chatListener = db.ref('gameLobbies/' + this.lobbyId + '/chat').on('child_added', (snapshot) => {
-                const msg = snapshot.val();
-                if (!msg) return;
-                this.addChatMessage(msg.user, msg.message, msg.timestamp);
+      lobbyRef.once('value').then(function (snap) {
+        var lobby = snap.val();
+        if (!lobby || lobby.phase !== 'night') return;
+        var myData = lobby.players[self.user];
+        if (!myData || !myData.alive) return;
+
+        var result = document.getElementById('wwNightResult');
+
+        if (action === 'kill') {
+          lobbyRef.update({ nightKill: target, lastNightAction: { user: self.user, action: 'kill', target: target } });
+          result.textContent = '✅ Đã chọn ' + target + ' làm nạn nhân';
+          result.style.color = '#10b981';
+          self.markDone();
+        } else if (action === 'seer') {
+          var targetRole = (lobby.players[target] && lobby.players[target].role) || 'unknown';
+          var isWolf = targetRole === 'werewolf';
+          result.textContent = '🔮 ' + target + ' là ' + (isWolf ? '🐺 Ma Sói' : '👤 Dân Làng');
+          result.style.color = isWolf ? '#f43f5e' : '#10b981';
+          lobbyRef.update({ lastNightAction: { user: self.user, action: 'seer', target: target, result: targetRole } });
+          self.markDone();
+        } else if (action === 'save') {
+          if (lobby.witchUsedSave) { result.textContent = '❌ Bạn đã dùng thuốc cứu rồi!'; result.style.color = '#f43f5e'; return; }
+          if (!lobby.nightKill) { result.textContent = '💚 Đêm nay không có ai bị giết, không cần cứu.'; result.style.color = '#94a3b8'; return; }
+          lobbyRef.update({ witchUsedSave: true, nightSaved: true, lastNightAction: { user: self.user, action: 'save', target: lobby.nightKill } });
+          result.textContent = '💚 Đã cứu ' + lobby.nightKill + '!';
+          result.style.color = '#10b981';
+          self.markDone();
+        } else if (action === 'poison') {
+          if (lobby.witchUsedPoison) { result.textContent = '❌ Bạn đã dùng thuốc độc rồi!'; result.style.color = '#f43f5e'; return; }
+          if (!target || !lobby.players[target] || !lobby.players[target].alive) { result.textContent = '❌ Mục tiêu không hợp lệ'; result.style.color = '#f43f5e'; return; }
+          lobbyRef.update({ witchUsedPoison: true, nightPoisonTarget: target, lastNightAction: { user: self.user, action: 'poison', target: target } });
+          result.textContent = '☠️ Đã đầu độc ' + target + '!';
+          result.style.color = '#f43f5e';
+          self.markDone();
+        } else if (action === 'guard') {
+          lobbyRef.update({ protectedPlayer: target, lastNightAction: { user: self.user, action: 'guard', target: target } });
+          result.textContent = '🛡️ Đã bảo vệ ' + target;
+          result.style.color = '#10b981';
+          self.markDone();
+        }
+      });
+    },
+
+    markDone: function () {
+      var self = this;
+      this.nightActionDone = true;
+      setTimeout(function () { self.nightActionDone = false; }, 1000);
+    },
+
+    // Hunter revenge: the hunter player chooses, instead of a random pick.
+    updateHunterRevenge: function (lobby) {
+      var area = document.getElementById('wwHunterArea');
+      var pending = lobby.pendingHunterRevenge;
+      if (pending && pending === this.user && !this.hunterDone) {
+        area.classList.add('active');
+        this.renderHunterRevenge(lobby);
+      } else {
+        area.classList.remove('active');
+      }
+    },
+
+    renderHunterRevenge: function (lobby) {
+      var self = this;
+      var container = document.getElementById('wwHunterOptions');
+      document.getElementById('wwHunterResult').textContent = '';
+      var targets = Object.keys(lobby.players).filter(function (n) { return n !== self.user && lobby.players[n].alive; });
+      if (targets.length === 0) { container.innerHTML = '<div style="color:#94a3b8;">Không còn ai để bắn</div>'; return; }
+      container.innerHTML = targets.map(function (name) {
+        return '<button class="action-btn" onclick="WW.hunterShoot(\'' + name.replace(/'/g, "\\'") + '\')" ' + (self.hunterDone ? 'disabled' : '') + '>' + esc(name) + '</button>';
+      }).join('');
+    },
+
+    hunterShoot: function (target) {
+      if (this.hunterDone) return;
+      var self = this;
+      var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+      lobbyRef.once('value').then(function (snap) {
+        var lobby = snap.val();
+        if (!lobby || lobby.pendingHunterRevenge !== self.user) return;
+        self.hunterDone = true;
+        var updates = {};
+        updates['players/' + target + '/alive'] = false;
+        updates.pendingHunterRevenge = null;
+        return lobbyRef.update(updates).then(function () {
+          return lobbyRef.child('gameLog').push({
+            round: lobby.currentRound || 1, event: 'hunter_shot', target: target, shooter: self.user,
+            time: new Date().toLocaleString('vi-VN')
+          });
+        });
+      }).then(function () {
+        document.getElementById('wwHunterResult').textContent = '🏹 Bạn đã bắn ' + target + '!';
+      });
+    },
+
+    updateLog: function (lobby) {
+      var listEl = document.getElementById('wwLogList');
+      var log = lobby.gameLog ? Object.values(lobby.gameLog) : [];
+      if (log.length === 0) { listEl.innerHTML = '<div class="log-entry" style="color:#64748b;">Chưa có sự kiện nào</div>'; return; }
+
+      var labels = {
+        kill: function (l) { return '🌙 Đêm ' + (l.round || '') + ': ' + esc(l.target) + ' đã bị Ma Sói cắn chết'; },
+        poison: function (l) { return '☠️ Đêm ' + (l.round || '') + ': ' + esc(l.target) + ' đã bị đầu độc'; },
+        hunter_shot: function (l) { return '🏹 ' + esc(l.target) + ' đã bị Thợ Săn bắn chết'; },
+        vote_out: function (l) { return '🗳️ Ngày ' + (l.round || '') + ': ' + esc(l.target) + ' đã bị dân làng treo cổ'; },
+        vote_tie: function (l) { return '🗳️ Ngày ' + (l.round || '') + ': Bỏ phiếu hòa, không ai bị treo cổ'; },
+        win: function (l) { return l.winner === 'werewolves' ? '🐺 Ma Sói đã chiến thắng!' : '👨‍🌾 Dân Làng đã chiến thắng!'; }
+      };
+
+      listEl.innerHTML = log.slice(-30).map(function (l) {
+        var fn = labels[l.event];
+        return '<div class="log-entry">' + (fn ? fn(l) : esc(l.event || '')) + '</div>';
+      }).join('');
+
+      var container = document.getElementById('wwLogArea');
+      container.scrollTop = container.scrollHeight;
+    },
+
+    updateChat: function (lobby) {
+      var self = this;
+      if (this.chatListener) this.chatListener();
+      this.chatListener = db.ref('gameLobbies/' + this.lobbyId + '/chat').on('child_added', function (snapshot) {
+        var msg = snapshot.val();
+        if (!msg) return;
+        self.addChatMessage(msg.user, msg.message, msg.timestamp);
+      });
+    },
+
+    addChatMessage: function (user, message, timestamp) {
+      var container = document.getElementById('wwChatMessages');
+      if (container.querySelector('div[style]')) container.innerHTML = '';
+      var time = new Date(timestamp).toLocaleTimeString('vi-VN');
+      var isMe = user === this.user;
+      var div = document.createElement('div');
+      div.className = 'chat-message';
+      div.innerHTML = '<span class="msg-user" style="' + (isMe ? 'color:#10b981;' : '') + '">' + esc(user) + '</span>' +
+        '<span class="msg-time">' + time + '</span><span style="margin-left:8px;">' + esc(message) + '</span>';
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    },
+
+    sendChat: function () {
+      var input = document.getElementById('wwChatInput');
+      var message = input.value.trim();
+      if (!message || !this.lobbyId) return;
+      db.ref('gameLobbies/' + this.lobbyId + '/chat').push({ user: this.user, message: message, timestamp: Date.now() });
+      input.value = '';
+    },
+
+    toggleReady: function () {
+      var newReady = !this.isReady;
+      db.ref('gameLobbies/' + this.lobbyId + '/players/' + this.user + '/ready').set(newReady);
+      this.isReady = newReady;
+    },
+
+    startGame: function () {
+      if (!this.isHost) return;
+      var self = this;
+      var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+
+      lobbyRef.once('value').then(function (snap) {
+        var lobby = snap.val();
+        if (!lobby) return;
+        var players = Object.keys(lobby.players);
+        if (players.length < 5 || players.length > 10) return;
+
+        var roles = self.assignRoles(players.length);
+        var shuffledPlayers = self.shuffle(players);
+        var updates = {};
+        shuffledPlayers.forEach(function (name, i) {
+          updates['players/' + name + '/role'] = roles[i];
+          updates['players/' + name + '/ready'] = false;
+        });
+
+        var duration = 90;
+        updates.status = 'playing';
+        updates.phase = 'night';
+        updates.phaseEndTime = Date.now() + duration * 1000;
+        updates.startedAt = Date.now();
+        updates.currentRound = 1;
+        updates.nightKill = null;
+        updates.nightSaved = false;
+        updates.nightPoisonTarget = null;
+        updates.votes = {};
+        updates.witchUsedSave = false;
+        updates.witchUsedPoison = false;
+        updates.protectedPlayer = null;
+        updates.lastProtectedPlayer = null;
+        updates.lastNightAction = null;
+        updates.pendingHunterRevenge = null;
+        updates.gameLog = [];
+        updates.phaseLock = null;
+
+        return lobbyRef.update(updates);
+      });
+    },
+
+    // Standard role distribution for a Werewolf game.
+    assignRoles: function (n) {
+      var wolfCount = (n <= 6) ? 2 : (n <= 9) ? 3 : 4;
+      var specials = ['seer', 'witch', 'guard', 'hunter'];
+      var roles = [];
+      for (var i = 0; i < wolfCount; i++) roles.push('werewolf');
+      for (var j = 0; j < specials.length && roles.length < n; j++) roles.push(specials[j]);
+      while (roles.length < n) roles.push('villager');
+      while (roles.length > n) roles.pop();
+      return this.shuffle(roles);
+    },
+
+    shuffle: function (arr) {
+      var a = arr.slice();
+      for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+      }
+      return a;
+    },
+
+    nextPhase: function () {
+      var self = this;
+      var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+      return lobbyRef.once('value').then(function (snap) {
+        var lobby = snap.val();
+        if (!lobby || lobby.status !== 'playing') return;
+
+        var current = lobby.phase;
+        var chain = Promise.resolve();
+        var nextP = '', duration = 0;
+
+        if (current === 'night') {
+          nextP = 'day'; duration = 90;
+          chain = self.processNightResult(lobby);
+        } else if (current === 'day') {
+          nextP = 'voting'; duration = 45;
+        } else if (current === 'voting') {
+          nextP = 'night'; duration = 90;
+          chain = self.processVoteResult(lobby).then(function () {
+            return lobbyRef.once('value');
+          }).then(function (freshSnap) {
+            var freshLobby = freshSnap.val();
+            return self.checkWinCondition(freshLobby).then(function (winner) {
+              if (winner) {
+                return lobbyRef.update({ status: 'ended', phase: 'ended', phaseEndTime: null }).then(function () {
+                  return self.saveGameHistory(freshLobby, winner);
+                }).then(function () { return 'ENDED'; });
+              }
+              return lobbyRef.child('currentRound').transaction(function (c) { return (c || 0) + 1; });
             });
-        },
+          });
+        }
 
-        addChatMessage(user, message, timestamp) {
-            const container = document.getElementById('chatMessages');
-            if (container.querySelector('div[style]')) container.innerHTML = '';
-
-            const time = new Date(timestamp).toLocaleTimeString('vi-VN');
-            const isMe = user === this.currentUser;
-
-            const div = document.createElement('div');
-            div.className = 'chat-message';
-            div.innerHTML = `
-                <span class="msg-user" style="${isMe ? 'color:#10b981;' : ''}">${user}</span>
-                <span class="msg-time">${time}</span>
-                <span style="margin-left:8px;">${message}</span>
-            `;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        },
-
-        async sendChat() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            if (!message || !this.lobbyId) return;
-
-            await db.ref('gameLobbies/' + this.lobbyId + '/chat').push({
-                user: this.currentUser,
-                message: message,
-                timestamp: Date.now()
-            });
-
-            input.value = '';
-        },
-
-        // ===== GAME CONTROLS =====
-        async toggleReady() {
-            const newReady = !this.isReady;
-            await db.ref('gameLobbies/' + this.lobbyId + '/players/' + this.currentUser + '/ready').set(newReady);
-            this.isReady = newReady;
-        },
-
-        async startGame() {
-            if (!this.isHost) return;
-
-            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
-            const snap = await lobbyRef.once('value');
-            const lobby = snap.val();
-            if (!lobby) return;
-
-            const players = Object.keys(lobby.players);
-            if (players.length < 5 || players.length > 10) return;
-
-            // Assign roles
-            const roles = this.assignRoles(players.length);
-            const shuffled = this.shuffleArray(players);
-            const assignments = {};
-
-            shuffled.forEach((name, index) => {
-                assignments[name] = roles[index % roles.length];
-            });
-
-            const updates = {};
-            Object.entries(assignments).forEach(([name, role]) => {
-                updates['players/' + name + '/role'] = role;
-                updates['players/' + name + '/ready'] = false;
-            });
-
-            const phaseDuration = 120;
-            updates.status = 'playing';
-            updates.phase = 'night';
-            updates.phaseEndTime = Date.now() + phaseDuration * 1000;
-            updates.startedAt = Date.now();
-            updates.currentRound = 1;
+        return chain.then(function (maybeEnded) {
+          if (maybeEnded === 'ENDED') return;
+          var updates = { phase: nextP, phaseEndTime: Date.now() + duration * 1000, votes: {} };
+          if (nextP === 'night') {
+            updates.protectedPlayer = null;
+            updates.lastProtectedPlayer = lobby.protectedPlayer || null;
             updates.nightKill = null;
             updates.nightSaved = false;
             updates.nightPoisonTarget = null;
-            updates.votes = {};
-            updates.witchUsedSave = false;
-            updates.witchUsedPoison = false;
-            updates.protectedPlayer = null;
             updates.lastNightAction = null;
-            updates.pendingHunterRevenge = null;
-            updates.gameLog = [];
-            updates.phaseLock = null;
+          }
+          return lobbyRef.update(updates);
+        });
+      });
+    },
 
-            await lobbyRef.update(updates);
-        },
+    processNightResult: function (lobby) {
+      var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+      var players = lobby.players || {};
+      var killTarget = lobby.nightKill;
+      var protectedPlayer = lobby.protectedPlayer;
+      var wasSaved = lobby.nightSaved === true;
+      var chain = Promise.resolve();
+      var killed = null, poisoned = null;
 
-        assignRoles(playerCount) {
-            let roles = [];
-            const wolfCount = Math.max(2, Math.floor(playerCount / 4));
-            const villagerCount = Math.max(0, playerCount - wolfCount - 4);
+      if (killTarget && killTarget !== protectedPlayer && !wasSaved && players[killTarget] && players[killTarget].alive) {
+        killed = killTarget;
+        chain = chain.then(function () {
+          return lobbyRef.child('players/' + killTarget + '/alive').set(false);
+        }).then(function () {
+          return lobbyRef.child('gameLog').push({ round: lobby.currentRound || 1, event: 'kill', target: killTarget, time: new Date().toLocaleString('vi-VN') });
+        });
+      }
 
-            for (let i = 0; i < wolfCount; i++) roles.push('werewolf');
-            const specials = ['seer', 'witch', 'guard', 'hunter'];
-            roles = roles.concat(specials);
-            for (let i = 0; i < villagerCount; i++) roles.push('villager');
+      var poisonTarget = lobby.nightPoisonTarget;
+      if (poisonTarget && players[poisonTarget] && players[poisonTarget].alive) {
+        poisoned = poisonTarget;
+        chain = chain.then(function () {
+          return lobbyRef.child('players/' + poisonTarget + '/alive').set(false);
+        }).then(function () {
+          return lobbyRef.child('gameLog').push({ round: lobby.currentRound || 1, event: 'poison', target: poisonTarget, time: new Date().toLocaleString('vi-VN') });
+        });
+      }
 
-            // Trim/pad to exactly playerCount in case of small lobbies
-            while (roles.length > playerCount) roles.pop();
-            while (roles.length < playerCount) roles.push('villager');
-
-            return this.shuffleArray(roles);
-        },
-
-        shuffleArray(arr) {
-            const shuffled = [...arr];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
-        },
-
-        async nextPhase() {
-            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
-            const snap = await lobbyRef.once('value');
-            const lobby = snap.val();
-            if (!lobby || lobby.status !== 'playing') return;
-
-            // Don't advance past night if a hunter revenge is still pending —
-            // give the hunter a moment, but don't block forever (handled by their own flow).
-            const currentPhase = lobby.phase;
-            let nextPhase = '';
-            let timer = 0;
-
-            if (currentPhase === 'night') {
-                nextPhase = 'day';
-                timer = 120;
-                await this.processNightResult(lobby);
-            } else if (currentPhase === 'day') {
-                nextPhase = 'voting';
-                timer = 60;
-            } else if (currentPhase === 'voting') {
-                nextPhase = 'night';
-                timer = 120;
-                await this.processVoteResult(lobby);
-
-                const freshSnap = await lobbyRef.once('value');
-                const freshLobby = freshSnap.val();
-                const winner = await this.checkWinCondition(freshLobby);
-                if (winner) {
-                    await lobbyRef.update({ status: 'ended', phase: 'ended', phaseEndTime: null });
-                    await this.saveGameHistory(freshLobby, winner);
-                    return;
-                }
-                await lobbyRef.child('currentRound').transaction((current) => (current || 0) + 1);
-            }
-
-            const updates = {
-                phase: nextPhase,
-                phaseEndTime: Date.now() + timer * 1000,
-                votes: {}
-            };
-
-            if (nextPhase === 'night') {
-                updates.witchUsedSave = lobby.witchUsedSave; // preserved across the whole game (one-time use)
-                updates.witchUsedPoison = lobby.witchUsedPoison;
-                updates.protectedPlayer = null;
-                updates.nightKill = null;
-                updates.nightSaved = false;
-                updates.nightPoisonTarget = null;
-                updates.lastNightAction = null;
-            }
-
-            await lobbyRef.update(updates);
-        },
-
-        async processNightResult(lobby) {
-            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
-            const players = lobby.players || {};
-            const killTarget = lobby.nightKill;
-            const protectedPlayer = lobby.protectedPlayer;
-            const wasSaved = lobby.nightSaved === true;
-
-            let killed = null;
-            if (killTarget && killTarget !== protectedPlayer && !wasSaved) {
-                if (players[killTarget] && players[killTarget].alive) {
-                    await lobbyRef.child('players/' + killTarget + '/alive').set(false);
-                    killed = killTarget;
-                    await lobbyRef.child('gameLog').push({
-                        round: lobby.currentRound || 1,
-                        event: 'kill',
-                        target: killTarget,
-                        time: new Date().toLocaleString('vi-VN')
-                    });
-                }
-            }
-
-            // Witch poison
-            const poisonTarget = lobby.nightPoisonTarget;
-            let poisoned = null;
-            if (poisonTarget && players[poisonTarget] && players[poisonTarget].alive) {
-                await lobbyRef.child('players/' + poisonTarget + '/alive').set(false);
-                poisoned = poisonTarget;
-                await lobbyRef.child('gameLog').push({
-                    round: lobby.currentRound || 1,
-                    event: 'poison',
-                    target: poisonTarget,
-                    time: new Date().toLocaleString('vi-VN')
-                });
-            }
-
-            // Hunter revenge: let the hunter choose, instead of picking randomly.
-            const deaths = [killed, poisoned].filter(Boolean);
-            for (const deadName of deaths) {
-                const victimData = players[deadName];
-                if (victimData && victimData.role === 'hunter') {
-                    await lobbyRef.child('pendingHunterRevenge').set(deadName);
-                    break; // only one hunter revenge prompt at a time
-                }
-            }
-        },
-
-        async processVoteResult(lobby) {
-            const votes = lobby.votes || {};
-            const voteCount = {};
-
-            Object.values(votes).forEach(voted => {
-                voteCount[voted] = (voteCount[voted] || 0) + 1;
-            });
-
-            let maxVotes = 0;
-            let eliminated = null;
-            let tie = false;
-
-            Object.entries(voteCount).forEach(([name, count]) => {
-                if (count > maxVotes) {
-                    maxVotes = count;
-                    eliminated = name;
-                    tie = false;
-                } else if (count === maxVotes && maxVotes > 0) {
-                    tie = true;
-                }
-            });
-
-            // On a tie, nobody is eliminated.
-            if (eliminated && !tie && lobby.players[eliminated] && lobby.players[eliminated].alive) {
-                const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
-                await lobbyRef.child('players/' + eliminated + '/alive').set(false);
-                await lobbyRef.child('gameLog').push({
-                    round: lobby.currentRound || 1,
-                    event: 'vote_out',
-                    target: eliminated,
-                    time: new Date().toLocaleString('vi-VN')
-                });
-
-                // Hunter revenge from being voted out too
-                const victimData = lobby.players[eliminated];
-                if (victimData && victimData.role === 'hunter') {
-                    await lobbyRef.child('pendingHunterRevenge').set(eliminated);
-                }
-            }
-        },
-
-        async checkWinCondition(lobby) {
-            const players = lobby.players || {};
-            const alive = Object.keys(players).filter(name => players[name].alive);
-            const wolves = alive.filter(name => players[name].role === 'werewolf');
-            const villagers = alive.filter(name => players[name].role !== 'werewolf');
-
-            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
-
-            if (wolves.length === 0) {
-                await lobbyRef.child('gameLog').push({
-                    event: 'win',
-                    winner: 'villagers',
-                    time: new Date().toLocaleString('vi-VN')
-                });
-                return 'villagers';
-            }
-
-            if (wolves.length >= villagers.length) {
-                await lobbyRef.child('gameLog').push({
-                    event: 'win',
-                    winner: 'werewolves',
-                    time: new Date().toLocaleString('vi-VN')
-                });
-                return 'werewolves';
-            }
-
-            return null;
-        },
-
-        async saveGameHistory(lobby, winner) {
-            const historyRef = db.ref('gameHistory').push();
-            const players = {};
-            Object.entries(lobby.players).forEach(([name, data]) => {
-                players[name] = data.role || 'villager';
-            });
-
-            await historyRef.set({
-                lobbyName: lobby.name || 'Ván chơi',
-                host: lobby.host,
-                players: players,
-                winner: winner,
-                playerCount: Object.keys(lobby.players).length,
-                startedAt: lobby.startedAt,
-                endedAt: Date.now(),
-                gameLog: lobby.gameLog || []
-            });
-        },
-
-        async castVote(target) {
-            const lobbySnap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
-            const lobby = lobbySnap.val();
-
-            if (!lobby || lobby.phase !== 'voting') return;
-            if (lobby.votes && lobby.votes[this.currentUser]) return;
-            if (!lobby.players[target] || !lobby.players[target].alive) return;
-
-            await db.ref('gameLobbies/' + this.lobbyId + '/votes/' + this.currentUser).set(target);
-            document.getElementById('voteResult').textContent = `✅ Bạn đã vote cho ${target}`;
-        },
-
-        // ===== LEAVE =====
-        leaveLobby() {
-            document.getElementById('leaveModal').classList.remove('hidden');
-        },
-
-        cancelLeave() {
-            document.getElementById('leaveModal').classList.add('hidden');
-        },
-
-        async confirmLeave() {
-            document.getElementById('leaveModal').classList.add('hidden');
-
-            try {
-                if (this.lobbyId) {
-                    const snap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
-                    const lobby = snap.val();
-
-                    if (lobby && lobby.players) {
-                        await db.ref('gameLobbies/' + this.lobbyId + '/players/' + this.currentUser).remove();
-
-                        const newSnap = await db.ref('gameLobbies/' + this.lobbyId + '/players').once('value');
-                        const remaining = newSnap.val() || {};
-
-                        if (Object.keys(remaining).length === 0) {
-                            await db.ref('gameLobbies/' + this.lobbyId).remove();
-                        } else if (lobby.host === this.currentUser) {
-                            const newHost = Object.keys(remaining)[0];
-                            await db.ref('gameLobbies/' + this.lobbyId + '/host').set(newHost);
-                            await db.ref('gameLobbies/' + this.lobbyId + '/players/' + newHost + '/isHost').set(true);
-                        }
-                    }
-                }
-
-                if (this.lobbyListener) {
-                    this.lobbyListener();
-                    this.lobbyListener = null;
-                }
-                if (this.chatListener) {
-                    this.chatListener();
-                    this.chatListener = null;
-                }
-                if (this.timerInterval) {
-                    clearInterval(this.timerInterval);
-                    this.timerInterval = null;
-                }
-
-                this.lobbyId = null;
-                window.location.href = '../dashboard.html';
-
-            } catch (e) {
-                console.error('Lỗi rời phòng:', e);
-                window.location.href = '../dashboard.html';
-            }
+      return chain.then(function () {
+        var deaths = [killed, poisoned].filter(Boolean);
+        for (var i = 0; i < deaths.length; i++) {
+          var victim = players[deaths[i]];
+          if (victim && victim.role === 'hunter') {
+            return lobbyRef.child('pendingHunterRevenge').set(deaths[i]);
+          }
         }
-    };
+      });
+    },
 
-    // Expose Game to window for inline onclick
-    window.Game = Game;
+    processVoteResult: function (lobby) {
+      var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+      var votes = lobby.votes || {};
+      var counts = {};
+      Object.keys(votes).forEach(function (voter) { var v = votes[voter]; counts[v] = (counts[v] || 0) + 1; });
 
-    document.addEventListener('DOMContentLoaded', () => Game.init());
+      var max = 0, eliminated = null, tie = false;
+      Object.keys(counts).forEach(function (name) {
+        var c = counts[name];
+        if (c > max) { max = c; eliminated = name; tie = false; }
+        else if (c === max && max > 0) { tie = true; }
+      });
+
+      if (!eliminated || tie) {
+        return lobbyRef.child('gameLog').push({ round: lobby.currentRound || 1, event: 'vote_tie', time: new Date().toLocaleString('vi-VN') });
+      }
+
+      if (eliminated && lobby.players[eliminated] && lobby.players[eliminated].alive) {
+        return lobbyRef.child('players/' + eliminated + '/alive').set(false).then(function () {
+          return lobbyRef.child('gameLog').push({ round: lobby.currentRound || 1, event: 'vote_out', target: eliminated, time: new Date().toLocaleString('vi-VN') });
+        }).then(function () {
+          var victim = lobby.players[eliminated];
+          if (victim && victim.role === 'hunter') {
+            return lobbyRef.child('pendingHunterRevenge').set(eliminated);
+          }
+        });
+      }
+      return Promise.resolve();
+    },
+
+    checkWinCondition: function (lobby) {
+      var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+      var players = lobby.players || {};
+      var alive = Object.keys(players).filter(function (n) { return players[n].alive; });
+      var wolves = alive.filter(function (n) { return players[n].role === 'werewolf'; });
+      var villagers = alive.filter(function (n) { return players[n].role !== 'werewolf'; });
+
+      if (wolves.length === 0) {
+        return lobbyRef.child('gameLog').push({ event: 'win', winner: 'villagers', time: new Date().toLocaleString('vi-VN') }).then(function () { return 'villagers'; });
+      }
+      if (wolves.length >= villagers.length) {
+        return lobbyRef.child('gameLog').push({ event: 'win', winner: 'werewolves', time: new Date().toLocaleString('vi-VN') }).then(function () { return 'werewolves'; });
+      }
+      return Promise.resolve(null);
+    },
+
+    saveGameHistory: function (lobby, winner) {
+      var historyRef = db.ref('gameHistory').push();
+      var players = {};
+      Object.keys(lobby.players).forEach(function (name) { players[name] = lobby.players[name].role || 'villager'; });
+      return historyRef.set({
+        lobbyName: lobby.name || 'Ván chơi',
+        host: lobby.host,
+        players: players,
+        winner: winner,
+        playerCount: Object.keys(lobby.players).length,
+        startedAt: lobby.startedAt,
+        endedAt: Date.now(),
+        gameLog: lobby.gameLog || []
+      });
+    },
+
+    castVote: function (target) {
+      var self = this;
+      db.ref('gameLobbies/' + this.lobbyId).once('value').then(function (snap) {
+        var lobby = snap.val();
+        if (!lobby || lobby.phase !== 'voting') return;
+        if (lobby.votes && lobby.votes[self.user]) return;
+        if (!lobby.players[target] || !lobby.players[target].alive) return;
+        db.ref('gameLobbies/' + self.lobbyId + '/votes/' + self.user).set(target).then(function () {
+          document.getElementById('wwVoteResult').textContent = '✅ Bạn đã vote treo cổ ' + target;
+        });
+      });
+    },
+
+    leaveLobby: function () { document.getElementById('wwLeaveModal').classList.remove('hidden'); },
+    cancelLeave: function () { document.getElementById('wwLeaveModal').classList.add('hidden'); },
+
+    confirmLeave: function () {
+      var self = this;
+      document.getElementById('wwLeaveModal').classList.add('hidden');
+
+      var cleanup = function () {
+        if (self.lobbyListener) { self.lobbyListener(); self.lobbyListener = null; }
+        if (self.chatListener) { self.chatListener(); self.chatListener = null; }
+        if (self.timerInterval) { clearInterval(self.timerInterval); self.timerInterval = null; }
+        self.lobbyId = null;
+        window.location.href = '../dashboard.html';
+      };
+
+      if (!this.lobbyId) { cleanup(); return; }
+
+      db.ref('gameLobbies/' + this.lobbyId).once('value').then(function (snap) {
+        var lobby = snap.val();
+        if (!lobby || !lobby.players) { cleanup(); return; }
+
+        return db.ref('gameLobbies/' + self.lobbyId + '/players/' + self.user).remove().then(function () {
+          return db.ref('gameLobbies/' + self.lobbyId + '/players').once('value');
+        }).then(function (newSnap) {
+          var remaining = newSnap.val() || {};
+          var remainingNames = Object.keys(remaining);
+          if (remainingNames.length === 0) {
+            return db.ref('gameLobbies/' + self.lobbyId).remove();
+          } else if (lobby.host === self.user) {
+            var newHost = remainingNames[0];
+            return db.ref('gameLobbies/' + self.lobbyId + '/host').set(newHost).then(function () {
+              return db.ref('gameLobbies/' + self.lobbyId + '/players/' + newHost + '/isHost').set(true);
+            });
+          }
+        });
+      }).catch(function (e) {
+        console.error('Lỗi rời phòng:', e);
+      }).then(cleanup);
+    }
+  };
+
+  window.WW = Game;
+  document.addEventListener('DOMContentLoaded', function () { Game.init(); });
+})();
 </script>
 </body>
 </html>

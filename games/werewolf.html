@@ -39,7 +39,7 @@
   
   /* LOBBY SELECTOR */
   .lobby-selector {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -188,7 +188,6 @@
     transform: translateY(-2px);
   }
   
-  /* HIDE/SHOW */
   .hidden { display: none !important; }
   
   /* GAME CONTENT */
@@ -461,8 +460,8 @@
 <div class="game-container">
   <!-- MAIN CONTENT -->
   <div class="game-main">
-    <!-- LOBBY SELECTOR -->
-    <div id="lobbySelector" class="lobby-selector">
+    <!-- LOBBY SELECTOR (luôn hiển thị khi chưa vào phòng) -->
+    <div id="lobbySelector">
       <h1>🐺 Ma Sói</h1>
       <p class="subtitle">Chọn hành động để bắt đầu</p>
       <div class="btn-group">
@@ -493,7 +492,7 @@
       </div>
     </div>
 
-    <!-- GAME CONTENT -->
+    <!-- GAME CONTENT (ẩn khi chưa vào phòng) -->
     <div id="gameContent" class="hidden" style="flex-direction:column; height:100%;">
       <div class="game-header">
         <div class="game-title" id="lobbyName">Phòng chơi Ma Sói</div>
@@ -545,8 +544,8 @@
     </div>
   </div>
   
-  <!-- SIDEBAR - CHAT -->
-  <div class="game-sidebar" id="gameSidebar" class="hidden">
+  <!-- SIDEBAR - CHAT (ẩn khi chưa vào phòng) -->
+  <div class="game-sidebar" id="gameSidebar" style="display:none;">
     <div style="font-weight:600; color:var(--text-muted); margin-bottom:8px;">💬 Trò chuyện</div>
     <div class="chat-container">
       <div class="chat-messages" id="chatMessages">
@@ -595,6 +594,11 @@
       if (lobbyId) {
         this.lobbyId = lobbyId;
         this.joinLobbyById();
+      } else {
+        // Hiển thị màn hình chọn
+        document.getElementById('lobbySelector').style.display = 'flex';
+        document.getElementById('gameContent').style.display = 'none';
+        document.getElementById('gameSidebar').style.display = 'none';
       }
     },
     
@@ -808,7 +812,6 @@
     },
     
     updateChat(lobby) {
-      // Chat listener
       if (this.chatListener) {
         this.chatListener();
       }
@@ -822,7 +825,7 @@
     addChatMessage(user, message, timestamp) {
       const container = document.getElementById('chatMessages');
       // Xóa placeholder
-      if (container.querySelector('.empty-msg') || container.querySelector('div[style]')) {
+      if (container.querySelector('div[style]')) {
         container.innerHTML = '';
       }
       
@@ -1631,7 +1634,6 @@
           this.chatListener = null;
         }
         
-        this.isInLobby = false;
         this.lobbyId = null;
         
         window.location.href = '../dashboard.html';

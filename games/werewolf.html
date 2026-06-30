@@ -222,6 +222,18 @@
         .game-status.playing { background: rgba(16, 185, 129, 0.2); color: #10b981; }
         .game-status.ended { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
 
+        .phase-display {
+            text-align: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .phase-display .phase-icon { font-size: 2rem; }
+        .phase-display .phase-name { font-size: 1.2rem; font-weight: 700; }
+        .phase-display .phase-timer { font-size: 1.5rem; font-weight: 700; color: #00f0ff; }
+
         .players-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -234,10 +246,12 @@
             border-radius: 12px;
             padding: 12px 16px;
             text-align: center;
+            transition: all 0.3s;
         }
         .player-card .p-name { font-weight: 600; font-size: 0.95rem; }
         .player-card .p-role { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
         .player-card.host { border-color: #00f0ff; }
+        .player-card.dead { opacity: 0.4; border-color: #f43f5e; }
         .player-card .host-badge {
             font-size: 0.65rem;
             color: #00f0ff;
@@ -252,7 +266,6 @@
             flex-wrap: wrap;
             margin: 12px 0;
         }
-        .game-controls .btn { min-width: auto; flex: none; }
 
         .status-msg {
             padding: 12px 16px;
@@ -263,6 +276,84 @@
         }
         .status-msg.success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
         .status-msg.error { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3); }
+        .status-msg.info { background: rgba(0, 240, 255, 0.1); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.2); }
+
+        /* ROLE REVEAL */
+        .role-reveal {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            text-align: center;
+            border: 1px solid #00f0ff;
+            display: none;
+        }
+        .role-reveal.active { display: block; }
+        .role-reveal .role-name { font-size: 1.5rem; font-weight: 700; color: #00f0ff; }
+
+        /* NIGHT ACTION */
+        .night-action-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+            border: 1px solid #8b5cf6;
+            display: none;
+        }
+        .night-action-area.active { display: block; }
+        .night-action-area .action-label { font-weight: 600; color: #94a3b8; margin-bottom: 8px; }
+        .night-action-area .action-options { display: flex; flex-wrap: wrap; gap: 8px; }
+        .night-action-btn {
+            padding: 8px 16px;
+            background: rgba(22, 27, 38, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .night-action-btn:hover:not(:disabled) { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.2); }
+        .night-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* VOTING */
+        .voting-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: none;
+        }
+        .voting-area.active { display: block; }
+        .vote-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .vote-btn {
+            padding: 8px 16px;
+            background: rgba(22, 27, 38, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .vote-btn:hover:not(:disabled) { border-color: #00f0ff; background: rgba(0, 240, 255, 0.1); }
+        .vote-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .vote-btn.selected { border-color: #10b981; background: rgba(16, 185, 129, 0.2); }
+
+        /* RESULT BANNER */
+        .result-banner {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 12px 0;
+            border: 2px solid #00f0ff;
+            display: none;
+        }
+        .result-banner.active { display: block; }
+        .result-banner .result-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
+        .result-banner .result-title.win { color: #10b981; }
+        .result-banner .result-title.lose { color: #f43f5e; }
+        .result-banner .result-detail { color: #94a3b8; font-size: 0.95rem; }
 
         .sidebar {
             width: 320px;
@@ -412,6 +503,7 @@
 </div>
 
 <div class="container">
+    <!-- MAIN CONTENT -->
     <div class="main">
         <!-- LOBBY SELECTOR -->
         <div id="lobbySelector">
@@ -455,6 +547,33 @@
                 </div>
             </div>
 
+            <!-- PHASE DISPLAY -->
+            <div class="phase-display" id="phaseDisplay">
+                <div class="phase-icon" id="phaseIcon">⏳</div>
+                <div class="phase-name" id="phaseName">Đang chờ người chơi</div>
+                <div class="phase-timer" id="phaseTimer">--:--</div>
+            </div>
+
+            <!-- RESULT BANNER -->
+            <div class="result-banner" id="resultBanner">
+                <div class="result-title" id="resultTitle">🏆 Chiến thắng!</div>
+                <div class="result-detail" id="resultDetail">Phe Dân Làng đã chiến thắng!</div>
+            </div>
+
+            <!-- ROLE REVEAL -->
+            <div class="role-reveal" id="roleReveal">
+                <div style="font-size:0.9rem; color:#94a3b8;">Vai trò của bạn là</div>
+                <div class="role-name" id="myRole">🐺 Ma Sói</div>
+                <div style="font-size:0.85rem; color:#94a3b8; margin-top:8px;" id="roleDescription">Mỗi đêm cùng đồng bọn chọn một nạn nhân để giết</div>
+            </div>
+
+            <!-- NIGHT ACTION -->
+            <div class="night-action-area" id="nightActionArea">
+                <div class="action-label" id="nightActionLabel">🌙 Chọn hành động ban đêm:</div>
+                <div class="action-options" id="nightActionOptions"></div>
+                <div id="nightActionResult" style="margin-top:8px; font-size:0.9rem; color:#94a3b8;"></div>
+            </div>
+
             <!-- PLAYERS -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="color:#94a3b8; font-size:0.9rem;">Người chơi: <span id="playerCount">0</span>/10</span>
@@ -462,10 +581,17 @@
             <div class="players-grid" id="playersGrid"></div>
 
             <!-- CONTROLS -->
-            <div class="game-controls" id="gameControls">
+            <div class="game-controls">
                 <button class="btn btn-secondary btn-sm" id="btnReady">✅ Sẵn sàng</button>
                 <button class="btn btn-success btn-sm" id="btnStart" disabled>▶ Bắt đầu</button>
                 <button class="btn btn-danger btn-sm" id="btnLeave">🚪 Rời phòng</button>
+            </div>
+
+            <!-- VOTING -->
+            <div class="voting-area" id="votingArea">
+                <div style="font-weight:700; margin-bottom:8px;">🗳️ Bạn vote ai là sói?</div>
+                <div class="vote-options" id="voteOptions"></div>
+                <div id="voteResult" style="margin-top:10px; font-size:0.9rem; color:#94a3b8;"></div>
             </div>
 
             <div id="gameStatusMsg" class="status-msg hidden"></div>
@@ -503,544 +629,1047 @@
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/app.js"></script>
 <script>
-    (function() {
-        'use strict';
+    // ===== WEREWOLF GAME - FULL LOGIC =====
+    const Game = {
+        currentUser: null,
+        currentRole: null,
+        lobbyId: null,
+        isHost: false,
+        isReady: false,
+        timerInterval: null,
+        lobbyListener: null,
+        chatListener: null,
+        myRole: null,
+        nightActionDone: false,
 
-        const Game = {
-            currentUser: null,
-            currentRole: null,
-            lobbyId: null,
-            isHost: false,
-            isReady: false,
-            lobbyListener: null,
-            chatListener: null,
+        // ROLE CONFIG
+        roles: {
+            werewolf: { name: 'Ma Sói', emoji: '🐺', desc: 'Mỗi đêm cùng đồng bọn chọn một nạn nhân để giết' },
+            seer: { name: 'Tiên Tri', emoji: '🔮', desc: 'Mỗi đêm có thể kiểm tra danh tính của một người chơi' },
+            witch: { name: 'Phù Thủy', emoji: '🧙', desc: 'Có thuốc cứu và thuốc độc, mỗi loại dùng một lần' },
+            guard: { name: 'Bảo Vệ', emoji: '🛡️', desc: 'Mỗi đêm bảo vệ một người khỏi bị sói giết' },
+            hunter: { name: 'Thợ Săn', emoji: '🏹', desc: 'Khi chết có thể bắn chết thêm một người' },
+            villager: { name: 'Dân Làng', emoji: '👤', desc: 'Không có khả năng đặc biệt' }
+        },
 
-            init() {
-                this.currentUser = sessionStorage.getItem('currentUser');
-                this.currentRole = sessionStorage.getItem('currentRole');
+        init() {
+            this.currentUser = sessionStorage.getItem('currentUser');
+            this.currentRole = sessionStorage.getItem('currentRole');
 
-                if (!this.currentUser) {
-                    window.location.href = '../index.html';
-                    return;
-                }
+            if (!this.currentUser) {
+                window.location.href = '../index.html';
+                return;
+            }
 
-                console.log('Game init - User:', this.currentUser);
+            this.bindEvents();
 
-                // Gán sự kiện
-                this.bindEvents();
-
-                // Kiểm tra URL
-                const params = new URLSearchParams(window.location.search);
-                const lobbyId = params.get('lobby');
-                if (lobbyId) {
-                    this.lobbyId = lobbyId;
-                    this.joinLobbyById(lobbyId);
-                }
-            },
-
-            bindEvents() {
-                // Thoát game
-                const btnBack = document.getElementById('btnBack');
-                if (btnBack) {
-                    btnBack.addEventListener('click', function() {
-                        window.location.href = '../dashboard.html';
-                    });
-                }
-
-                // Tạo phòng
-                const btnShowCreate = document.getElementById('btnShowCreate');
-                if (btnShowCreate) {
-                    btnShowCreate.addEventListener('click', function() {
-                        document.getElementById('createForm').classList.remove('hidden');
-                        document.getElementById('joinForm').classList.add('hidden');
-                        document.getElementById('createStatus').classList.add('hidden');
-                        document.getElementById('lobbyNameInput').focus();
-                    });
-                }
-
-                // Tham gia phòng
-                const btnShowJoin = document.getElementById('btnShowJoin');
-                if (btnShowJoin) {
-                    btnShowJoin.addEventListener('click', function() {
-                        document.getElementById('joinForm').classList.remove('hidden');
-                        document.getElementById('createForm').classList.add('hidden');
-                        document.getElementById('joinStatus').classList.add('hidden');
-                        document.getElementById('lobbyIdInput').focus();
-                    });
-                }
-
-                // Hủy tạo phòng
-                const btnCancelCreate = document.getElementById('btnCancelCreate');
-                if (btnCancelCreate) {
-                    btnCancelCreate.addEventListener('click', function() {
-                        document.getElementById('createForm').classList.add('hidden');
-                    });
-                }
-
-                // Hủy tham gia
-                const btnCancelJoin = document.getElementById('btnCancelJoin');
-                if (btnCancelJoin) {
-                    btnCancelJoin.addEventListener('click', function() {
-                        document.getElementById('joinForm').classList.add('hidden');
-                    });
-                }
-
-                // Tạo phòng
-                const btnCreate = document.getElementById('btnCreate');
-                if (btnCreate) {
-                    btnCreate.addEventListener('click', function() {
-                        Game.createLobby();
-                    });
-                }
-
-                // Tham gia
-                const btnJoin = document.getElementById('btnJoin');
-                if (btnJoin) {
-                    btnJoin.addEventListener('click', function() {
-                        Game.joinLobby();
-                    });
-                }
-
-                // Sẵn sàng
-                const btnReady = document.getElementById('btnReady');
-                if (btnReady) {
-                    btnReady.addEventListener('click', function() {
-                        Game.toggleReady();
-                    });
-                }
-
-                // Bắt đầu
-                const btnStart = document.getElementById('btnStart');
-                if (btnStart) {
-                    btnStart.addEventListener('click', function() {
-                        Game.startGame();
-                    });
-                }
-
-                // Rời phòng
-                const btnLeave = document.getElementById('btnLeave');
-                if (btnLeave) {
-                    btnLeave.addEventListener('click', function() {
-                        Game.showLeaveModal();
-                    });
-                }
-
-                // Gửi chat
-                const btnSendChat = document.getElementById('btnSendChat');
-                if (btnSendChat) {
-                    btnSendChat.addEventListener('click', function() {
-                        Game.sendChat();
-                    });
-                }
-
-                // Enter chat
-                const chatInput = document.getElementById('chatInput');
-                if (chatInput) {
-                    chatInput.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') Game.sendChat();
-                    });
-                }
-
-                // Enter lobby name
-                const lobbyNameInput = document.getElementById('lobbyNameInput');
-                if (lobbyNameInput) {
-                    lobbyNameInput.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') Game.createLobby();
-                    });
-                }
-
-                // Enter lobby id
-                const lobbyIdInput = document.getElementById('lobbyIdInput');
-                if (lobbyIdInput) {
-                    lobbyIdInput.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') Game.joinLobby();
-                    });
-                }
-
-                // Modal leave
-                const btnStay = document.getElementById('btnStay');
-                if (btnStay) {
-                    btnStay.addEventListener('click', function() {
-                        Game.hideLeaveModal();
-                    });
-                }
-
-                const btnConfirmLeave = document.getElementById('btnConfirmLeave');
-                if (btnConfirmLeave) {
-                    btnConfirmLeave.addEventListener('click', function() {
-                        Game.confirmLeave();
-                    });
-                }
-
-                const leaveModal = document.getElementById('leaveModal');
-                if (leaveModal) {
-                    leaveModal.addEventListener('click', function(e) {
-                        if (e.target === leaveModal) Game.hideLeaveModal();
-                    });
-                }
-            },
-
-            generateLobbyId() {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                let id = '';
-                for (let i = 0; i < 6; i++) {
-                    id += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                return id;
-            },
-
-            showStatus(elementId, message, type) {
-                const el = document.getElementById(elementId);
-                if (!el) return;
-                el.textContent = message;
-                el.className = 'status-msg ' + type;
-                el.classList.remove('hidden');
-            },
-
-            hideStatus(elementId) {
-                const el = document.getElementById(elementId);
-                if (el) el.classList.add('hidden');
-            },
-
-            async createLobby() {
-                const nameInput = document.getElementById('lobbyNameInput');
-                const lobbyName = nameInput ? nameInput.value.trim() || 'Phòng của ' + this.currentUser : 'Phòng của ' + this.currentUser;
-
-                if (this.currentRole === 'user') {
-                    const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
-                    if (!snap.val()) {
-                        this.showStatus('createStatus', '❌ Bạn chưa mua game Ma Sói! Quay lại trang chủ để mua.', 'error');
-                        return;
-                    }
-                }
-
-                const lobbyId = this.generateLobbyId();
-
-                const checkSnap = await db.ref('gameLobbies/' + lobbyId).once('value');
-                if (checkSnap.exists()) {
-                    this.createLobby();
-                    return;
-                }
-
-                const lobbyData = {
-                    name: lobbyName,
-                    host: this.currentUser,
-                    status: 'waiting',
-                    players: {
-                        [this.currentUser]: {
-                            role: null,
-                            alive: true,
-                            ready: false,
-                            isHost: true
-                        }
-                    },
-                    chat: {},
-                    createdAt: Date.now()
-                };
-
-                await db.ref('gameLobbies/' + lobbyId).set(lobbyData);
-
+            const params = new URLSearchParams(window.location.search);
+            const lobbyId = params.get('lobby');
+            if (lobbyId) {
                 this.lobbyId = lobbyId;
-                this.isHost = true;
-                window.history.pushState({}, '', '?lobby=' + lobbyId);
+                this.joinLobbyById(lobbyId);
+            }
+        },
 
-                this.showGameContent();
-                this.listenLobby();
+        bindEvents() {
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.location.href = '../dashboard.html';
+            });
 
-                this.showStatus('createStatus', '✅ Tạo phòng thành công! Mã phòng: ' + lobbyId, 'success');
+            document.getElementById('btnShowCreate').addEventListener('click', () => this.showCreateForm());
+            document.getElementById('btnShowJoin').addEventListener('click', () => this.showJoinForm());
+            document.getElementById('btnCancelCreate').addEventListener('click', () => this.hideCreateForm());
+            document.getElementById('btnCancelJoin').addEventListener('click', () => this.hideJoinForm());
+            document.getElementById('btnCreate').addEventListener('click', () => this.createLobby());
+            document.getElementById('btnJoin').addEventListener('click', () => this.joinLobby());
+            document.getElementById('btnReady').addEventListener('click', () => this.toggleReady());
+            document.getElementById('btnStart').addEventListener('click', () => this.startGame());
+            document.getElementById('btnLeave').addEventListener('click', () => this.leaveLobby());
+            document.getElementById('btnSendChat').addEventListener('click', () => this.sendChat());
 
-                setTimeout(() => {
-                    this.hideCreateForm();
-                    this.hideStatus('createStatus');
-                }, 2000);
-            },
+            document.getElementById('btnStay').addEventListener('click', () => this.cancelLeave());
+            document.getElementById('btnConfirmLeave').addEventListener('click', () => this.confirmLeave());
+            document.getElementById('leaveModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('leaveModal')) this.cancelLeave();
+            });
 
-            hideCreateForm() {
-                document.getElementById('createForm').classList.add('hidden');
-            },
+            document.getElementById('lobbyNameInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.createLobby();
+            });
+            document.getElementById('lobbyIdInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.joinLobby();
+            });
+            document.getElementById('chatInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.sendChat();
+            });
+        },
 
-            async joinLobby() {
-                const input = document.getElementById('lobbyIdInput');
-                const lobbyId = input ? input.value.trim().toUpperCase() : '';
+        showCreateForm() {
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('joinForm').classList.add('hidden');
+            document.getElementById('createStatus').classList.add('hidden');
+            document.getElementById('lobbyNameInput').focus();
+        },
 
-                if (!lobbyId || lobbyId.length !== 6) {
-                    this.showStatus('joinStatus', '❌ Vui lòng nhập mã phòng 6 ký tự!', 'error');
+        hideCreateForm() {
+            document.getElementById('createForm').classList.add('hidden');
+        },
+
+        showJoinForm() {
+            document.getElementById('joinForm').classList.remove('hidden');
+            document.getElementById('createForm').classList.add('hidden');
+            document.getElementById('joinStatus').classList.add('hidden');
+            document.getElementById('lobbyIdInput').focus();
+        },
+
+        hideJoinForm() {
+            document.getElementById('joinForm').classList.add('hidden');
+        },
+
+        generateLobbyId() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let id = '';
+            for (let i = 0; i < 6; i++) {
+                id += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return id;
+        },
+
+        showStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = 'status-msg ' + type;
+            el.classList.remove('hidden');
+        },
+
+        hideStatus(elementId) {
+            document.getElementById(elementId).classList.add('hidden');
+        },
+
+        async createLobby() {
+            const nameInput = document.getElementById('lobbyNameInput');
+            const lobbyName = nameInput.value.trim() || 'Phòng của ' + this.currentUser;
+
+            if (this.currentRole === 'user') {
+                const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
+                if (!snap.val()) {
+                    this.showStatus('createStatus', '❌ Bạn chưa mua game Ma Sói! Quay lại trang chủ để mua.', 'error');
                     return;
                 }
+            }
 
-                await this.joinLobbyById(lobbyId);
-            },
+            const lobbyId = this.generateLobbyId();
+            const checkSnap = await db.ref('gameLobbies/' + lobbyId).once('value');
+            if (checkSnap.exists()) {
+                this.createLobby();
+                return;
+            }
 
-            async joinLobbyById(lobbyId) {
-                const lobbySnap = await db.ref('gameLobbies/' + lobbyId).once('value');
-                if (!lobbySnap.exists()) {
-                    this.showStatus('joinStatus', '❌ Không tìm thấy phòng với mã: ' + lobbyId, 'error');
-                    return;
-                }
-
-                const lobby = lobbySnap.val();
-                if (lobby.status === 'ended') {
-                    this.showStatus('joinStatus', '❌ Phòng đã kết thúc!', 'error');
-                    return;
-                }
-
-                if (Object.keys(lobby.players).length >= 10) {
-                    this.showStatus('joinStatus', '❌ Phòng đã đầy! (Tối đa 10 người)', 'error');
-                    return;
-                }
-
-                if (this.currentRole === 'user') {
-                    const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
-                    if (!snap.val()) {
-                        this.showStatus('joinStatus', '❌ Bạn chưa mua game Ma Sói! Quay lại trang chủ để mua.', 'error');
-                        return;
-                    }
-                }
-
-                if (!lobby.players[this.currentUser]) {
-                    await db.ref('gameLobbies/' + lobbyId + '/players/' + this.currentUser).set({
+            const lobbyData = {
+                name: lobbyName,
+                host: this.currentUser,
+                status: 'waiting',
+                phase: 'waiting',
+                phaseTimer: 0,
+                players: {
+                    [this.currentUser]: {
                         role: null,
                         alive: true,
                         ready: false,
-                        isHost: false
-                    });
-                }
-
-                this.lobbyId = lobbyId;
-                this.isHost = false;
-                window.history.pushState({}, '', '?lobby=' + lobbyId);
-
-                this.showGameContent();
-                this.listenLobby();
-
-                document.getElementById('joinForm').classList.add('hidden');
-                this.hideStatus('joinStatus');
-            },
-
-            showGameContent() {
-                document.getElementById('lobbySelector').style.display = 'none';
-                document.getElementById('gameContent').classList.add('active');
-                document.getElementById('gameSidebar').classList.add('active');
-                document.getElementById('lobbyIdDisplay').textContent = '🆔 ' + this.lobbyId;
-
-                db.ref('gameLobbies/' + this.lobbyId + '/name').once('value', (snap) => {
-                    document.getElementById('lobbyName').textContent = snap.val() || 'Phòng chơi';
-                });
-            },
-
-            listenLobby() {
-                if (this.lobbyListener) this.lobbyListener();
-                this.lobbyListener = db.ref('gameLobbies/' + this.lobbyId).on('value', (snapshot) => {
-                    const lobby = snapshot.val();
-                    if (!lobby) {
-                        this.lobbyId = null;
-                        window.location.href = '../dashboard.html';
-                        return;
+                        isHost: true
                     }
+                },
+                nightKill: null,
+                votes: {},
+                chat: {},
+                createdAt: Date.now(),
+                startedAt: null,
+                endedAt: null,
+                currentRound: 0,
+                gameLog: [],
+                witchUsedSave: false,
+                witchUsedPoison: false,
+                protectedPlayer: null,
+                lastNightAction: null,
+                werewolfVotes: {}
+            };
 
-                    this.renderPlayers(lobby);
-                    this.updatePlayerCount(lobby);
-                    this.updateGameStatus(lobby);
-                    this.updateControls(lobby);
-                    this.updateChat(lobby);
+            await db.ref('gameLobbies/' + lobbyId).set(lobbyData);
+
+            this.lobbyId = lobbyId;
+            this.isHost = true;
+            window.history.pushState({}, '', '?lobby=' + lobbyId);
+
+            this.showGameContent();
+            this.listenLobby();
+
+            this.showStatus('createStatus', '✅ Tạo phòng thành công! Mã phòng: ' + lobbyId, 'success');
+
+            setTimeout(() => {
+                this.hideCreateForm();
+                this.hideStatus('createStatus');
+            }, 2000);
+        },
+
+        async joinLobby() {
+            const input = document.getElementById('lobbyIdInput');
+            const lobbyId = input.value.trim().toUpperCase();
+
+            if (!lobbyId || lobbyId.length !== 6) {
+                this.showStatus('joinStatus', '❌ Vui lòng nhập mã phòng 6 ký tự!', 'error');
+                return;
+            }
+
+            await this.joinLobbyById(lobbyId);
+        },
+
+        async joinLobbyById(lobbyId) {
+            const lobbySnap = await db.ref('gameLobbies/' + lobbyId).once('value');
+            if (!lobbySnap.exists()) {
+                this.showStatus('joinStatus', '❌ Không tìm thấy phòng với mã: ' + lobbyId, 'error');
+                return;
+            }
+
+            const lobby = lobbySnap.val();
+            if (lobby.status === 'ended') {
+                this.showStatus('joinStatus', '❌ Phòng đã kết thúc!', 'error');
+                return;
+            }
+
+            if (Object.keys(lobby.players).length >= 10) {
+                this.showStatus('joinStatus', '❌ Phòng đã đầy! (Tối đa 10 người)', 'error');
+                return;
+            }
+
+            if (this.currentRole === 'user') {
+                const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
+                if (!snap.val()) {
+                    this.showStatus('joinStatus', '❌ Bạn chưa mua game Ma Sói! Quay lại trang chủ để mua.', 'error');
+                    return;
+                }
+            }
+
+            if (!lobby.players[this.currentUser]) {
+                await db.ref('gameLobbies/' + lobbyId + '/players/' + this.currentUser).set({
+                    role: null,
+                    alive: true,
+                    ready: false,
+                    isHost: false
                 });
-            },
+            }
 
-            renderPlayers(lobby) {
-                const grid = document.getElementById('playersGrid');
-                const players = lobby.players || {};
+            this.lobbyId = lobbyId;
+            this.isHost = false;
+            window.history.pushState({}, '', '?lobby=' + lobbyId);
 
-                if (Object.keys(players).length === 0) {
-                    grid.innerHTML = '<div style="grid-column:span 3; text-align:center; color:#94a3b8; padding:20px;">Chưa có người chơi</div>';
+            this.showGameContent();
+            this.listenLobby();
+
+            this.hideJoinForm();
+            this.hideStatus('joinStatus');
+        },
+
+        showGameContent() {
+            document.getElementById('lobbySelector').style.display = 'none';
+            document.getElementById('gameContent').classList.add('active');
+            document.getElementById('gameSidebar').classList.add('active');
+            document.getElementById('lobbyIdDisplay').textContent = '🆔 ' + this.lobbyId;
+
+            db.ref('gameLobbies/' + this.lobbyId + '/name').once('value', (snap) => {
+                document.getElementById('lobbyName').textContent = snap.val() || 'Phòng chơi';
+            });
+        },
+
+        listenLobby() {
+            if (this.lobbyListener) this.lobbyListener();
+            this.lobbyListener = db.ref('gameLobbies/' + this.lobbyId).on('value', (snapshot) => {
+                const lobby = snapshot.val();
+                if (!lobby) {
+                    this.lobbyId = null;
+                    window.location.href = '../dashboard.html';
                     return;
                 }
 
-                grid.innerHTML = Object.entries(players).map(([name, data]) => {
-                    const isHost = data.isHost;
-                    const isMe = name === this.currentUser;
-                    return `
-                        <div class="player-card ${isHost ? 'host' : ''}">
-                            <div class="p-name">${isMe ? '⭐ ' : ''}${name}</div>
-                            <div class="p-role">${isHost ? '<span class="host-badge">👑 Chủ phòng</span>' : '❓'}</div>
-                            ${data.ready ? '<div style="color:#10b981; font-size:0.7rem;">✅ Sẵn sàng</div>' : ''}
-                        </div>
-                    `;
-                }).join('');
-            },
+                this.renderPlayers(lobby);
+                this.updatePlayerCount(lobby);
+                this.updateGameStatus(lobby);
+                this.updatePhase(lobby);
+                this.updateControls(lobby);
+                this.updateVoting(lobby);
+                this.updateNightActions(lobby);
+                this.updateResultBanner(lobby);
+                this.updateChat(lobby);
+            });
+        },
 
-            updatePlayerCount(lobby) {
-                const count = Object.keys(lobby.players || {}).length;
-                document.getElementById('playerCount').textContent = count;
-            },
+        // ===== RENDER =====
+        renderPlayers(lobby) {
+            const grid = document.getElementById('playersGrid');
+            const players = lobby.players || {};
 
-            updateGameStatus(lobby) {
-                const el = document.getElementById('gameStatus');
-                const statusMap = {
-                    'waiting': '⏳ Đang chờ',
-                    'playing': '🔄 Đang chơi',
-                    'ended': '🏁 Đã kết thúc'
-                };
-                el.textContent = statusMap[lobby.status] || lobby.status;
-                el.className = 'game-status ' + lobby.status;
-            },
+            if (Object.keys(players).length === 0) {
+                grid.innerHTML = '<div style="grid-column:span 3; text-align:center; color:#94a3b8; padding:20px;">Chưa có người chơi</div>';
+                return;
+            }
 
-            updateControls(lobby) {
-                const btnReady = document.getElementById('btnReady');
-                const btnStart = document.getElementById('btnStart');
-                const myData = lobby.players[this.currentUser];
+            grid.innerHTML = Object.entries(players).map(([name, data]) => {
+                const isHost = data.isHost;
+                const isMe = name === this.currentUser;
+                const isDead = !data.alive;
+                const roleName = data.role ? this.roles[data.role]?.name || '❓' : '❓';
+                const roleEmoji = data.role ? this.roles[data.role]?.emoji || '❓' : '❓';
 
-                if (!myData || !btnReady || !btnStart) return;
-
-                // Nút Ready
-                this.isReady = myData.ready || false;
-                btnReady.textContent = this.isReady ? '❌ Hủy sẵn sàng' : '✅ Sẵn sàng';
-                btnReady.classList.toggle('active', this.isReady);
-
-                // Nút Start - chỉ Host
-                if (this.isHost && lobby.status === 'waiting') {
-                    const count = Object.keys(lobby.players).length;
-                    const allReady = Object.values(lobby.players).every(p => p.ready);
-                    if (count < 5 || count > 10) {
-                        btnStart.textContent = `⚠️ Cần 5-10 người (${count}/10)`;
-                        btnStart.disabled = true;
-                    } else if (!allReady) {
-                        btnStart.textContent = '⏳ Chờ mọi người sẵn sàng';
-                        btnStart.disabled = true;
-                    } else {
-                        btnStart.textContent = '▶ Bắt đầu';
-                        btnStart.disabled = false;
-                    }
-                    btnStart.style.display = 'inline-block';
-                } else {
-                    btnStart.disabled = true;
-                    if (lobby.status === 'playing') {
-                        btnStart.textContent = '⏳ Đang chơi...';
-                    } else {
-                        btnStart.textContent = '👑 Chờ chủ phòng';
-                    }
-                    btnStart.style.display = 'inline-block';
+                let displayRole = '❓';
+                if (isMe && data.role) {
+                    displayRole = roleEmoji + ' ' + roleName;
+                } else if (lobby.status === 'ended' && data.role) {
+                    displayRole = roleEmoji + ' ' + roleName;
                 }
 
-                // Ẩn Ready khi đang chơi
-                if (lobby.status === 'playing') {
-                    btnReady.style.display = 'none';
-                } else {
-                    btnReady.style.display = 'inline-block';
-                }
-            },
-
-            updateChat(lobby) {
-                if (this.chatListener) this.chatListener();
-                this.chatListener = db.ref('gameLobbies/' + this.lobbyId + '/chat').on('child_added', (snapshot) => {
-                    const msg = snapshot.val();
-                    if (!msg) return;
-                    this.addChatMessage(msg.user, msg.message, msg.timestamp);
-                });
-            },
-
-            addChatMessage(user, message, timestamp) {
-                const container = document.getElementById('chatMessages');
-                if (!container) return;
-                const placeholder = container.querySelector('div[style]');
-                if (placeholder) container.innerHTML = '';
-
-                const time = new Date(timestamp).toLocaleTimeString('vi-VN');
-                const isMe = user === this.currentUser;
-
-                const div = document.createElement('div');
-                div.className = 'chat-message';
-                div.innerHTML = `
-                    <span class="msg-user" style="${isMe ? 'color:#10b981;' : ''}">${user}</span>
-                    <span class="msg-time">${time}</span>
-                    <span style="margin-left:8px;">${message}</span>
+                return `
+                    <div class="player-card ${isHost ? 'host' : ''} ${isDead ? 'dead' : ''}">
+                        <div class="p-name">${isMe ? '⭐ ' : ''}${name}</div>
+                        <div class="p-role">${displayRole}</div>
+                        ${isHost ? '<div class="host-badge">👑 Chủ phòng</div>' : ''}
+                        ${data.ready ? '<div style="color:#10b981; font-size:0.7rem;">✅ Sẵn sàng</div>' : ''}
+                    </div>
                 `;
-                container.appendChild(div);
-                container.scrollTop = container.scrollHeight;
-            },
+            }).join('');
+        },
 
-            async sendChat() {
-                const input = document.getElementById('chatInput');
-                const message = input ? input.value.trim() : '';
-                if (!message || !this.lobbyId) return;
+        updatePlayerCount(lobby) {
+            const count = Object.keys(lobby.players || {}).length;
+            document.getElementById('playerCount').textContent = count;
+        },
 
-                await db.ref('gameLobbies/' + this.lobbyId + '/chat').push({
-                    user: this.currentUser,
-                    message: message,
-                    timestamp: Date.now()
-                });
+        updateGameStatus(lobby) {
+            const el = document.getElementById('gameStatus');
+            const statusMap = {
+                'waiting': '⏳ Đang chờ',
+                'playing': '🔄 Đang chơi',
+                'ended': '🏁 Đã kết thúc'
+            };
+            el.textContent = statusMap[lobby.status] || lobby.status;
+            el.className = 'game-status ' + lobby.status;
+        },
 
-                if (input) input.value = '';
-            },
+        updatePhase(lobby) {
+            const icon = document.getElementById('phaseIcon');
+            const name = document.getElementById('phaseName');
+            const timer = document.getElementById('phaseTimer');
 
-            async toggleReady() {
-                const newReady = !this.isReady;
-                await db.ref('gameLobbies/' + this.lobbyId + '/players/' + this.currentUser + '/ready').set(newReady);
-                this.isReady = newReady;
-            },
+            const phaseMap = {
+                'waiting': { icon: '⏳', name: 'Đang chờ người chơi' },
+                'night': { icon: '🌙', name: '🌙 Ban đêm - Hãy làm nhiệm vụ của bạn' },
+                'day': { icon: '☀️', name: '☀️ Ban ngày - Thảo luận và vote' },
+                'voting': { icon: '🗳️', name: '🗳️ Đang vote - Hãy bỏ phiếu!' },
+                'ended': { icon: '🏁', name: '🏁 Trò chơi đã kết thúc' }
+            };
 
-            async startGame() {
-                if (!this.isHost) return;
-                console.log('Start game clicked');
-                // TODO: Thêm logic game ở đây
-                this.showStatus('gameStatusMsg', '🚧 Tính năng đang được phát triển!', 'info');
-            },
+            const phase = phaseMap[lobby.phase] || phaseMap.waiting;
+            icon.textContent = phase.icon;
+            name.textContent = phase.name;
 
-            showLeaveModal() {
-                document.getElementById('leaveModal').classList.remove('hidden');
-            },
+            if (lobby.phaseTimer > 0) {
+                const mins = Math.floor(lobby.phaseTimer / 60);
+                const secs = lobby.phaseTimer % 60;
+                timer.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            } else {
+                timer.textContent = '--:--';
+            }
 
-            hideLeaveModal() {
-                document.getElementById('leaveModal').classList.add('hidden');
-            },
+            // Role reveal
+            const roleReveal = document.getElementById('roleReveal');
+            const myRoleEl = document.getElementById('myRole');
+            const roleDesc = document.getElementById('roleDescription');
 
-            async confirmLeave() {
-                this.hideLeaveModal();
-
-                try {
-                    if (this.lobbyId) {
-                        const snap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
-                        const lobby = snap.val();
-
-                        if (lobby && lobby.players) {
-                            await db.ref('gameLobbies/' + this.lobbyId + '/players/' + this.currentUser).remove();
-
-                            const newSnap = await db.ref('gameLobbies/' + this.lobbyId + '/players').once('value');
-                            const remaining = newSnap.val() || {};
-
-                            if (Object.keys(remaining).length === 0) {
-                                await db.ref('gameLobbies/' + this.lobbyId).remove();
-                            } else if (lobby.host === this.currentUser) {
-                                const newHost = Object.keys(remaining)[0];
-                                await db.ref('gameLobbies/' + this.lobbyId + '/host').set(newHost);
-                                await db.ref('gameLobbies/' + this.lobbyId + '/players/' + newHost + '/isHost').set(true);
-                            }
-                        }
-                    }
-
-                    if (this.lobbyListener) {
-                        this.lobbyListener();
-                        this.lobbyListener = null;
-                    }
-                    if (this.chatListener) {
-                        this.chatListener();
-                        this.chatListener = null;
-                    }
-
-                    this.lobbyId = null;
-                    window.location.href = '../dashboard.html';
-
-                } catch (e) {
-                    console.error('Lỗi rời phòng:', e);
-                    window.location.href = '../dashboard.html';
+            if (lobby.phase === 'waiting' || lobby.phase === 'ended') {
+                roleReveal.classList.remove('active');
+            } else if (lobby.players[this.currentUser]) {
+                const myData = lobby.players[this.currentUser];
+                if (myData.role) {
+                    this.myRole = myData.role;
+                    const roleInfo = this.roles[myData.role];
+                    roleReveal.classList.add('active');
+                    myRoleEl.textContent = (roleInfo?.emoji || '❓') + ' ' + (roleInfo?.name || myData.role);
+                    roleDesc.textContent = roleInfo?.desc || '';
                 }
             }
-        };
 
-        // Khởi tạo
-        document.addEventListener('DOMContentLoaded', function() {
-            Game.init();
-        });
-    })();
+            // Result banner
+            const banner = document.getElementById('resultBanner');
+            if (lobby.status === 'ended') {
+                banner.classList.add('active');
+                const title = document.getElementById('resultTitle');
+                const detail = document.getElementById('resultDetail');
+                const log = lobby.gameLog || [];
+                const winLog = log.find(l => l.event === 'win');
+                if (winLog) {
+                    if (winLog.winner === 'werewolves') {
+                        title.textContent = '🐺 Ma Sói chiến thắng!';
+                        title.className = 'result-title lose';
+                        detail.textContent = 'Ma Sói đã tiêu diệt hết Dân Làng!';
+                    } else {
+                        title.textContent = '👨‍🌾 Dân Làng chiến thắng!';
+                        title.className = 'result-title win';
+                        detail.textContent = 'Dân Làng đã tiêu diệt hết Ma Sói!';
+                    }
+                }
+            } else {
+                banner.classList.remove('active');
+            }
+        },
+
+        updateControls(lobby) {
+            const btnReady = document.getElementById('btnReady');
+            const btnStart = document.getElementById('btnStart');
+            const myData = lobby.players[this.currentUser];
+
+            if (!myData) return;
+
+            if (!myData.alive && lobby.status === 'playing') {
+                btnReady.disabled = true;
+                btnStart.disabled = true;
+                btnReady.textContent = '💀 Đã chết';
+                return;
+            }
+
+            btnReady.disabled = false;
+            this.isReady = myData.ready || false;
+            btnReady.textContent = this.isReady ? '❌ Hủy sẵn sàng' : '✅ Sẵn sàng';
+            btnReady.classList.toggle('active', this.isReady);
+
+            if (this.isHost && lobby.status === 'waiting') {
+                const count = Object.keys(lobby.players).length;
+                const allReady = Object.values(lobby.players).every(p => p.ready);
+                if (count < 5 || count > 10) {
+                    btnStart.textContent = `⚠️ Cần 5-10 người (${count}/10)`;
+                    btnStart.disabled = true;
+                } else if (!allReady) {
+                    btnStart.textContent = '⏳ Chờ mọi người sẵn sàng';
+                    btnStart.disabled = true;
+                } else {
+                    btnStart.textContent = '▶ Bắt đầu';
+                    btnStart.disabled = false;
+                }
+            } else {
+                btnStart.disabled = true;
+                btnStart.textContent = lobby.status === 'playing' ? '⏳ Đang chơi...' : (this.isHost ? '⏳ Đang chờ...' : '👑 Chờ chủ phòng bắt đầu');
+            }
+
+            if (lobby.status === 'playing') {
+                btnReady.style.display = 'none';
+            } else {
+                btnReady.style.display = 'block';
+            }
+        },
+
+        updateVoting(lobby) {
+            const area = document.getElementById('votingArea');
+            if (lobby.phase === 'voting' && lobby.players[this.currentUser] && lobby.players[this.currentUser].alive) {
+                area.classList.add('active');
+                this.renderVoteOptions(lobby);
+            } else {
+                area.classList.remove('active');
+            }
+        },
+
+        renderVoteOptions(lobby) {
+            const container = document.getElementById('voteOptions');
+            const players = Object.keys(lobby.players).filter(name =>
+                name !== this.currentUser && lobby.players[name].alive
+            );
+
+            if (players.length === 0) {
+                container.innerHTML = '<div style="color:#94a3b8;">Không có ai để vote</div>';
+                return;
+            }
+
+            const voted = lobby.votes[this.currentUser] || null;
+
+            container.innerHTML = players.map(name => `
+                <button class="vote-btn ${voted === name ? 'selected' : ''}"
+                        onclick="Game.castVote('${name}')"
+                        ${lobby.votes[this.currentUser] ? 'disabled' : ''}>
+                    ${name}
+                </button>
+            `).join('');
+
+            document.getElementById('voteResult').textContent = lobby.votes[this.currentUser] ?
+                `✅ Bạn đã vote cho ${lobby.votes[this.currentUser]}` : '';
+        },
+
+        updateNightActions(lobby) {
+            const area = document.getElementById('nightActionArea');
+            const myData = lobby.players[this.currentUser];
+
+            if (!myData || !myData.alive || lobby.phase !== 'night') {
+                area.classList.remove('active');
+                return;
+            }
+
+            const role = myData.role;
+            if (!role || role === 'villager') {
+                area.classList.remove('active');
+                return;
+            }
+
+            area.classList.add('active');
+            this.renderNightActions(lobby);
+        },
+
+        renderNightActions(lobby) {
+            const container = document.getElementById('nightActionOptions');
+            const label = document.getElementById('nightActionLabel');
+            const result = document.getElementById('nightActionResult');
+            const myData = lobby.players[this.currentUser];
+            const role = myData.role;
+
+            container.innerHTML = '';
+            result.textContent = '';
+
+            if (role === 'werewolf') {
+                label.textContent = '🐺 Chọn nạn nhân để giết:';
+                const targets = Object.keys(lobby.players).filter(name =>
+                    name !== this.currentUser && lobby.players[name].alive && lobby.players[name].role !== 'werewolf'
+                );
+                if (targets.length === 0) {
+                    container.innerHTML = '<div style="color:#94a3b8;">Không có ai để giết</div>';
+                    return;
+                }
+                container.innerHTML = targets.map(name => `
+                    <button class="night-action-btn" onclick="Game.nightAction('kill', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
+                        ${name}
+                    </button>
+                `).join('');
+            } else if (role === 'seer') {
+                label.textContent = '🔮 Chọn người để soi:';
+                const targets = Object.keys(lobby.players).filter(name => name !== this.currentUser && lobby.players[name].alive);
+                if (targets.length === 0) {
+                    container.innerHTML = '<div style="color:#94a3b8;">Không có ai để soi</div>';
+                    return;
+                }
+                container.innerHTML = targets.map(name => `
+                    <button class="night-action-btn" onclick="Game.nightAction('seer', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
+                        ${name}
+                    </button>
+                `).join('');
+            } else if (role === 'witch') {
+                label.textContent = '🧙 Chọn hành động (mỗi loại dùng 1 lần):';
+                const saveDisabled = lobby.witchUsedSave ? 'disabled' : '';
+                const poisonDisabled = lobby.witchUsedPoison ? 'disabled' : '';
+                container.innerHTML = `
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="night-action-btn" onclick="Game.nightAction('save', '${lobby.nightKill || ''}')" ${saveDisabled}>
+                            💚 Cứu người (${lobby.nightKill || 'không ai bị giết'})
+                        </button>
+                        <button class="night-action-btn" onclick="Game.nightAction('poison', '')" ${poisonDisabled}>
+                            ☠️ Đầu độc
+                        </button>
+                    </div>
+                    <div style="margin-top:8px; font-size:0.8rem; color:#94a3b8;">
+                        ${lobby.witchUsedSave ? '✅ Đã dùng thuốc cứu' : '💚 Còn thuốc cứu'}
+                        <span style="margin-left:12px;">${lobby.witchUsedPoison ? '✅ Đã dùng thuốc độc' : '☠️ Còn thuốc độc'}</span>
+                    </div>
+                `;
+            } else if (role === 'guard') {
+                label.textContent = '🛡️ Chọn người để bảo vệ:';
+                const targets = Object.keys(lobby.players).filter(name => name !== this.currentUser && lobby.players[name].alive);
+                if (targets.length === 0) {
+                    container.innerHTML = '<div style="color:#94a3b8;">Không có ai để bảo vệ</div>';
+                    return;
+                }
+                container.innerHTML = targets.map(name => `
+                    <button class="night-action-btn" onclick="Game.nightAction('guard', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
+                        ${name}
+                    </button>
+                `).join('');
+            } else if (role === 'hunter') {
+                label.textContent = '🏹 Bạn là Thợ săn! Nếu bị giết, bạn có thể bắn một người.';
+                container.innerHTML = '<div style="color:#94a3b8;">Chờ khi bị giết để sử dụng kỹ năng</div>';
+            }
+        },
+
+        // ===== NIGHT ACTIONS =====
+        async nightAction(action, target) {
+            if (this.nightActionDone) return;
+
+            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+            const snap = await lobbyRef.once('value');
+            const lobby = snap.val();
+
+            if (!lobby || lobby.phase !== 'night') return;
+            if (!lobby.players[this.currentUser] || !lobby.players[this.currentUser].alive) return;
+
+            const result = document.getElementById('nightActionResult');
+
+            if (action === 'kill') {
+                await lobbyRef.update({
+                    'nightKill': target,
+                    'lastNightAction': { user: this.currentUser, action: 'kill', target: target }
+                });
+                result.textContent = `✅ Đã chọn ${target} làm nạn nhân`;
+                result.style.color = '#10b981';
+                this.nightActionDone = true;
+            } else if (action === 'seer') {
+                const targetRole = lobby.players[target]?.role || 'unknown';
+                const isWerewolf = targetRole === 'werewolf';
+                result.textContent = `🔮 ${target} là ${isWerewolf ? '🐺 Ma Sói' : '👤 Dân Làng'}`;
+                result.style.color = isWerewolf ? '#f43f5e' : '#10b981';
+                this.nightActionDone = true;
+                await lobbyRef.update({
+                    'lastNightAction': { user: this.currentUser, action: 'seer', target: target, result: targetRole }
+                });
+            } else if (action === 'save') {
+                if (lobby.witchUsedSave) {
+                    result.textContent = '❌ Bạn đã dùng thuốc cứu rồi!';
+                    result.style.color = '#f43f5e';
+                    return;
+                }
+                if (!lobby.nightKill) {
+                    result.textContent = '💚 Đêm nay không có ai bị giết, không cần cứu.';
+                    result.style.color = '#94a3b8';
+                    return;
+                }
+                await lobbyRef.update({
+                    'witchUsedSave': true,
+                    'nightKill': null,
+                    'lastNightAction': { user: this.currentUser, action: 'save' }
+                });
+                result.textContent = `💚 Đã cứu ${lobby.nightKill}!`;
+                result.style.color = '#10b981';
+                this.nightActionDone = true;
+            } else if (action === 'poison') {
+                if (lobby.witchUsedPoison) {
+                    result.textContent = '❌ Bạn đã dùng thuốc độc rồi!';
+                    result.style.color = '#f43f5e';
+                    return;
+                }
+                const targets = Object.keys(lobby.players).filter(name =>
+                    name !== this.currentUser && lobby.players[name].alive
+                );
+                if (targets.length === 0) {
+                    result.textContent = '❌ Không có ai để đầu độc';
+                    result.style.color = '#f43f5e';
+                    return;
+                }
+                const targetName = prompt('☠️ Chọn người để đầu độc:\n' + targets.join(', '));
+                if (targetName && targets.includes(targetName)) {
+                    await lobbyRef.update({
+                        'witchUsedPoison': true,
+                        'players/' + targetName + '/alive': false,
+                        'lastNightAction': { user: this.currentUser, action: 'poison', target: targetName }
+                    });
+                    result.textContent = `☠️ Đã đầu độc ${targetName}!`;
+                    result.style.color = '#f43f5e';
+                    this.nightActionDone = true;
+                } else {
+                    result.textContent = '❌ Đã hủy đầu độc';
+                    result.style.color = '#94a3b8';
+                }
+            } else if (action === 'guard') {
+                await lobbyRef.update({
+                    'protectedPlayer': target,
+                    'lastNightAction': { user: this.currentUser, action: 'guard', target: target }
+                });
+                result.textContent = `🛡️ Đã bảo vệ ${target}`;
+                result.style.color = '#10b981';
+                this.nightActionDone = true;
+            }
+
+            if (this.nightActionDone) {
+                setTimeout(() => { this.nightActionDone = false; }, 1000);
+            }
+        },
+
+        updateResultBanner(lobby) {
+            // Handled in updatePhase
+        },
+
+        // ===== CHAT =====
+        updateChat(lobby) {
+            if (this.chatListener) this.chatListener();
+            this.chatListener = db.ref('gameLobbies/' + this.lobbyId + '/chat').on('child_added', (snapshot) => {
+                const msg = snapshot.val();
+                if (!msg) return;
+                this.addChatMessage(msg.user, msg.message, msg.timestamp);
+            });
+        },
+
+        addChatMessage(user, message, timestamp) {
+            const container = document.getElementById('chatMessages');
+            if (container.querySelector('div[style]')) container.innerHTML = '';
+
+            const time = new Date(timestamp).toLocaleTimeString('vi-VN');
+            const isMe = user === this.currentUser;
+
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            div.innerHTML = `
+                <span class="msg-user" style="${isMe ? 'color:#10b981;' : ''}">${user}</span>
+                <span class="msg-time">${time}</span>
+                <span style="margin-left:8px;">${message}</span>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        },
+
+        async sendChat() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message || !this.lobbyId) return;
+
+            await db.ref('gameLobbies/' + this.lobbyId + '/chat').push({
+                user: this.currentUser,
+                message: message,
+                timestamp: Date.now()
+            });
+
+            input.value = '';
+        },
+
+        // ===== GAME CONTROLS =====
+        async toggleReady() {
+            const newReady = !this.isReady;
+            await db.ref('gameLobbies/' + this.lobbyId + '/players/' + this.currentUser + '/ready').set(newReady);
+            this.isReady = newReady;
+        },
+
+        async startGame() {
+            if (!this.isHost) return;
+
+            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+            const snap = await lobbyRef.once('value');
+            const lobby = snap.val();
+            if (!lobby) return;
+
+            const players = Object.keys(lobby.players);
+            if (players.length < 5 || players.length > 10) return;
+
+            // Assign roles
+            const roles = this.assignRoles(players.length);
+            const shuffled = this.shuffleArray(players);
+            const assignments = {};
+
+            shuffled.forEach((name, index) => {
+                assignments[name] = roles[index % roles.length];
+            });
+
+            const updates = {};
+            Object.entries(assignments).forEach(([name, role]) => {
+                updates['players/' + name + '/role'] = role;
+                updates['players/' + name + '/ready'] = false;
+            });
+
+            updates.status = 'playing';
+            updates.phase = 'night';
+            updates.phaseTimer = 120;
+            updates.startedAt = Date.now();
+            updates.currentRound = 1;
+            updates.nightKill = null;
+            updates.votes = {};
+            updates.witchUsedSave = false;
+            updates.witchUsedPoison = false;
+            updates.protectedPlayer = null;
+            updates.lastNightAction = null;
+
+            await lobbyRef.update(updates);
+
+            this.startPhaseTimer();
+        },
+
+        assignRoles(playerCount) {
+            let roles = [];
+            const wolfCount = Math.max(2, Math.floor(playerCount / 4));
+            const villagerCount = playerCount - wolfCount - 4;
+
+            for (let i = 0; i < wolfCount; i++) roles.push('werewolf');
+            const specials = ['seer', 'witch', 'guard', 'hunter'];
+            roles = roles.concat(specials);
+            for (let i = 0; i < villagerCount; i++) roles.push('villager');
+
+            return this.shuffleArray(roles);
+        },
+
+        shuffleArray(arr) {
+            const shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        },
+
+        startPhaseTimer() {
+            if (this.timerInterval) clearInterval(this.timerInterval);
+
+            this.timerInterval = setInterval(async () => {
+                const snap = await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').once('value');
+                let timer = snap.val() || 0;
+
+                if (timer <= 0) {
+                    await this.nextPhase();
+                    return;
+                }
+
+                timer--;
+                await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').set(timer);
+            }, 1000);
+        },
+
+        async nextPhase() {
+            const snap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
+            const lobby = snap.val();
+            if (!lobby || lobby.status !== 'playing') {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                return;
+            }
+
+            const currentPhase = lobby.phase;
+            let nextPhase = '';
+            let timer = 0;
+
+            if (currentPhase === 'night') {
+                nextPhase = 'day';
+                timer = 120;
+                await this.processNightResult(lobby);
+            } else if (currentPhase === 'day') {
+                nextPhase = 'voting';
+                timer = 60;
+            } else if (currentPhase === 'voting') {
+                nextPhase = 'night';
+                timer = 120;
+                await this.processVoteResult(lobby);
+                const winner = await this.checkWinCondition(lobby);
+                if (winner) {
+                    await db.ref('gameLobbies/' + this.lobbyId + '/status').set('ended');
+                    await db.ref('gameLobbies/' + this.lobbyId + '/phase').set('ended');
+                    await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').set(0);
+                    if (this.timerInterval) {
+                        clearInterval(this.timerInterval);
+                        this.timerInterval = null;
+                    }
+                    await this.saveGameHistory(lobby, winner);
+                    return;
+                }
+                await db.ref('gameLobbies/' + this.lobbyId + '/currentRound').transaction((current) => (current || 0) + 1);
+            }
+
+            await db.ref('gameLobbies/' + this.lobbyId + '/phase').set(nextPhase);
+            await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').set(timer);
+            await db.ref('gameLobbies/' + this.lobbyId + '/votes').set({});
+
+            if (nextPhase === 'night') {
+                await db.ref('gameLobbies/' + this.lobbyId + '/witchUsedSave').set(false);
+                await db.ref('gameLobbies/' + this.lobbyId + '/witchUsedPoison').set(false);
+                await db.ref('gameLobbies/' + this.lobbyId + '/protectedPlayer').set(null);
+                await db.ref('gameLobbies/' + this.lobbyId + '/nightKill').set(null);
+                await db.ref('gameLobbies/' + this.lobbyId + '/lastNightAction').set(null);
+            }
+        },
+
+        async processNightResult(lobby) {
+            const players = lobby.players || {};
+            const killTarget = lobby.nightKill;
+            const protectedPlayer = lobby.protectedPlayer;
+
+            let killed = null;
+            if (killTarget && killTarget !== protectedPlayer) {
+                if (!lobby.witchUsedSave || lobby.witchUsedSave !== true) {
+                    await db.ref('gameLobbies/' + this.lobbyId + '/players/' + killTarget + '/alive').set(false);
+                    killed = killTarget;
+                    await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+                        round: lobby.currentRound || 1,
+                        event: 'kill',
+                        target: killTarget,
+                        time: new Date().toLocaleString('vi-VN')
+                    });
+                }
+            }
+
+            const lastAction = lobby.lastNightAction;
+            if (lastAction && lastAction.action === 'poison') {
+                const poisonTarget = lastAction.target;
+                if (poisonTarget && players[poisonTarget] && players[poisonTarget].alive) {
+                    await db.ref('gameLobbies/' + this.lobbyId + '/players/' + poisonTarget + '/alive').set(false);
+                    await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+                        round: lobby.currentRound || 1,
+                        event: 'poison',
+                        target: poisonTarget,
+                        time: new Date().toLocaleString('vi-VN')
+                    });
+                }
+            }
+
+            // Hunter revenge
+            if (killed) {
+                const victimData = players[killed];
+                if (victimData && victimData.role === 'hunter') {
+                    const targets = Object.keys(players).filter(name => name !== killed && players[name].alive);
+                    if (targets.length > 0) {
+                        const target = targets[Math.floor(Math.random() * targets.length)];
+                        await db.ref('gameLobbies/' + this.lobbyId + '/players/' + target + '/alive').set(false);
+                        await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+                            round: lobby.currentRound || 1,
+                            event: 'hunter_shot',
+                            target: target,
+                            time: new Date().toLocaleString('vi-VN')
+                        });
+                    }
+                }
+            }
+        },
+
+        async processVoteResult(lobby) {
+            const votes = lobby.votes || {};
+            const voteCount = {};
+
+            Object.values(votes).forEach(voted => {
+                voteCount[voted] = (voteCount[voted] || 0) + 1;
+            });
+
+            let maxVotes = 0;
+            let eliminated = null;
+
+            Object.entries(voteCount).forEach(([name, count]) => {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    eliminated = name;
+                }
+            });
+
+            if (eliminated && lobby.players[eliminated] && lobby.players[eliminated].alive) {
+                await db.ref('gameLobbies/' + this.lobbyId + '/players/' + eliminated + '/alive').set(false);
+                await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+                    round: lobby.currentRound || 1,
+                    event: 'vote_out',
+                    target: eliminated,
+                    time: new Date().toLocaleString('vi-VN')
+                });
+            }
+        },
+
+        async checkWinCondition(lobby) {
+            const players = lobby.players || {};
+            const alive = Object.keys(players).filter(name => players[name].alive);
+            const wolves = alive.filter(name => players[name].role === 'werewolf');
+            const villagers = alive.filter(name => players[name].role !== 'werewolf');
+
+            if (wolves.length === 0) {
+                await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+                    event: 'win',
+                    winner: 'villagers',
+                    time: new Date().toLocaleString('vi-VN')
+                });
+                return 'villagers';
+            }
+
+            if (wolves.length >= villagers.length) {
+                await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+                    event: 'win',
+                    winner: 'werewolves',
+                    time: new Date().toLocaleString('vi-VN')
+                });
+                return 'werewolves';
+            }
+
+            return null;
+        },
+
+        async saveGameHistory(lobby, winner) {
+            const historyRef = db.ref('gameHistory').push();
+            const players = {};
+            Object.entries(lobby.players).forEach(([name, data]) => {
+                players[name] = data.role || 'villager';
+            });
+
+            await historyRef.set({
+                lobbyName: lobby.name || 'Ván chơi',
+                host: lobby.host,
+                players: players,
+                winner: winner,
+                playerCount: Object.keys(lobby.players).length,
+                startedAt: lobby.startedAt,
+                endedAt: Date.now(),
+                gameLog: lobby.gameLog || []
+            });
+        },
+
+        async castVote(target) {
+            const lobbySnap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
+            const lobby = lobbySnap.val();
+
+            if (!lobby || lobby.phase !== 'voting') return;
+            if (lobby.votes[this.currentUser]) return;
+            if (!lobby.players[target] || !lobby.players[target].alive) return;
+
+            await db.ref('gameLobbies/' + this.lobbyId + '/votes/' + this.currentUser).set(target);
+            document.getElementById('voteResult').textContent = `✅ Bạn đã vote cho ${target}`;
+        },
+
+        // ===== LEAVE =====
+        leaveLobby() {
+            document.getElementById('leaveModal').classList.remove('hidden');
+        },
+
+        cancelLeave() {
+            document.getElementById('leaveModal').classList.add('hidden');
+        },
+
+        async confirmLeave() {
+            document.getElementById('leaveModal').classList.add('hidden');
+
+            try {
+                if (this.lobbyId) {
+                    const snap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
+                    const lobby = snap.val();
+
+                    if (lobby && lobby.players) {
+                        await db.ref('gameLobbies/' + this.lobbyId + '/players/' + this.currentUser).remove();
+
+                        const newSnap = await db.ref('gameLobbies/' + this.lobbyId + '/players').once('value');
+                        const remaining = newSnap.val() || {};
+
+                        if (Object.keys(remaining).length === 0) {
+                            await db.ref('gameLobbies/' + this.lobbyId).remove();
+                        } else if (lobby.host === this.currentUser) {
+                            const newHost = Object.keys(remaining)[0];
+                            await db.ref('gameLobbies/' + this.lobbyId + '/host').set(newHost);
+                            await db.ref('gameLobbies/' + this.lobbyId + '/players/' + newHost + '/isHost').set(true);
+                        }
+                    }
+                }
+
+                if (this.lobbyListener) {
+                    this.lobbyListener();
+                    this.lobbyListener = null;
+                }
+                if (this.chatListener) {
+                    this.chatListener();
+                    this.chatListener = null;
+                }
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+
+                this.lobbyId = null;
+                window.location.href = '../dashboard.html';
+
+            } catch (e) {
+                console.error('Lỗi rời phòng:', e);
+                window.location.href = '../dashboard.html';
+            }
+        }
+    };
+
+    // Expose Game to window for inline onclick
+    window.Game = Game;
+
+    document.addEventListener('DOMContentLoaded', () => Game.init());
 </script>
 </body>
 </html>

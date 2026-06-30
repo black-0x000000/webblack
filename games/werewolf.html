@@ -301,12 +301,79 @@
             cursor: pointer;
         }
 
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-overlay.hidden { display: none; }
+
+        .modal-box {
+            background: #1a1f2e;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 40px 48px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+        .modal-icon { font-size: 3rem; margin-bottom: 12px; }
+        .modal-title { font-size: 1.5rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
+        .modal-desc { color: #94a3b8; font-size: 1rem; margin-bottom: 24px; }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .btn-modal {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 100px;
+        }
+        .btn-modal-cancel {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .btn-modal-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .btn-modal-confirm {
+            background: #f43f5e;
+            color: #fff;
+        }
+        .btn-modal-confirm:hover {
+            background: #e06060;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(244, 63, 94, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
         @media (max-width: 768px) {
             .container { flex-direction: column; }
             .sidebar { width: 100%; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.08); max-height: 300px; }
             .btn { min-width: 120px; padding: 12px 20px; }
             .join-row { flex-direction: column; }
             .join-row input { width: 100%; }
+            .modal-box { padding: 30px 24px; }
         }
     </style>
 </head>
@@ -394,16 +461,30 @@
     </div>
 </div>
 
+<!-- MODAL XÁC NHẬN RỜI PHÒNG -->
+<div id="leaveModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-icon">🚪</div>
+        <h3 class="modal-title">Rời phòng?</h3>
+        <p class="modal-desc">Bạn có chắc chắn muốn rời phòng chơi?</p>
+        <div class="modal-actions">
+            <button class="btn-modal btn-modal-cancel" id="btnStay">Ở lại</button>
+            <button class="btn-modal btn-modal-confirm" id="btnConfirmLeave">Rời</button>
+        </div>
+    </div>
+</div>
+
 <script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/app.js"></script>
 <script>
-    // ===== WEREWOLF GAME - CHỈ TẠO PHÒNG + THAM GIA =====
+    // ===== WEREWOLF GAME =====
     const Game = {
         currentUser: null,
         currentRole: null,
         lobbyId: null,
         isHost: false,
         lobbyListener: null,
+        chatListener: null,
 
         init() {
             this.currentUser = sessionStorage.getItem('currentUser');
@@ -414,7 +495,17 @@
                 return;
             }
 
-            // Gán sự kiện
+            this.bindEvents();
+
+            const params = new URLSearchParams(window.location.search);
+            const lobbyId = params.get('lobby');
+            if (lobbyId) {
+                this.lobbyId = lobbyId;
+                this.joinLobbyById(lobbyId);
+            }
+        },
+
+        bindEvents() {
             document.getElementById('btnShowCreate').addEventListener('click', () => this.showCreateForm());
             document.getElementById('btnShowJoin').addEventListener('click', () => this.showJoinForm());
             document.getElementById('btnCancelCreate').addEventListener('click', () => this.hideCreateForm());
@@ -423,6 +514,15 @@
             document.getElementById('btnJoin').addEventListener('click', () => this.joinLobby());
             document.getElementById('btnLeave').addEventListener('click', () => this.leaveLobby());
             document.getElementById('btnSendChat').addEventListener('click', () => this.sendChat());
+
+            // Modal
+            document.getElementById('btnStay').addEventListener('click', () => this.cancelLeave());
+            document.getElementById('btnConfirmLeave').addEventListener('click', () => this.confirmLeave());
+            document.getElementById('leaveModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('leaveModal')) {
+                    this.cancelLeave();
+                }
+            });
 
             document.getElementById('lobbyNameInput').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') this.createLobby();
@@ -433,14 +533,6 @@
             document.getElementById('chatInput').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') this.sendChat();
             });
-
-            // Kiểm tra URL có lobby ID không
-            const params = new URLSearchParams(window.location.search);
-            const lobbyId = params.get('lobby');
-            if (lobbyId) {
-                this.lobbyId = lobbyId;
-                this.joinLobbyById(lobbyId);
-            }
         },
 
         showCreateForm() {
@@ -489,7 +581,6 @@
             const nameInput = document.getElementById('lobbyNameInput');
             const lobbyName = nameInput.value.trim() || 'Phòng của ' + this.currentUser;
 
-            // Kiểm tra User đã mua game chưa
             if (this.currentRole === 'user') {
                 const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
                 if (!snap.val()) {
@@ -500,10 +591,8 @@
 
             const lobbyId = this.generateLobbyId();
 
-            // Kiểm tra ID trùng
             const checkSnap = await db.ref('gameLobbies/' + lobbyId).once('value');
             if (checkSnap.exists()) {
-                // Nếu trùng thì tạo lại
                 this.createLobby();
                 return;
             }
@@ -529,7 +618,6 @@
             this.lobbyId = lobbyId;
             this.isHost = true;
 
-            // Cập nhật URL
             window.history.pushState({}, '', '?lobby=' + lobbyId);
 
             this.showGameContent();
@@ -537,7 +625,6 @@
 
             this.showStatus('createStatus', '✅ Tạo phòng thành công! Mã phòng: ' + lobbyId, 'success');
 
-            // Ẩn form sau 1s
             setTimeout(() => {
                 this.hideCreateForm();
                 this.hideStatus('createStatus');
@@ -574,7 +661,6 @@
                 return;
             }
 
-            // Kiểm tra User đã mua game chưa
             if (this.currentRole === 'user') {
                 const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
                 if (!snap.val()) {
@@ -583,7 +669,6 @@
                 }
             }
 
-            // Thêm người chơi
             if (!lobby.players[this.currentUser]) {
                 await db.ref('gameLobbies/' + lobbyId + '/players/' + this.currentUser).set({
                     role: null,
@@ -596,7 +681,6 @@
             this.lobbyId = lobbyId;
             this.isHost = false;
 
-            // Cập nhật URL
             window.history.pushState({}, '', '?lobby=' + lobbyId);
 
             this.showGameContent();
@@ -611,10 +695,8 @@
             document.getElementById('gameContent').classList.add('active');
             document.getElementById('gameSidebar').classList.add('active');
 
-            // Cập nhật lobby ID
             document.getElementById('lobbyIdDisplay').textContent = '🆔 ' + this.lobbyId;
 
-            // Lấy tên phòng
             db.ref('gameLobbies/' + this.lobbyId + '/name').once('value', (snap) => {
                 document.getElementById('lobbyName').textContent = snap.val() || 'Phòng chơi';
             });
@@ -677,7 +759,6 @@
         },
 
         updateChat(lobby) {
-            // Lắng nghe chat
             if (this.chatListener) {
                 this.chatListener();
             }
@@ -690,7 +771,6 @@
 
         addChatMessage(user, message, timestamp) {
             const container = document.getElementById('chatMessages');
-            // Xóa placeholder
             if (container.querySelector('div[style]')) {
                 container.innerHTML = '';
             }
@@ -723,8 +803,17 @@
             input.value = '';
         },
 
-        async leaveLobby() {
-            if (!confirm('Bạn có chắc muốn rời phòng?')) return;
+        // === MODAL RỜI PHÒNG ===
+        leaveLobby() {
+            document.getElementById('leaveModal').classList.remove('hidden');
+        },
+
+        cancelLeave() {
+            document.getElementById('leaveModal').classList.add('hidden');
+        },
+
+        async confirmLeave() {
+            document.getElementById('leaveModal').classList.add('hidden');
 
             try {
                 if (this.lobbyId) {
@@ -766,7 +855,6 @@
         }
     };
 
-    // Khởi tạo
     document.addEventListener('DOMContentLoaded', () => Game.init());
 </script>
 </body>

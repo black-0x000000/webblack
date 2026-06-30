@@ -295,7 +295,10 @@
     villager: { name: 'Dân Làng', emoji: '👤', desc: 'Không có khả năng đặc biệt, dùng lý luận để tìm sói.' }
   };
 
-  function esc(s) { return Utils.escapeHTML(s); }
+  function esc(s) { 
+    if (!s) return '';
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); 
+  }
 
   var Game = {
     lobbyId: null,
@@ -307,11 +310,13 @@
     nightActionDone: false,
     hunterDone: false,
     phaseAdvancing: false,
+    wolfVotes: {},
 
-    get user() { return App.currentUser; },
+    get user() { return sessionStorage.getItem('currentUser'); },
+    get role() { return sessionStorage.getItem('currentRole'); },
 
     init: function () {
-      if (!App.currentUser) {
+      if (!this.user) {
         window.location.href = '../index.html';
         return;
       }
@@ -371,13 +376,19 @@
 
     showStatus: function (id, msg, type) {
       var el = document.getElementById(id);
+      if (!el) return;
       el.textContent = msg;
       el.className = 'status-msg ' + type;
       el.classList.remove('hidden');
     },
+    
+    hideStatus: function(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    },
 
     checkPurchase: function () {
-      if (App.currentRole !== 'user') return Promise.resolve(true);
+      if (this.role !== 'user') return Promise.resolve(true);
       return db.ref('accounts/' + this.user + '/games/werewolf').once('value').then(function (snap) {
         return !!snap.val();
       });
@@ -416,14 +427,15 @@
             createdAt: Date.now(),
             startedAt: null,
             currentRound: 0,
-            gameLog: [],
+            gameLog: {},
             witchUsedSave: false,
             witchUsedPoison: false,
             protectedPlayer: null,
             lastProtectedPlayer: null,
             lastNightAction: null,
             pendingHunterRevenge: null,
-            phaseLock: null
+            phaseLock: null,
+            wolfVotes: {}
           };
 
           db.ref('gameLobbies/' + lobbyId).set(lobbyData).then(function () {
@@ -433,7 +445,10 @@
             self.showGameContent();
             self.listenLobby();
             self.showStatus('wwCreateStatus', '✅ Tạo phòng thành công! Mã phòng: ' + lobbyId, 'success');
-            setTimeout(function () { self.hideCreateForm(); document.getElementById('wwCreateStatus').classList.add('hidden'); }, 2000);
+            setTimeout(function () { 
+              self.hideCreateForm(); 
+              self.hideStatus('wwCreateStatus');
+            }, 2000);
           });
         });
       });
@@ -482,7 +497,7 @@
             self.showGameContent();
             self.listenLobby();
             self.hideJoinForm();
-            document.getElementById('wwJoinStatus').classList.add('hidden');
+            self.hideStatus('wwJoinStatus');
           };
 
           if (!alreadyIn) {
@@ -641,16 +656,13 @@
       this.timerInterval = setInterval(tick, 1000);
     },
 
-    // Any connected client can attempt to advance the phase; a Firebase transaction
-    // lock guarantees only one of them actually performs it. This keeps the game
-    // moving even if the host's tab is closed.
     tryAdvancePhase: function () {
       var self = this;
       this.phaseAdvancing = true;
       var lockRef = db.ref('gameLobbies/' + this.lobbyId + '/phaseLock');
       lockRef.transaction(function (current) {
         var now = Date.now();
-        if (current && now - current < 5000) return; // someone else handling it
+        if (current && now - current < 5000) return;
         return now;
       }).then(function (result) {
         if (result.committed) return self.nextPhase();
@@ -728,7 +740,7 @@
       var myData = lobby.players[this.user];
       if (!myData || !myData.alive || lobby.phase !== 'night') { area.classList.remove('active'); return; }
       var role = myData.role;
-      if (!role || role === 'villager' || role === 'hunter') { area.classList.remove('active'); return; }
+      if (!role || role === 'villager') { area.classList.remove('active'); return; }
       area.classList.add('active');
       this.renderNightActions(lobby, role, myData);
     },
@@ -750,22 +762,59 @@
         });
       };
 
+      // ===== WEREWOLF - Tất cả sói vote =====
       if (role === 'werewolf') {
-        label.textContent = '🐺 Chọn nạn nhân để giết:';
+        label.textContent = '🐺 Chọn nạn nhân để giết (tất cả sói phải chọn cùng 1 người):';
         var targets = others('werewolf');
         if (targets.length === 0) { container.innerHTML = '<div style="color:#94a3b8;">Không có ai để giết</div>'; return; }
-        var chosen = (lobby.lastNightAction && lobby.lastNightAction.action === 'kill') ? lobby.lastNightAction.target : null;
-        container.innerHTML = targets.map(function (name) {
-          return '<button class="action-btn ' + (chosen === name ? 'selected' : '') + '" onclick="WW.nightAction(\'kill\', \'' + name.replace(/'/g, "\\'") + '\')" ' + (self.nightActionDone ? 'disabled' : '') + '>' + esc(name) + '</button>';
+        
+        var wolfVotes = lobby.wolfVotes || {};
+        var currentVote = wolfVotes[this.user] || null;
+        var allWolves = Object.keys(lobby.players).filter(function(n) { return lobby.players[n].role === 'werewolf' && lobby.players[n].alive; });
+        var voteCounts = {};
+        Object.values(wolfVotes).forEach(function(v) { voteCounts[v] = (voteCounts[v] || 0) + 1; });
+        var maxCount = 0; var finalTarget = null;
+        Object.keys(voteCounts).forEach(function(name) {
+          if (voteCounts[name] > maxCount) { maxCount = voteCounts[name]; finalTarget = name; }
+        });
+        var allVoted = allWolves.every(function(n) { return wolfVotes[n] && wolfVotes[n] !== ''; });
+        var consensus = allVoted && maxCount === allWolves.length;
+        
+        var html = targets.map(function(name) {
+          return '<button class="action-btn ' + (currentVote === name ? 'selected' : '') + '" onclick="WW.wolfVote(\'' + name.replace(/'/g, "\\'") + '\')" ' + (self.nightActionDone ? 'disabled' : '') + '>' + esc(name) + '</button>';
         }).join('');
-      } else if (role === 'seer') {
+        
+        html += '<div style="margin-top:8px; font-size:0.8rem; color:#94a3b8;">';
+        if (allVoted && consensus) {
+          html += '✅ Tất cả sói đã chọn: <strong>' + esc(finalTarget) + '</strong>';
+        } else if (allVoted && !consensus) {
+          html += '⚠️ Các sói chưa thống nhất! ' + allWolves.filter(function(n) { return wolfVotes[n]; }).length + '/' + allWolves.length + ' đã vote';
+        } else {
+          html += '⏳ Đang chờ sói khác vote... (' + allWolves.filter(function(n) { return wolfVotes[n]; }).length + '/' + allWolves.length + ')';
+        }
+        html += '</div>';
+        container.innerHTML = html;
+        
+        if (allVoted && consensus && !self.nightActionDone) {
+          self.nightActionDone = true;
+          self.executeWolfKill(finalTarget);
+        }
+        return;
+      }
+
+      // ===== SEER - Tiên Tri =====
+      if (role === 'seer') {
         label.textContent = '🔮 Chọn người để soi:';
         var t2 = others();
         if (t2.length === 0) { container.innerHTML = '<div style="color:#94a3b8;">Không có ai để soi</div>'; return; }
         container.innerHTML = t2.map(function (name) {
           return '<button class="action-btn" onclick="WW.nightAction(\'seer\', \'' + name.replace(/'/g, "\\'") + '\')" ' + (self.nightActionDone ? 'disabled' : '') + '>' + esc(name) + '</button>';
         }).join('');
-      } else if (role === 'witch') {
+        return;
+      }
+
+      // ===== WITCH - Phù Thủy =====
+      if (role === 'witch') {
         label.textContent = '🧙 Chọn hành động (mỗi loại dùng 1 lần cho cả ván):';
         var saveDisabled = lobby.witchUsedSave ? 'disabled' : '';
         var poisonDisabled = lobby.witchUsedPoison ? 'disabled' : '';
@@ -792,14 +841,53 @@
             }).join('');
           });
         }
-      } else if (role === 'guard') {
+        return;
+      }
+
+      // ===== GUARD - Bảo Vệ =====
+      if (role === 'guard') {
         label.textContent = '🛡️ Chọn người để bảo vệ (không trùng người đêm trước):';
         var t3 = others().filter(function (n) { return n !== lobby.lastProtectedPlayer; });
         if (t3.length === 0) { container.innerHTML = '<div style="color:#94a3b8;">Không có ai để bảo vệ</div>'; return; }
         container.innerHTML = t3.map(function (name) {
           return '<button class="action-btn" onclick="WW.nightAction(\'guard\', \'' + name.replace(/'/g, "\\'") + '\')" ' + (self.nightActionDone ? 'disabled' : '') + '>' + esc(name) + '</button>';
         }).join('');
+        return;
       }
+    },
+
+    wolfVote: function(target) {
+      var self = this;
+      var ref = db.ref('gameLobbies/' + this.lobbyId + '/wolfVotes/' + this.user);
+      ref.set(target).then(function() {
+        return db.ref('gameLobbies/' + self.lobbyId).once('value');
+      }).then(function(snap) {
+        var lobby = snap.val();
+        var allWolves = Object.keys(lobby.players).filter(function(n) { return lobby.players[n].role === 'werewolf' && lobby.players[n].alive; });
+        var wolfVotes = lobby.wolfVotes || {};
+        var allVoted = allWolves.every(function(n) { return wolfVotes[n] && wolfVotes[n] !== ''; });
+        if (!allVoted) return;
+        var counts = {};
+        Object.values(wolfVotes).forEach(function(v) { counts[v] = (counts[v] || 0) + 1; });
+        var max = 0; var finalTarget = null;
+        Object.keys(counts).forEach(function(name) {
+          if (counts[name] > max) { max = counts[name]; finalTarget = name; }
+        });
+        if (max === allWolves.length && finalTarget) {
+          self.nightActionDone = true;
+          self.executeWolfKill(finalTarget);
+        }
+      });
+    },
+
+    executeWolfKill: function(target) {
+      var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+      lobbyRef.update({ 
+        nightKill: target, 
+        lastNightAction: { user: this.user, action: 'kill', target: target } 
+      });
+      document.getElementById('wwNightResult').textContent = '✅ Tất cả sói đã chọn ' + target + ' làm nạn nhân';
+      document.getElementById('wwNightResult').style.color = '#10b981';
     },
 
     nightAction: function (action, target) {
@@ -815,37 +903,36 @@
 
         var result = document.getElementById('wwNightResult');
 
-        if (action === 'kill') {
-          lobbyRef.update({ nightKill: target, lastNightAction: { user: self.user, action: 'kill', target: target } });
-          result.textContent = '✅ Đã chọn ' + target + ' làm nạn nhân';
-          result.style.color = '#10b981';
-          self.markDone();
-        } else if (action === 'seer') {
+        if (action === 'seer') {
           var targetRole = (lobby.players[target] && lobby.players[target].role) || 'unknown';
           var isWolf = targetRole === 'werewolf';
           result.textContent = '🔮 ' + target + ' là ' + (isWolf ? '🐺 Ma Sói' : '👤 Dân Làng');
           result.style.color = isWolf ? '#f43f5e' : '#10b981';
           lobbyRef.update({ lastNightAction: { user: self.user, action: 'seer', target: target, result: targetRole } });
-          self.markDone();
+          self.nightActionDone = true;
+          setTimeout(function () { self.nightActionDone = false; }, 1000);
         } else if (action === 'save') {
           if (lobby.witchUsedSave) { result.textContent = '❌ Bạn đã dùng thuốc cứu rồi!'; result.style.color = '#f43f5e'; return; }
           if (!lobby.nightKill) { result.textContent = '💚 Đêm nay không có ai bị giết, không cần cứu.'; result.style.color = '#94a3b8'; return; }
           lobbyRef.update({ witchUsedSave: true, nightSaved: true, lastNightAction: { user: self.user, action: 'save', target: lobby.nightKill } });
           result.textContent = '💚 Đã cứu ' + lobby.nightKill + '!';
           result.style.color = '#10b981';
-          self.markDone();
+          self.nightActionDone = true;
+          setTimeout(function () { self.nightActionDone = false; }, 1000);
         } else if (action === 'poison') {
           if (lobby.witchUsedPoison) { result.textContent = '❌ Bạn đã dùng thuốc độc rồi!'; result.style.color = '#f43f5e'; return; }
           if (!target || !lobby.players[target] || !lobby.players[target].alive) { result.textContent = '❌ Mục tiêu không hợp lệ'; result.style.color = '#f43f5e'; return; }
           lobbyRef.update({ witchUsedPoison: true, nightPoisonTarget: target, lastNightAction: { user: self.user, action: 'poison', target: target } });
           result.textContent = '☠️ Đã đầu độc ' + target + '!';
           result.style.color = '#f43f5e';
-          self.markDone();
+          self.nightActionDone = true;
+          setTimeout(function () { self.nightActionDone = false; }, 1000);
         } else if (action === 'guard') {
           lobbyRef.update({ protectedPlayer: target, lastNightAction: { user: self.user, action: 'guard', target: target } });
           result.textContent = '🛡️ Đã bảo vệ ' + target;
           result.style.color = '#10b981';
-          self.markDone();
+          self.nightActionDone = true;
+          setTimeout(function () { self.nightActionDone = false; }, 1000);
         }
       });
     },
@@ -856,7 +943,6 @@
       setTimeout(function () { self.nightActionDone = false; }, 1000);
     },
 
-    // Hunter revenge: the hunter player chooses, instead of a random pick.
     updateHunterRevenge: function (lobby) {
       var area = document.getElementById('wwHunterArea');
       var pending = lobby.pendingHunterRevenge;
@@ -898,6 +984,11 @@
         });
       }).then(function () {
         document.getElementById('wwHunterResult').textContent = '🏹 Bạn đã bắn ' + target + '!';
+        // Kiểm tra thắng sau khi hunter bắn
+        return db.ref('gameLobbies/' + self.lobbyId).once('value');
+      }).then(function(snap) {
+        var lobby = snap.val();
+        return self.checkAndEndGame(lobby);
       });
     },
 
@@ -996,14 +1087,14 @@
         updates.lastProtectedPlayer = null;
         updates.lastNightAction = null;
         updates.pendingHunterRevenge = null;
-        updates.gameLog = [];
+        updates.gameLog = {};
         updates.phaseLock = null;
+        updates.wolfVotes = {};
 
         return lobbyRef.update(updates);
       });
     },
 
-    // Standard role distribution for a Werewolf game.
     assignRoles: function (n) {
       var wolfCount = (n <= 6) ? 2 : (n <= 9) ? 3 : 4;
       var specials = ['seer', 'witch', 'guard', 'hunter'];
@@ -1046,12 +1137,8 @@
             return lobbyRef.once('value');
           }).then(function (freshSnap) {
             var freshLobby = freshSnap.val();
-            return self.checkWinCondition(freshLobby).then(function (winner) {
-              if (winner) {
-                return lobbyRef.update({ status: 'ended', phase: 'ended', phaseEndTime: null }).then(function () {
-                  return self.saveGameHistory(freshLobby, winner);
-                }).then(function () { return 'ENDED'; });
-              }
+            return self.checkAndEndGame(freshLobby).then(function (winner) {
+              if (winner) return 'ENDED';
               return lobbyRef.child('currentRound').transaction(function (c) { return (c || 0) + 1; });
             });
           });
@@ -1059,21 +1146,27 @@
 
         return chain.then(function (maybeEnded) {
           if (maybeEnded === 'ENDED') return;
-          var updates = { phase: nextP, phaseEndTime: Date.now() + duration * 1000, votes: {} };
-          if (nextP === 'night') {
-            updates.protectedPlayer = null;
-            updates.lastProtectedPlayer = lobby.protectedPlayer || null;
-            updates.nightKill = null;
-            updates.nightSaved = false;
-            updates.nightPoisonTarget = null;
-            updates.lastNightAction = null;
-          }
-          return lobbyRef.update(updates);
+          return lobbyRef.once('value').then(function (checkSnap) {
+            var checkLobby = checkSnap.val();
+            if (checkLobby.status === 'ended') return;
+            var updates = { phase: nextP, phaseEndTime: Date.now() + duration * 1000, votes: {} };
+            if (nextP === 'night') {
+              updates.protectedPlayer = null;
+              updates.lastProtectedPlayer = lobby.protectedPlayer || null;
+              updates.nightKill = null;
+              updates.nightSaved = false;
+              updates.nightPoisonTarget = null;
+              updates.lastNightAction = null;
+              updates.wolfVotes = {};
+            }
+            return lobbyRef.update(updates);
+          });
         });
       });
     },
 
     processNightResult: function (lobby) {
+      var self = this;
       var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
       var players = lobby.players || {};
       var killTarget = lobby.nightKill;
@@ -1087,7 +1180,12 @@
         chain = chain.then(function () {
           return lobbyRef.child('players/' + killTarget + '/alive').set(false);
         }).then(function () {
-          return lobbyRef.child('gameLog').push({ round: lobby.currentRound || 1, event: 'kill', target: killTarget, time: new Date().toLocaleString('vi-VN') });
+          return lobbyRef.child('gameLog').push({ 
+            round: lobby.currentRound || 1, 
+            event: 'kill', 
+            target: killTarget, 
+            time: new Date().toLocaleString('vi-VN') 
+          });
         });
       }
 
@@ -1097,7 +1195,12 @@
         chain = chain.then(function () {
           return lobbyRef.child('players/' + poisonTarget + '/alive').set(false);
         }).then(function () {
-          return lobbyRef.child('gameLog').push({ round: lobby.currentRound || 1, event: 'poison', target: poisonTarget, time: new Date().toLocaleString('vi-VN') });
+          return lobbyRef.child('gameLog').push({ 
+            round: lobby.currentRound || 1, 
+            event: 'poison', 
+            target: poisonTarget, 
+            time: new Date().toLocaleString('vi-VN') 
+          });
         });
       }
 
@@ -1109,6 +1212,11 @@
             return lobbyRef.child('pendingHunterRevenge').set(deaths[i]);
           }
         }
+        // Kiểm tra thắng ngay sau đêm
+        return lobbyRef.once('value');
+      }).then(function(snap) {
+        var freshLobby = snap.val();
+        return self.checkAndEndGame(freshLobby);
       });
     },
 
@@ -1126,12 +1234,21 @@
       });
 
       if (!eliminated || tie) {
-        return lobbyRef.child('gameLog').push({ round: lobby.currentRound || 1, event: 'vote_tie', time: new Date().toLocaleString('vi-VN') });
+        return lobbyRef.child('gameLog').push({ 
+          round: lobby.currentRound || 1, 
+          event: 'vote_tie', 
+          time: new Date().toLocaleString('vi-VN') 
+        });
       }
 
       if (eliminated && lobby.players[eliminated] && lobby.players[eliminated].alive) {
         return lobbyRef.child('players/' + eliminated + '/alive').set(false).then(function () {
-          return lobbyRef.child('gameLog').push({ round: lobby.currentRound || 1, event: 'vote_out', target: eliminated, time: new Date().toLocaleString('vi-VN') });
+          return lobbyRef.child('gameLog').push({ 
+            round: lobby.currentRound || 1, 
+            event: 'vote_out', 
+            target: eliminated, 
+            time: new Date().toLocaleString('vi-VN') 
+          });
         }).then(function () {
           var victim = lobby.players[eliminated];
           if (victim && victim.role === 'hunter') {
@@ -1142,7 +1259,8 @@
       return Promise.resolve();
     },
 
-    checkWinCondition: function (lobby) {
+    checkAndEndGame: function (lobby) {
+      var self = this;
       var lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
       var players = lobby.players || {};
       var alive = Object.keys(players).filter(function (n) { return players[n].alive; });
@@ -1150,10 +1268,26 @@
       var villagers = alive.filter(function (n) { return players[n].role !== 'werewolf'; });
 
       if (wolves.length === 0) {
-        return lobbyRef.child('gameLog').push({ event: 'win', winner: 'villagers', time: new Date().toLocaleString('vi-VN') }).then(function () { return 'villagers'; });
+        return lobbyRef.child('gameLog').push({ 
+          event: 'win', 
+          winner: 'villagers', 
+          time: new Date().toLocaleString('vi-VN') 
+        }).then(function () {
+          return lobbyRef.update({ status: 'ended', phase: 'ended', phaseEndTime: null });
+        }).then(function () {
+          return self.saveGameHistory(lobby, 'villagers');
+        }).then(function () { return 'villagers'; });
       }
       if (wolves.length >= villagers.length) {
-        return lobbyRef.child('gameLog').push({ event: 'win', winner: 'werewolves', time: new Date().toLocaleString('vi-VN') }).then(function () { return 'werewolves'; });
+        return lobbyRef.child('gameLog').push({ 
+          event: 'win', 
+          winner: 'werewolves', 
+          time: new Date().toLocaleString('vi-VN') 
+        }).then(function () {
+          return lobbyRef.update({ status: 'ended', phase: 'ended', phaseEndTime: null });
+        }).then(function () {
+          return self.saveGameHistory(lobby, 'werewolves');
+        }).then(function () { return 'werewolves'; });
       }
       return Promise.resolve(null);
     },
@@ -1187,8 +1321,13 @@
       });
     },
 
-    leaveLobby: function () { document.getElementById('wwLeaveModal').classList.remove('hidden'); },
-    cancelLeave: function () { document.getElementById('wwLeaveModal').classList.add('hidden'); },
+    leaveLobby: function () { 
+      document.getElementById('wwLeaveModal').classList.remove('hidden'); 
+    },
+    
+    cancelLeave: function () { 
+      document.getElementById('wwLeaveModal').classList.add('hidden'); 
+    },
 
     confirmLeave: function () {
       var self = this;

@@ -83,12 +83,18 @@
             <div class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><rect width="20" height="12" x="2" y="6" rx="2"/></svg></div>
             <div class="tool-name">Snake</div>
           </div>
+          
+          <!-- GAME MA SÓI -->
+          <div class="tool-card" id="werewolfCard" onclick="handleWerewolfClick()" style="border-color: rgba(255, 100, 100, 0.3);">
+            <div class="tool-icon" style="font-size: 2.5rem;">🐺</div>
+            <div class="tool-name" id="werewolfName">Ma Sói - 10 Onyx</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;" id="werewolfStatus">🔒 Cần 10 Onyx để mở</div>
+          </div>
         </div>
       </div>
 
       <!-- RECHARGE TAB -->
       <div id="webTabRecharge" class="web-tab-content">
-        <!-- PHẦN NẠP THỜI GIAN TỪ ADMIN (GIỮ NGUYÊN) -->
         <div style="padding: 8px 0 4px; color: var(--text-muted); font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">⏱️ Nạp thêm thời gian</div>
         <div class="recharge-grid">
           <button class="recharge-btn" onclick="requestRecharge(30)">30s</button>
@@ -104,7 +110,7 @@
         </div>
         <div id="rechargeMsg" style="margin-top: 16px; color: var(--accent-green); text-align: center;"></div>
 
-        <!-- PHẦN MUA THỜI GIAN BẰNG ONYX (THÊM MỚI) -->
+        <!-- PHẦN MUA THỜI GIAN BẰNG ONYX -->
         <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border-glass);">
           <div style="padding: 8px 0 4px; color: var(--text-muted); font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">⚫ Mua thời gian bằng Onyx</div>
           <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
@@ -164,7 +170,6 @@
     <button class="btn-save" style="width:100%; padding:12px; font-size:1rem;" onclick="redeemCard()">Xác Nhận</button>
     <div id="cardRedeemMsg" style="margin-top:12px; text-align:center; font-size:0.95rem;"></div>
     
-    <!-- Bảng giá -->
     <div style="margin-top:20px; border-top:1px solid var(--border-glass); padding-top:16px;">
       <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px; text-align:center; font-weight:600;">💰 BẢNG GIÁ QUY ĐỔI</div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.85rem;">
@@ -180,6 +185,20 @@
     <div class="modal-actions" style="margin-top:16px;">
       <button class="btn-cancel" onclick="closeModal('rechargeOnyxModal')">Đóng</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL XÁC NHẬN MUA GAME -->
+<div class="modal-overlay" id="buyGameModal">
+  <div class="modal-box" style="max-width: 400px;">
+    <h3 style="display:flex; align-items:center; gap:10px;">🐺 Mua game Ma Sói</h3>
+    <p style="color:var(--text-muted); margin-bottom:16px;">Bạn có chắc muốn dùng <strong style="color:var(--accent-cyan);">10 Onyx</strong> để mở khóa game Ma Sói?</p>
+    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:16px;">Số dư hiện tại: <strong id="buyGameBalance" style="color:var(--accent-cyan);">0</strong> Onyx</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('buyGameModal')">Hủy</button>
+      <button class="btn-save" onclick="confirmBuyGame()">✅ Mua</button>
+    </div>
+    <div id="buyGameMsg" style="margin-top:12px; text-align:center; font-size:0.95rem;"></div>
   </div>
 </div>
 

@@ -266,7 +266,6 @@
             flex-wrap: wrap;
             margin: 12px 0;
         }
-        .game-controls .btn { min-width: auto; flex: none; }
 
         .status-msg {
             padding: 12px 16px;
@@ -355,6 +354,25 @@
         .result-banner .result-title.win { color: #10b981; }
         .result-banner .result-title.lose { color: #f43f5e; }
         .result-banner .result-detail { color: #94a3b8; font-size: 0.95rem; }
+
+        /* GAME LOG */
+        .game-log {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-top: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .game-log .log-title { font-weight: 700; color: #94a3b8; margin-bottom: 8px; font-size: 0.9rem; }
+        .game-log .log-entry {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .game-log .log-entry:last-child { border-bottom: none; }
 
         .sidebar {
             width: 320px;
@@ -575,6 +593,13 @@
                 <div id="nightActionResult" style="margin-top:8px; font-size:0.9rem; color:#94a3b8;"></div>
             </div>
 
+            <!-- HUNTER REVENGE (shown when hunter just died) -->
+            <div class="night-action-area" id="hunterRevengeArea">
+                <div class="action-label">🏹 Bạn đã bị giết! Hãy bắn một người trước khi chết hẳn:</div>
+                <div class="action-options" id="hunterRevengeOptions"></div>
+                <div id="hunterRevengeResult" style="margin-top:8px; font-size:0.9rem; color:#94a3b8;"></div>
+            </div>
+
             <!-- PLAYERS -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="color:#94a3b8; font-size:0.9rem;">Người chơi: <span id="playerCount">0</span>/10</span>
@@ -593,6 +618,12 @@
                 <div style="font-weight:700; margin-bottom:8px;">🗳️ Bạn vote ai là sói?</div>
                 <div class="vote-options" id="voteOptions"></div>
                 <div id="voteResult" style="margin-top:10px; font-size:0.9rem; color:#94a3b8;"></div>
+            </div>
+
+            <!-- GAME LOG -->
+            <div class="game-log" id="gameLogArea">
+                <div class="log-title">📜 Diễn biến ván chơi</div>
+                <div id="gameLogList"><div class="log-entry" style="color:#64748b;">Chưa có sự kiện nào</div></div>
             </div>
 
             <div id="gameStatusMsg" class="status-msg hidden"></div>
@@ -642,6 +673,9 @@
         chatListener: null,
         myRole: null,
         nightActionDone: false,
+        hunterRevengeDone: false,
+        lastSeenLogCount: 0,
+        phaseAdvancing: false,
 
         // ROLE CONFIG
         roles: {
@@ -772,6 +806,7 @@
                 status: 'waiting',
                 phase: 'waiting',
                 phaseTimer: 0,
+                phaseEndTime: null,
                 players: {
                     [this.currentUser]: {
                         role: null,
@@ -792,7 +827,9 @@
                 witchUsedPoison: false,
                 protectedPlayer: null,
                 lastNightAction: null,
-                werewolfVotes: {}
+                werewolfVotes: {},
+                pendingHunterRevenge: null,
+                phaseLock: null
             };
 
             await db.ref('gameLobbies/' + lobbyId).set(lobbyData);
@@ -837,7 +874,7 @@
                 return;
             }
 
-            if (Object.keys(lobby.players).length >= 10) {
+            if (Object.keys(lobby.players).length >= 10 && !lobby.players[this.currentUser]) {
                 this.showStatus('joinStatus', '❌ Phòng đã đầy! (Tối đa 10 người)', 'error');
                 return;
             }
@@ -860,7 +897,7 @@
             }
 
             this.lobbyId = lobbyId;
-            this.isHost = false;
+            this.isHost = (lobby.host === this.currentUser);
             window.history.pushState({}, '', '?lobby=' + lobbyId);
 
             this.showGameContent();
@@ -891,6 +928,8 @@
                     return;
                 }
 
+                this.isHost = (lobby.host === this.currentUser);
+
                 this.renderPlayers(lobby);
                 this.updatePlayerCount(lobby);
                 this.updateGameStatus(lobby);
@@ -898,8 +937,11 @@
                 this.updateControls(lobby);
                 this.updateVoting(lobby);
                 this.updateNightActions(lobby);
+                this.updateHunterRevenge(lobby);
                 this.updateResultBanner(lobby);
                 this.updateChat(lobby);
+                this.updateGameLog(lobby);
+                this.watchPhaseTimer(lobby);
             });
         },
 
@@ -957,7 +999,6 @@
         updatePhase(lobby) {
             const icon = document.getElementById('phaseIcon');
             const name = document.getElementById('phaseName');
-            const timer = document.getElementById('phaseTimer');
 
             const phaseMap = {
                 'waiting': { icon: '⏳', name: 'Đang chờ người chơi' },
@@ -970,14 +1011,6 @@
             const phase = phaseMap[lobby.phase] || phaseMap.waiting;
             icon.textContent = phase.icon;
             name.textContent = phase.name;
-
-            if (lobby.phaseTimer > 0) {
-                const mins = Math.floor(lobby.phaseTimer / 60);
-                const secs = lobby.phaseTimer % 60;
-                timer.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-            } else {
-                timer.textContent = '--:--';
-            }
 
             // Role reveal
             const roleReveal = document.getElementById('roleReveal');
@@ -1003,7 +1036,7 @@
                 banner.classList.add('active');
                 const title = document.getElementById('resultTitle');
                 const detail = document.getElementById('resultDetail');
-                const log = lobby.gameLog || [];
+                const log = lobby.gameLog ? Object.values(lobby.gameLog) : [];
                 const winLog = log.find(l => l.event === 'win');
                 if (winLog) {
                     if (winLog.winner === 'werewolves') {
@@ -1018,6 +1051,63 @@
                 }
             } else {
                 banner.classList.remove('active');
+            }
+        },
+
+        // Drives the countdown display locally from an absolute end time stored in Firebase,
+        // so the timer stays correct even if the page reloads. Any connected client (not just
+        // the host) can trigger the phase advance once time is up, guarded by a transaction
+        // lock so only one client actually executes it.
+        watchPhaseTimer(lobby) {
+            const timerEl = document.getElementById('phaseTimer');
+
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+
+            if (lobby.status !== 'playing' || !lobby.phaseEndTime) {
+                timerEl.textContent = '--:--';
+                return;
+            }
+
+            const tick = async () => {
+                const remainingMs = lobby.phaseEndTime - Date.now();
+                const remaining = Math.max(0, Math.ceil(remainingMs / 1000));
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+                if (remaining <= 0 && !this.phaseAdvancing) {
+                    this.tryAdvancePhase();
+                }
+            };
+
+            tick();
+            this.timerInterval = setInterval(tick, 1000);
+        },
+
+        // Any client can call this; the transaction lock ensures only one of them
+        // actually performs the phase transition, so the game never gets stuck even
+        // if the host disconnects.
+        async tryAdvancePhase() {
+            this.phaseAdvancing = true;
+            const lockRef = db.ref('gameLobbies/' + this.lobbyId + '/phaseLock');
+            try {
+                const result = await lockRef.transaction((current) => {
+                    const now = Date.now();
+                    if (current && now - current < 5000) {
+                        return; // someone else is already handling it
+                    }
+                    return now;
+                });
+                if (result.committed) {
+                    await this.nextPhase();
+                }
+            } catch (e) {
+                console.error('Lỗi chuyển phase:', e);
+            } finally {
+                this.phaseAdvancing = false;
             }
         },
 
@@ -1086,18 +1176,18 @@
                 return;
             }
 
-            const voted = lobby.votes[this.currentUser] || null;
+            const voted = (lobby.votes && lobby.votes[this.currentUser]) || null;
 
             container.innerHTML = players.map(name => `
                 <button class="vote-btn ${voted === name ? 'selected' : ''}"
                         onclick="Game.castVote('${name}')"
-                        ${lobby.votes[this.currentUser] ? 'disabled' : ''}>
+                        ${voted ? 'disabled' : ''}>
                     ${name}
                 </button>
             `).join('');
 
-            document.getElementById('voteResult').textContent = lobby.votes[this.currentUser] ?
-                `✅ Bạn đã vote cho ${lobby.votes[this.currentUser]}` : '';
+            document.getElementById('voteResult').textContent = voted ?
+                `✅ Bạn đã vote cho ${voted}` : '';
         },
 
         updateNightActions(lobby) {
@@ -1138,8 +1228,9 @@
                     container.innerHTML = '<div style="color:#94a3b8;">Không có ai để giết</div>';
                     return;
                 }
+                const chosen = lobby.lastNightAction && lobby.lastNightAction.action === 'kill' ? lobby.lastNightAction.target : null;
                 container.innerHTML = targets.map(name => `
-                    <button class="night-action-btn" onclick="Game.nightAction('kill', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
+                    <button class="night-action-btn ${chosen === name ? 'selected' : ''}" onclick="Game.nightAction('kill', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
                         ${name}
                     </button>
                 `).join('');
@@ -1159,20 +1250,42 @@
                 label.textContent = '🧙 Chọn hành động (mỗi loại dùng 1 lần):';
                 const saveDisabled = lobby.witchUsedSave ? 'disabled' : '';
                 const poisonDisabled = lobby.witchUsedPoison ? 'disabled' : '';
-                container.innerHTML = `
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+
+                let html = `<div style="display:flex; gap:8px; flex-wrap:wrap;">
                         <button class="night-action-btn" onclick="Game.nightAction('save', '${lobby.nightKill || ''}')" ${saveDisabled}>
                             💚 Cứu người (${lobby.nightKill || 'không ai bị giết'})
                         </button>
-                        <button class="night-action-btn" onclick="Game.nightAction('poison', '')" ${poisonDisabled}>
+                        <button class="night-action-btn" id="btnTogglePoison" ${poisonDisabled}>
                             ☠️ Đầu độc
                         </button>
                     </div>
+                    <div id="poisonTargets" style="margin-top:8px; display:none; flex-wrap:wrap; gap:8px;"></div>
                     <div style="margin-top:8px; font-size:0.8rem; color:#94a3b8;">
                         ${lobby.witchUsedSave ? '✅ Đã dùng thuốc cứu' : '💚 Còn thuốc cứu'}
                         <span style="margin-left:12px;">${lobby.witchUsedPoison ? '✅ Đã dùng thuốc độc' : '☠️ Còn thuốc độc'}</span>
-                    </div>
-                `;
+                    </div>`;
+                container.innerHTML = html;
+
+                const toggleBtn = document.getElementById('btnTogglePoison');
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', () => {
+                        const targetsEl = document.getElementById('poisonTargets');
+                        const targets = Object.keys(lobby.players).filter(name =>
+                            name !== this.currentUser && lobby.players[name].alive
+                        );
+                        if (targets.length === 0) {
+                            targetsEl.style.display = 'flex';
+                            targetsEl.innerHTML = '<div style="color:#94a3b8;">Không có ai để đầu độc</div>';
+                            return;
+                        }
+                        targetsEl.style.display = 'flex';
+                        targetsEl.innerHTML = targets.map(name => `
+                            <button class="night-action-btn" onclick="Game.nightAction('poison', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
+                                ${name}
+                            </button>
+                        `).join('');
+                    });
+                }
             } else if (role === 'guard') {
                 label.textContent = '🛡️ Chọn người để bảo vệ:';
                 const targets = Object.keys(lobby.players).filter(name => name !== this.currentUser && lobby.players[name].alive);
@@ -1186,9 +1299,66 @@
                     </button>
                 `).join('');
             } else if (role === 'hunter') {
-                label.textContent = '🏹 Bạn là Thợ săn! Nếu bị giết, bạn có thể bắn một người.';
+                label.textContent = '🏹 Bạn là Thợ săn! Nếu bị giết, bạn sẽ được chọn người để bắn.';
                 container.innerHTML = '<div style="color:#94a3b8;">Chờ khi bị giết để sử dụng kỹ năng</div>';
             }
+        },
+
+        // ===== HUNTER REVENGE (player-driven) =====
+        updateHunterRevenge(lobby) {
+            const area = document.getElementById('hunterRevengeArea');
+            const pending = lobby.pendingHunterRevenge;
+
+            if (pending && pending === this.currentUser && !this.hunterRevengeDone) {
+                area.classList.add('active');
+                this.renderHunterRevenge(lobby);
+            } else {
+                area.classList.remove('active');
+            }
+        },
+
+        renderHunterRevenge(lobby) {
+            const container = document.getElementById('hunterRevengeOptions');
+            const result = document.getElementById('hunterRevengeResult');
+            result.textContent = '';
+
+            const targets = Object.keys(lobby.players).filter(name =>
+                name !== this.currentUser && lobby.players[name].alive
+            );
+
+            if (targets.length === 0) {
+                container.innerHTML = '<div style="color:#94a3b8;">Không còn ai để bắn</div>';
+                return;
+            }
+
+            container.innerHTML = targets.map(name => `
+                <button class="night-action-btn" onclick="Game.hunterShoot('${name}')" ${this.hunterRevengeDone ? 'disabled' : ''}>
+                    ${name}
+                </button>
+            `).join('');
+        },
+
+        async hunterShoot(target) {
+            if (this.hunterRevengeDone) return;
+            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+            const snap = await lobbyRef.once('value');
+            const lobby = snap.val();
+            if (!lobby || lobby.pendingHunterRevenge !== this.currentUser) return;
+
+            this.hunterRevengeDone = true;
+            await lobbyRef.update({
+                ['players/' + target + '/alive']: false,
+                pendingHunterRevenge: null
+            });
+            await lobbyRef.child('gameLog').push({
+                round: lobby.currentRound || 1,
+                event: 'hunter_shot',
+                target: target,
+                shooter: this.currentUser,
+                time: new Date().toLocaleString('vi-VN')
+            });
+
+            document.getElementById('hunterRevengeResult').textContent = `🏹 Bạn đã bắn ${target}!`;
         },
 
         // ===== NIGHT ACTIONS =====
@@ -1234,8 +1404,8 @@
                 }
                 await lobbyRef.update({
                     'witchUsedSave': true,
-                    'nightKill': null,
-                    'lastNightAction': { user: this.currentUser, action: 'save' }
+                    'nightSaved': true,
+                    'lastNightAction': { user: this.currentUser, action: 'save', target: lobby.nightKill }
                 });
                 result.textContent = `💚 Đã cứu ${lobby.nightKill}!`;
                 result.style.color = '#10b981';
@@ -1246,28 +1416,19 @@
                     result.style.color = '#f43f5e';
                     return;
                 }
-                const targets = Object.keys(lobby.players).filter(name =>
-                    name !== this.currentUser && lobby.players[name].alive
-                );
-                if (targets.length === 0) {
-                    result.textContent = '❌ Không có ai để đầu độc';
+                if (!target || !lobby.players[target] || !lobby.players[target].alive) {
+                    result.textContent = '❌ Mục tiêu không hợp lệ';
                     result.style.color = '#f43f5e';
                     return;
                 }
-                const targetName = prompt('☠️ Chọn người để đầu độc:\n' + targets.join(', '));
-                if (targetName && targets.includes(targetName)) {
-                    await lobbyRef.update({
-                        'witchUsedPoison': true,
-                        'players/' + targetName + '/alive': false,
-                        'lastNightAction': { user: this.currentUser, action: 'poison', target: targetName }
-                    });
-                    result.textContent = `☠️ Đã đầu độc ${targetName}!`;
-                    result.style.color = '#f43f5e';
-                    this.nightActionDone = true;
-                } else {
-                    result.textContent = '❌ Đã hủy đầu độc';
-                    result.style.color = '#94a3b8';
-                }
+                await lobbyRef.update({
+                    'witchUsedPoison': true,
+                    'nightPoisonTarget': target,
+                    'lastNightAction': { user: this.currentUser, action: 'poison', target: target }
+                });
+                result.textContent = `☠️ Đã đầu độc ${target}!`;
+                result.style.color = '#f43f5e';
+                this.nightActionDone = true;
             } else if (action === 'guard') {
                 await lobbyRef.update({
                     'protectedPlayer': target,
@@ -1285,6 +1446,34 @@
 
         updateResultBanner(lobby) {
             // Handled in updatePhase
+        },
+
+        // ===== GAME LOG =====
+        updateGameLog(lobby) {
+            const listEl = document.getElementById('gameLogList');
+            const log = lobby.gameLog ? Object.values(lobby.gameLog) : [];
+
+            if (log.length === 0) {
+                listEl.innerHTML = '<div class="log-entry" style="color:#64748b;">Chưa có sự kiện nào</div>';
+                return;
+            }
+
+            const labels = {
+                kill: (l) => `🌙 Đêm ${l.round || ''}: ${l.target} đã bị Ma Sói cắn chết`,
+                poison: (l) => `☠️ Đêm ${l.round || ''}: ${l.target} đã bị đầu độc`,
+                hunter_shot: (l) => `🏹 ${l.target} đã bị Thợ Săn bắn chết`,
+                vote_out: (l) => `🗳️ Ngày ${l.round || ''}: ${l.target} đã bị dân làng treo cổ`,
+                win: (l) => l.winner === 'werewolves' ? '🐺 Ma Sói đã chiến thắng!' : '👨‍🌾 Dân Làng đã chiến thắng!'
+            };
+
+            listEl.innerHTML = log.slice(-30).map(l => {
+                const fn = labels[l.event];
+                const text = fn ? fn(l) : (l.event || '');
+                return `<div class="log-entry">${text}</div>`;
+            }).join('');
+
+            const container = document.getElementById('gameLogArea');
+            container.scrollTop = container.scrollHeight;
         },
 
         // ===== CHAT =====
@@ -1336,12 +1525,8 @@
             this.isReady = newReady;
         },
 
-        // ===== START GAME - ĐÃ SỬA =====
         async startGame() {
-            if (!this.isHost) {
-                this.showStatus('gameStatusMsg', '⚠️ Chỉ chủ phòng mới có thể bắt đầu!', 'error');
-                return;
-            }
+            if (!this.isHost) return;
 
             const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
             const snap = await lobbyRef.once('value');
@@ -1349,19 +1534,9 @@
             if (!lobby) return;
 
             const players = Object.keys(lobby.players);
-            if (players.length < 5 || players.length > 10) {
-                this.showStatus('gameStatusMsg', `⚠️ Cần 5-10 người chơi! Hiện có ${players.length} người.`, 'error');
-                return;
-            }
+            if (players.length < 5 || players.length > 10) return;
 
-            // Kiểm tra tất cả đã sẵn sàng chưa
-            const allReady = Object.values(lobby.players).every(p => p.ready);
-            if (!allReady) {
-                this.showStatus('gameStatusMsg', '⏳ Chờ mọi người sẵn sàng!', 'error');
-                return;
-            }
-
-            // Phân vai ngẫu nhiên
+            // Assign roles
             const roles = this.assignRoles(players.length);
             const shuffled = this.shuffleArray(players);
             const assignments = {};
@@ -1370,47 +1545,46 @@
                 assignments[name] = roles[index % roles.length];
             });
 
-            // Cập nhật vai trò vào database
             const updates = {};
             Object.entries(assignments).forEach(([name, role]) => {
                 updates['players/' + name + '/role'] = role;
                 updates['players/' + name + '/ready'] = false;
             });
 
+            const phaseDuration = 120;
             updates.status = 'playing';
             updates.phase = 'night';
-            updates.phaseTimer = 120;
+            updates.phaseEndTime = Date.now() + phaseDuration * 1000;
             updates.startedAt = Date.now();
             updates.currentRound = 1;
             updates.nightKill = null;
+            updates.nightSaved = false;
+            updates.nightPoisonTarget = null;
             updates.votes = {};
             updates.witchUsedSave = false;
             updates.witchUsedPoison = false;
             updates.protectedPlayer = null;
             updates.lastNightAction = null;
+            updates.pendingHunterRevenge = null;
+            updates.gameLog = [];
+            updates.phaseLock = null;
 
             await lobbyRef.update(updates);
-
-            this.showStatus('gameStatusMsg', '🎮 Game bắt đầu! Vai trò đã được phân phát.', 'success');
-
-            // Bắt đầu timer
-            this.startPhaseTimer();
-
-            // Ẩn thông báo sau 3s
-            setTimeout(() => {
-                this.hideStatus('gameStatusMsg');
-            }, 3000);
         },
 
         assignRoles(playerCount) {
             let roles = [];
             const wolfCount = Math.max(2, Math.floor(playerCount / 4));
-            const villagerCount = playerCount - wolfCount - 4;
+            const villagerCount = Math.max(0, playerCount - wolfCount - 4);
 
             for (let i = 0; i < wolfCount; i++) roles.push('werewolf');
             const specials = ['seer', 'witch', 'guard', 'hunter'];
             roles = roles.concat(specials);
             for (let i = 0; i < villagerCount; i++) roles.push('villager');
+
+            // Trim/pad to exactly playerCount in case of small lobbies
+            while (roles.length > playerCount) roles.pop();
+            while (roles.length < playerCount) roles.push('villager');
 
             return this.shuffleArray(roles);
         },
@@ -1424,34 +1598,14 @@
             return shuffled;
         },
 
-        startPhaseTimer() {
-            if (this.timerInterval) clearInterval(this.timerInterval);
-
-            this.timerInterval = setInterval(async () => {
-                const snap = await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').once('value');
-                let timer = snap.val() || 0;
-
-                if (timer <= 0) {
-                    await this.nextPhase();
-                    return;
-                }
-
-                timer--;
-                await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').set(timer);
-            }, 1000);
-        },
-
         async nextPhase() {
-            const snap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
+            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+            const snap = await lobbyRef.once('value');
             const lobby = snap.val();
-            if (!lobby || lobby.status !== 'playing') {
-                if (this.timerInterval) {
-                    clearInterval(this.timerInterval);
-                    this.timerInterval = null;
-                }
-                return;
-            }
+            if (!lobby || lobby.status !== 'playing') return;
 
+            // Don't advance past night if a hunter revenge is still pending —
+            // give the hunter a moment, but don't block forever (handled by their own flow).
             const currentPhase = lobby.phase;
             let nextPhase = '';
             let timer = 0;
@@ -1467,45 +1621,50 @@
                 nextPhase = 'night';
                 timer = 120;
                 await this.processVoteResult(lobby);
-                const winner = await this.checkWinCondition(lobby);
+
+                const freshSnap = await lobbyRef.once('value');
+                const freshLobby = freshSnap.val();
+                const winner = await this.checkWinCondition(freshLobby);
                 if (winner) {
-                    await db.ref('gameLobbies/' + this.lobbyId + '/status').set('ended');
-                    await db.ref('gameLobbies/' + this.lobbyId + '/phase').set('ended');
-                    await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').set(0);
-                    if (this.timerInterval) {
-                        clearInterval(this.timerInterval);
-                        this.timerInterval = null;
-                    }
-                    await this.saveGameHistory(lobby, winner);
+                    await lobbyRef.update({ status: 'ended', phase: 'ended', phaseEndTime: null });
+                    await this.saveGameHistory(freshLobby, winner);
                     return;
                 }
-                await db.ref('gameLobbies/' + this.lobbyId + '/currentRound').transaction((current) => (current || 0) + 1);
+                await lobbyRef.child('currentRound').transaction((current) => (current || 0) + 1);
             }
 
-            await db.ref('gameLobbies/' + this.lobbyId + '/phase').set(nextPhase);
-            await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').set(timer);
-            await db.ref('gameLobbies/' + this.lobbyId + '/votes').set({});
+            const updates = {
+                phase: nextPhase,
+                phaseEndTime: Date.now() + timer * 1000,
+                votes: {}
+            };
 
             if (nextPhase === 'night') {
-                await db.ref('gameLobbies/' + this.lobbyId + '/witchUsedSave').set(false);
-                await db.ref('gameLobbies/' + this.lobbyId + '/witchUsedPoison').set(false);
-                await db.ref('gameLobbies/' + this.lobbyId + '/protectedPlayer').set(null);
-                await db.ref('gameLobbies/' + this.lobbyId + '/nightKill').set(null);
-                await db.ref('gameLobbies/' + this.lobbyId + '/lastNightAction').set(null);
+                updates.witchUsedSave = lobby.witchUsedSave; // preserved across the whole game (one-time use)
+                updates.witchUsedPoison = lobby.witchUsedPoison;
+                updates.protectedPlayer = null;
+                updates.nightKill = null;
+                updates.nightSaved = false;
+                updates.nightPoisonTarget = null;
+                updates.lastNightAction = null;
             }
+
+            await lobbyRef.update(updates);
         },
 
         async processNightResult(lobby) {
+            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
             const players = lobby.players || {};
             const killTarget = lobby.nightKill;
             const protectedPlayer = lobby.protectedPlayer;
+            const wasSaved = lobby.nightSaved === true;
 
             let killed = null;
-            if (killTarget && killTarget !== protectedPlayer) {
-                if (!lobby.witchUsedSave || lobby.witchUsedSave !== true) {
-                    await db.ref('gameLobbies/' + this.lobbyId + '/players/' + killTarget + '/alive').set(false);
+            if (killTarget && killTarget !== protectedPlayer && !wasSaved) {
+                if (players[killTarget] && players[killTarget].alive) {
+                    await lobbyRef.child('players/' + killTarget + '/alive').set(false);
                     killed = killTarget;
-                    await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+                    await lobbyRef.child('gameLog').push({
                         round: lobby.currentRound || 1,
                         event: 'kill',
                         target: killTarget,
@@ -1514,35 +1673,27 @@
                 }
             }
 
-            const lastAction = lobby.lastNightAction;
-            if (lastAction && lastAction.action === 'poison') {
-                const poisonTarget = lastAction.target;
-                if (poisonTarget && players[poisonTarget] && players[poisonTarget].alive) {
-                    await db.ref('gameLobbies/' + this.lobbyId + '/players/' + poisonTarget + '/alive').set(false);
-                    await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
-                        round: lobby.currentRound || 1,
-                        event: 'poison',
-                        target: poisonTarget,
-                        time: new Date().toLocaleString('vi-VN')
-                    });
-                }
+            // Witch poison
+            const poisonTarget = lobby.nightPoisonTarget;
+            let poisoned = null;
+            if (poisonTarget && players[poisonTarget] && players[poisonTarget].alive) {
+                await lobbyRef.child('players/' + poisonTarget + '/alive').set(false);
+                poisoned = poisonTarget;
+                await lobbyRef.child('gameLog').push({
+                    round: lobby.currentRound || 1,
+                    event: 'poison',
+                    target: poisonTarget,
+                    time: new Date().toLocaleString('vi-VN')
+                });
             }
 
-            // Hunter revenge
-            if (killed) {
-                const victimData = players[killed];
+            // Hunter revenge: let the hunter choose, instead of picking randomly.
+            const deaths = [killed, poisoned].filter(Boolean);
+            for (const deadName of deaths) {
+                const victimData = players[deadName];
                 if (victimData && victimData.role === 'hunter') {
-                    const targets = Object.keys(players).filter(name => name !== killed && players[name].alive);
-                    if (targets.length > 0) {
-                        const target = targets[Math.floor(Math.random() * targets.length)];
-                        await db.ref('gameLobbies/' + this.lobbyId + '/players/' + target + '/alive').set(false);
-                        await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
-                            round: lobby.currentRound || 1,
-                            event: 'hunter_shot',
-                            target: target,
-                            time: new Date().toLocaleString('vi-VN')
-                        });
-                    }
+                    await lobbyRef.child('pendingHunterRevenge').set(deadName);
+                    break; // only one hunter revenge prompt at a time
                 }
             }
         },
@@ -1557,22 +1708,34 @@
 
             let maxVotes = 0;
             let eliminated = null;
+            let tie = false;
 
             Object.entries(voteCount).forEach(([name, count]) => {
                 if (count > maxVotes) {
                     maxVotes = count;
                     eliminated = name;
+                    tie = false;
+                } else if (count === maxVotes && maxVotes > 0) {
+                    tie = true;
                 }
             });
 
-            if (eliminated && lobby.players[eliminated] && lobby.players[eliminated].alive) {
-                await db.ref('gameLobbies/' + this.lobbyId + '/players/' + eliminated + '/alive').set(false);
-                await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+            // On a tie, nobody is eliminated.
+            if (eliminated && !tie && lobby.players[eliminated] && lobby.players[eliminated].alive) {
+                const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+                await lobbyRef.child('players/' + eliminated + '/alive').set(false);
+                await lobbyRef.child('gameLog').push({
                     round: lobby.currentRound || 1,
                     event: 'vote_out',
                     target: eliminated,
                     time: new Date().toLocaleString('vi-VN')
                 });
+
+                // Hunter revenge from being voted out too
+                const victimData = lobby.players[eliminated];
+                if (victimData && victimData.role === 'hunter') {
+                    await lobbyRef.child('pendingHunterRevenge').set(eliminated);
+                }
             }
         },
 
@@ -1582,8 +1745,10 @@
             const wolves = alive.filter(name => players[name].role === 'werewolf');
             const villagers = alive.filter(name => players[name].role !== 'werewolf');
 
+            const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+
             if (wolves.length === 0) {
-                await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+                await lobbyRef.child('gameLog').push({
                     event: 'win',
                     winner: 'villagers',
                     time: new Date().toLocaleString('vi-VN')
@@ -1592,7 +1757,7 @@
             }
 
             if (wolves.length >= villagers.length) {
-                await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+                await lobbyRef.child('gameLog').push({
                     event: 'win',
                     winner: 'werewolves',
                     time: new Date().toLocaleString('vi-VN')
@@ -1627,7 +1792,7 @@
             const lobby = lobbySnap.val();
 
             if (!lobby || lobby.phase !== 'voting') return;
-            if (lobby.votes[this.currentUser]) return;
+            if (lobby.votes && lobby.votes[this.currentUser]) return;
             if (!lobby.players[target] || !lobby.players[target].alive) return;
 
             await db.ref('gameLobbies/' + this.lobbyId + '/votes/' + this.currentUser).set(target);

@@ -199,10 +199,11 @@
         </div>
       </div>
 
+      <!-- PHASE DISPLAY -->
       <div class="phase-display" id="wwPhaseDisplay">
         <div class="phase-icon" id="wwPhaseIcon">⏳</div>
         <div class="phase-name" id="wwPhaseName">Đang chờ người chơi</div>
-        <div class="phase-timer" id="wwPhaseTimer">--:--</div>
+        <div class="phase-timer" id="wwPhaseTimer" style="font-size:2rem; font-weight:700; color:#00f0ff;">--:--</div>
       </div>
 
       <div class="result-banner" id="wwResultBanner">
@@ -634,6 +635,7 @@
       }
     },
 
+    // ===== WATCH TIMER - SỬA LỖI HIỂN THỊ =====
     watchTimer: function (lobby) {
       var self = this;
       var timerEl = document.getElementById('wwPhaseTimer');
@@ -650,7 +652,9 @@
         var mins = Math.floor(remaining / 60);
         var secs = remaining % 60;
         timerEl.textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
-        if (remaining <= 0 && !self.phaseAdvancing) self.tryAdvancePhase();
+        if (remaining <= 0 && !self.phaseAdvancing) {
+          self.tryAdvancePhase();
+        }
       };
       tick();
       this.timerInterval = setInterval(tick, 1000);
@@ -762,7 +766,6 @@
         });
       };
 
-      // ===== WEREWOLF - Tất cả sói vote =====
       if (role === 'werewolf') {
         label.textContent = '🐺 Chọn nạn nhân để giết (tất cả sói phải chọn cùng 1 người):';
         var targets = others('werewolf');
@@ -802,7 +805,6 @@
         return;
       }
 
-      // ===== SEER - Tiên Tri =====
       if (role === 'seer') {
         label.textContent = '🔮 Chọn người để soi:';
         var t2 = others();
@@ -813,7 +815,6 @@
         return;
       }
 
-      // ===== WITCH - Phù Thủy =====
       if (role === 'witch') {
         label.textContent = '🧙 Chọn hành động (mỗi loại dùng 1 lần cho cả ván):';
         var saveDisabled = lobby.witchUsedSave ? 'disabled' : '';
@@ -844,7 +845,6 @@
         return;
       }
 
-      // ===== GUARD - Bảo Vệ =====
       if (role === 'guard') {
         label.textContent = '🛡️ Chọn người để bảo vệ (không trùng người đêm trước):';
         var t3 = others().filter(function (n) { return n !== lobby.lastProtectedPlayer; });
@@ -937,12 +937,6 @@
       });
     },
 
-    markDone: function () {
-      var self = this;
-      this.nightActionDone = true;
-      setTimeout(function () { self.nightActionDone = false; }, 1000);
-    },
-
     updateHunterRevenge: function (lobby) {
       var area = document.getElementById('wwHunterArea');
       var pending = lobby.pendingHunterRevenge;
@@ -984,7 +978,6 @@
         });
       }).then(function () {
         document.getElementById('wwHunterResult').textContent = '🏹 Bạn đã bắn ' + target + '!';
-        // Kiểm tra thắng sau khi hunter bắn
         return db.ref('gameLobbies/' + self.lobbyId).once('value');
       }).then(function(snap) {
         var lobby = snap.val();
@@ -1071,10 +1064,11 @@
           updates['players/' + name + '/ready'] = false;
         });
 
-        var duration = 90;
+        // 120 giây = 2 phút cho ban đêm
+        var nightDuration = 120;
         updates.status = 'playing';
         updates.phase = 'night';
-        updates.phaseEndTime = Date.now() + duration * 1000;
+        updates.phaseEndTime = Date.now() + nightDuration * 1000;
         updates.startedAt = Date.now();
         updates.currentRound = 1;
         updates.nightKill = null;
@@ -1127,12 +1121,15 @@
         var nextP = '', duration = 0;
 
         if (current === 'night') {
-          nextP = 'day'; duration = 90;
+          nextP = 'day'; 
+          duration = 120; // 2 phút ban ngày
           chain = self.processNightResult(lobby);
         } else if (current === 'day') {
-          nextP = 'voting'; duration = 45;
+          nextP = 'voting'; 
+          duration = 60; // 1 phút vote
         } else if (current === 'voting') {
-          nextP = 'night'; duration = 90;
+          nextP = 'night'; 
+          duration = 120; // 2 phút ban đêm tiếp theo
           chain = self.processVoteResult(lobby).then(function () {
             return lobbyRef.once('value');
           }).then(function (freshSnap) {
@@ -1149,7 +1146,11 @@
           return lobbyRef.once('value').then(function (checkSnap) {
             var checkLobby = checkSnap.val();
             if (checkLobby.status === 'ended') return;
-            var updates = { phase: nextP, phaseEndTime: Date.now() + duration * 1000, votes: {} };
+            var updates = { 
+              phase: nextP, 
+              phaseEndTime: Date.now() + duration * 1000, 
+              votes: {} 
+            };
             if (nextP === 'night') {
               updates.protectedPlayer = null;
               updates.lastProtectedPlayer = lobby.protectedPlayer || null;
@@ -1212,7 +1213,6 @@
             return lobbyRef.child('pendingHunterRevenge').set(deaths[i]);
           }
         }
-        // Kiểm tra thắng ngay sau đêm
         return lobbyRef.once('value');
       }).then(function(snap) {
         var freshLobby = snap.val();

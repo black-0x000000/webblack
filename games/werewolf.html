@@ -490,35 +490,35 @@
 <div class="game-container">
   <!-- MAIN CONTENT -->
   <div class="game-main">
-    <!-- LOBBY SELECTOR (hiển thị khi chưa vào phòng) -->
+    <!-- LOBBY SELECTOR -->
     <div id="lobbySelector" class="lobby-selector">
       <h1>🐺 Ma Sói</h1>
       <p class="subtitle">Chọn hành động để bắt đầu</p>
       <div class="btn-group">
-        <button class="btn btn-create-lobby" onclick="Game.showCreateLobby()">🆕 Tạo Phòng</button>
-        <button class="btn btn-join-lobby" onclick="Game.showJoinLobby()">🔗 Tham gia phòng</button>
+        <button class="btn btn-create-lobby" id="btnCreateLobby">🆕 Tạo Phòng</button>
+        <button class="btn btn-join-lobby" id="btnJoinLobby">🔗 Tham gia phòng</button>
       </div>
       <div id="createLobbyForm" style="display:none; margin-top:16px; width:100%; max-width:400px;">
         <div class="form-group">
           <label style="color:var(--text-muted);">Tên phòng</label>
           <input type="text" id="lobbyNameInput" placeholder="Nhập tên phòng..." style="width:100%; padding:12px 16px; background:rgba(0,0,0,0.3); border:1px solid var(--border-glass); border-radius:10px; color:var(--text-main); font-size:1rem; outline:none;">
         </div>
-        <button class="btn btn-create-lobby" style="width:100%;" onclick="Game.createLobby()">✅ Tạo phòng</button>
-        <button class="btn btn-cancel" style="width:100%; margin-top:8px; background:transparent; border:1px solid var(--border-glass); color:var(--text-muted); padding:10px; border-radius:10px; cursor:pointer;" onclick="Game.hideCreateLobby()">Hủy</button>
+        <button class="btn btn-create-lobby" style="width:100%;" id="btnConfirmCreate">✅ Tạo phòng</button>
+        <button class="btn btn-cancel" style="width:100%; margin-top:8px; background:transparent; border:1px solid var(--border-glass); color:var(--text-muted); padding:10px; border-radius:10px; cursor:pointer;" id="btnCancelCreate">Hủy</button>
       </div>
       <div id="joinLobbyForm" style="display:none; margin-top:16px; width:100%; max-width:400px;">
         <div class="form-group">
           <label style="color:var(--text-muted);">Nhập mã phòng (6 số)</label>
           <div class="join-form">
             <input type="text" id="lobbyIdInput" placeholder="VD: A1B2C3" maxlength="6" style="text-transform:uppercase; letter-spacing:4px;">
-            <button class="btn btn-join-submit" onclick="Game.joinLobbyById()">🔗 Tham gia</button>
+            <button class="btn btn-join-submit" id="btnConfirmJoin">🔗 Tham gia</button>
           </div>
         </div>
-        <button class="btn btn-cancel" style="width:100%; margin-top:8px; background:transparent; border:1px solid var(--border-glass); color:var(--text-muted); padding:10px; border-radius:10px; cursor:pointer;" onclick="Game.hideJoinLobby()">Hủy</button>
+        <button class="btn btn-cancel" style="width:100%; margin-top:8px; background:transparent; border:1px solid var(--border-glass); color:var(--text-muted); padding:10px; border-radius:10px; cursor:pointer;" id="btnCancelJoin">Hủy</button>
       </div>
     </div>
 
-    <!-- GAME CONTENT (hiển thị khi đã vào phòng) -->
+    <!-- GAME CONTENT -->
     <div id="gameContent" style="display:none; flex-direction:column; height:100%;">
       <div class="game-header">
         <div class="game-title" id="lobbyName">Phòng chơi Ma Sói</div>
@@ -528,47 +528,40 @@
         </div>
       </div>
       
-      <!-- PHASE DISPLAY -->
       <div class="phase-display" id="phaseDisplay">
         <div class="phase-icon" id="phaseIcon">🌙</div>
         <div class="phase-name" id="phaseName">Đang chờ người chơi</div>
         <div class="phase-timer" id="phaseTimer">--:--</div>
       </div>
       
-      <!-- RESULT BANNER -->
       <div class="result-banner" id="resultBanner">
         <div class="result-title" id="resultTitle">🏆 Chiến thắng!</div>
         <div class="result-detail" id="resultDetail">Phe Dân Làng đã chiến thắng!</div>
       </div>
       
-      <!-- ROLE REVEAL -->
       <div class="role-reveal" id="roleReveal">
         <div style="font-size:0.9rem; color:var(--text-muted);">Vai trò của bạn là</div>
         <div class="role-name" id="myRole">🐺 Ma Sói</div>
         <div style="font-size:0.85rem; color:var(--text-muted); margin-top:8px;" id="roleDescription">Mỗi đêm cùng đồng bọn chọn một nạn nhân để giết</div>
       </div>
       
-      <!-- NIGHT ACTION AREA -->
       <div class="night-action-area" id="nightActionArea">
         <div class="action-label" id="nightActionLabel">🌙 Chọn hành động ban đêm:</div>
         <div class="action-options" id="nightActionOptions"></div>
         <div id="nightActionResult" style="margin-top:8px; font-size:0.9rem; color:var(--text-muted);"></div>
       </div>
       
-      <!-- PLAYERS -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <span style="color:var(--text-muted); font-size:0.9rem;">Người chơi: <span id="playerCount">0</span>/10</span>
       </div>
       <div class="players-grid" id="playersGrid"></div>
       
-      <!-- GAME CONTROLS -->
       <div class="game-controls">
-        <button class="btn btn-ready" id="btnReady" onclick="Game.toggleReady()">✅ Sẵn sàng</button>
-        <button class="btn btn-start" id="btnStart" onclick="Game.startGame()" disabled>▶ Bắt đầu</button>
-        <button class="btn btn-leave" onclick="Game.leaveLobby()">🚪 Rời phòng</button>
+        <button class="btn btn-ready" id="btnReady">✅ Sẵn sàng</button>
+        <button class="btn btn-start" id="btnStart" disabled>▶ Bắt đầu</button>
+        <button class="btn btn-leave" id="btnLeave">🚪 Rời phòng</button>
       </div>
       
-      <!-- VOTING AREA -->
       <div class="voting-area" id="votingArea">
         <div style="font-weight:700; margin-bottom:8px;">🗳️ Bạn vote ai là sói?</div>
         <div class="vote-options" id="voteOptions"></div>
@@ -585,8 +578,8 @@
         <div style="color:var(--text-muted); text-align:center; padding:20px; font-size:0.9rem;">Chưa có tin nhắn</div>
       </div>
       <div class="chat-input-area">
-        <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') Game.sendChatMessage()">
-        <button onclick="Game.sendChatMessage()">Gửi</button>
+        <input type="text" id="chatInput" placeholder="Nhập tin nhắn...">
+        <button id="btnSendChat">Gửi</button>
       </div>
     </div>
   </div>
@@ -609,6 +602,8 @@
     nightActionDone: false,
     isInLobby: false,
     lobbyListener: null,
+    nameListener: null,
+    chatListener: null,
     
     init() {
       this.currentUser = sessionStorage.getItem('currentUser');
@@ -619,6 +614,9 @@
         return;
       }
       
+      // Gán sự kiện bằng JavaScript
+      this.bindEvents();
+      
       const params = new URLSearchParams(window.location.search);
       const lobbyId = params.get('lobby');
       
@@ -628,6 +626,30 @@
       } else {
         this.showLobbySelector();
       }
+    },
+    
+    bindEvents() {
+      document.getElementById('btnCreateLobby').addEventListener('click', () => this.showCreateLobby());
+      document.getElementById('btnJoinLobby').addEventListener('click', () => this.showJoinLobby());
+      document.getElementById('btnConfirmCreate').addEventListener('click', () => this.createLobby());
+      document.getElementById('btnCancelCreate').addEventListener('click', () => this.hideCreateLobby());
+      document.getElementById('btnConfirmJoin').addEventListener('click', () => this.joinLobbyById());
+      document.getElementById('btnCancelJoin').addEventListener('click', () => this.hideJoinLobby());
+      document.getElementById('btnReady').addEventListener('click', () => this.toggleReady());
+      document.getElementById('btnStart').addEventListener('click', () => this.startGame());
+      document.getElementById('btnLeave').addEventListener('click', () => this.leaveLobby());
+      document.getElementById('btnSendChat').addEventListener('click', () => this.sendChatMessage());
+      document.getElementById('chatInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') this.sendChatMessage();
+      });
+      
+      // Enter key cho lobby name input
+      document.getElementById('lobbyNameInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') this.createLobby();
+      });
+      document.getElementById('lobbyIdInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') this.joinLobbyById();
+      });
     },
     
     showLobbySelector() {
@@ -797,7 +819,7 @@
       if (this.lobbyListener) {
         this.lobbyListener();
       }
-      db.ref('gameLobbies/' + this.lobbyId).on('value', (snapshot) => {
+      this.lobbyListener = db.ref('gameLobbies/' + this.lobbyId).on('value', (snapshot) => {
         const lobby = snapshot.val();
         if (!lobby) {
           alert('Phòng đã bị xóa!');
@@ -814,11 +836,13 @@
         this.updateResultBanner(lobby);
         this.updatePlayerStatus(lobby);
       });
-      this.lobbyListener = () => db.ref('gameLobbies/' + this.lobbyId).off();
     },
     
     loadLobbyInfo() {
-      db.ref('gameLobbies/' + this.lobbyId + '/name').on('value', (snap) => {
+      if (this.nameListener) {
+        this.nameListener();
+      }
+      this.nameListener = db.ref('gameLobbies/' + this.lobbyId + '/name').on('value', (snap) => {
         document.getElementById('lobbyName').textContent = snap.val() || 'Phòng chơi Ma Sói';
       });
     },
@@ -1220,14 +1244,6 @@
         title.className = 'result-title';
         detail.textContent = 'Trò chơi đã kết thúc.';
       }
-    },
-    
-    setupChatListener() {
-      db.ref('gameLobbies/' + this.lobbyId + '/chat').on('child_added', (snapshot) => {
-        const msg = snapshot.val();
-        if (!msg) return;
-        this.addChatMessage(msg.user, msg.message, msg.timestamp);
-      });
     },
     
     addChatMessage(user, message, timestamp) {
@@ -1633,6 +1649,16 @@
           this.lobbyListener = null;
         }
         
+        if (this.nameListener) {
+          this.nameListener();
+          this.nameListener = null;
+        }
+        
+        if (this.chatListener) {
+          this.chatListener();
+          this.chatListener = null;
+        }
+        
         this.isInLobby = false;
         this.lobbyId = null;
         
@@ -1644,15 +1670,7 @@
     }
   };
   
-  // Expose functions to window for inline onclick
-  window.Game = Game;
-  window.showCreateLobby = () => Game.showCreateLobby();
-  window.hideCreateLobby = () => Game.hideCreateLobby();
-  window.showJoinLobby = () => Game.showJoinLobby();
-  window.hideJoinLobby = () => Game.hideJoinLobby();
-  window.createLobby = () => Game.createLobby();
-  window.joinLobbyById = () => Game.joinLobbyById();
-  
+  // Khởi tạo game khi trang load
   document.addEventListener('DOMContentLoaded', () => Game.init());
 </script>
 </body>

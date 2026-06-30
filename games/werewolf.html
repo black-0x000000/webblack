@@ -276,6 +276,80 @@
     color: var(--accent-cyan);
   }
   
+  .night-action-area {
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 12px;
+    border: 1px solid var(--accent-purple);
+    display: none;
+  }
+  
+  .night-action-area.active { display: block; }
+  
+  .night-action-area .action-label {
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  
+  .night-action-area .action-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .night-action-btn {
+    padding: 8px 16px;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+  
+  .night-action-btn:hover:not(:disabled) {
+    border-color: var(--accent-purple);
+    background: rgba(139,92,246,0.2);
+  }
+  
+  .night-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  .night-action-btn.selected {
+    border-color: var(--accent-purple);
+    background: rgba(139,92,246,0.3);
+  }
+  
+  .result-banner {
+    background: rgba(0,0,0,0.5);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    margin: 12px 0;
+    border: 2px solid var(--accent-cyan);
+    display: none;
+  }
+  
+  .result-banner.active { display: block; }
+  
+  .result-banner .result-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  
+  .result-banner .result-title.win { color: var(--accent-green); }
+  .result-banner .result-title.lose { color: var(--accent-red); }
+  
+  .result-banner .result-detail {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+  
   @media (max-width: 768px) {
     .game-container { flex-direction: column; }
     .game-sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border-glass); max-height: 300px; }
@@ -307,11 +381,24 @@
       <div class="phase-timer" id="phaseTimer">--:--</div>
     </div>
     
+    <!-- RESULT BANNER -->
+    <div class="result-banner" id="resultBanner">
+      <div class="result-title" id="resultTitle">🏆 Chiến thắng!</div>
+      <div class="result-detail" id="resultDetail">Phe Dân Làng đã chiến thắng!</div>
+    </div>
+    
     <!-- ROLE REVEAL -->
     <div class="role-reveal" id="roleReveal">
       <div style="font-size:0.9rem; color:var(--text-muted);">Vai trò của bạn là</div>
       <div class="role-name" id="myRole">🐺 Ma Sói</div>
       <div style="font-size:0.85rem; color:var(--text-muted); margin-top:8px;" id="roleDescription">Mỗi đêm cùng đồng bọn chọn một nạn nhân để giết</div>
+    </div>
+    
+    <!-- NIGHT ACTION AREA -->
+    <div class="night-action-area" id="nightActionArea">
+      <div class="action-label" id="nightActionLabel">🌙 Chọn hành động ban đêm:</div>
+      <div class="action-options" id="nightActionOptions"></div>
+      <div id="nightActionResult" style="margin-top:8px; font-size:0.9rem; color:var(--text-muted);"></div>
     </div>
     
     <!-- PLAYERS -->
@@ -323,9 +410,9 @@
     
     <!-- GAME CONTROLS -->
     <div class="game-controls">
-      <button class="btn btn-ready" id="btnReady" onclick="toggleReady()">✅ Sẵn sàng</button>
-      <button class="btn btn-start" id="btnStart" onclick="startGame()" disabled>▶ Bắt đầu</button>
-      <button class="btn btn-leave" onclick="leaveLobby()">🚪 Rời phòng</button>
+      <button class="btn btn-ready" id="btnReady" onclick="Game.toggleReady()">✅ Sẵn sàng</button>
+      <button class="btn btn-start" id="btnStart" onclick="Game.startGame()" disabled>▶ Bắt đầu</button>
+      <button class="btn btn-leave" onclick="Game.leaveLobby()">🚪 Rời phòng</button>
     </div>
     
     <!-- VOTING AREA -->
@@ -344,8 +431,8 @@
         <div style="color:var(--text-muted); text-align:center; padding:20px; font-size:0.9rem;">Chưa có tin nhắn</div>
       </div>
       <div class="chat-input-area">
-        <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-        <button onclick="sendChatMessage()">Gửi</button>
+        <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') Game.sendChatMessage()">
+        <button onclick="Game.sendChatMessage()">Gửi</button>
       </div>
     </div>
   </div>
@@ -363,6 +450,9 @@
     isReady: false,
     timerInterval: null,
     phaseTimer: 0,
+    myRole: null,
+    isAlive: true,
+    nightActionDone: false,
     
     init() {
       this.currentUser = sessionStorage.getItem('currentUser');
@@ -373,7 +463,6 @@
         return;
       }
       
-      // Lấy lobbyId từ URL
       const params = new URLSearchParams(window.location.search);
       this.lobbyId = params.get('lobby');
       
@@ -387,7 +476,6 @@
     },
     
     async createLobby() {
-      // Kiểm tra user đã mua game chưa (trừ Admin/Owner)
       if (this.currentRole === 'user') {
         const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
         if (!snap.val()) {
@@ -397,7 +485,6 @@
         }
       }
       
-      // Tạo phòng mới
       const lobbyRef = db.ref('gameLobbies').push();
       this.lobbyId = lobbyRef.key;
       
@@ -422,13 +509,16 @@
         startedAt: null,
         endedAt: null,
         currentRound: 0,
-        gameLog: []
+        gameLog: [],
+        witchUsedSave: false,
+        witchUsedPoison: false,
+        protectedPlayer: null,
+        lastNightAction: null
       };
       
       await lobbyRef.set(lobbyData);
       this.isHost = true;
       
-      // Cập nhật URL
       window.history.pushState({}, '', '?lobby=' + this.lobbyId);
       
       this.listenLobby();
@@ -436,7 +526,6 @@
     },
     
     async joinLobby() {
-      // Kiểm tra user đã mua game chưa (trừ Admin/Owner)
       if (this.currentRole === 'user') {
         const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
         if (!snap.val()) {
@@ -446,7 +535,6 @@
         }
       }
       
-      // Kiểm tra phòng tồn tại
       const lobbySnap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
       if (!lobbySnap.exists()) {
         alert('Phòng không tồn tại!');
@@ -461,7 +549,6 @@
         return;
       }
       
-      // Thêm người chơi
       if (!lobby.players[this.currentUser]) {
         await db.ref('gameLobbies/' + this.lobbyId + '/players/' + this.currentUser).set({
           role: null,
@@ -490,11 +577,13 @@
         this.updatePhase(lobby);
         this.updateControls(lobby);
         this.updateVoting(lobby);
+        this.updateNightActions(lobby);
+        this.updateResultBanner(lobby);
+        this.updatePlayerStatus(lobby);
       });
     },
     
     loadLobbyInfo() {
-      // Lấy tên phòng
       db.ref('gameLobbies/' + this.lobbyId + '/name').once('value', (snap) => {
         document.getElementById('lobbyName').textContent = snap.val() || 'Phòng chơi Ma Sói';
       });
@@ -518,7 +607,6 @@
         const roleName = data.role ? this.getRoleName(data.role) : '❓';
         const roleEmoji = data.role ? this.getRoleEmoji(data.role) : '❓';
         
-        // Chỉ hiển thị vai trò của chính mình
         let displayRole = '❓';
         if (isMe) {
           displayRole = roleEmoji + ' ' + roleName;
@@ -565,7 +653,6 @@
       icon.textContent = phase.icon;
       name.textContent = phase.name;
       
-      // Timer
       if (lobby.phaseTimer > 0) {
         const mins = Math.floor(lobby.phaseTimer / 60);
         const secs = lobby.phaseTimer % 60;
@@ -574,19 +661,29 @@
         timer.textContent = '--:--';
       }
       
-      // Role reveal
       const roleReveal = document.getElementById('roleReveal');
       const myRoleEl = document.getElementById('myRole');
       const roleDesc = document.getElementById('roleDescription');
       
-      if (lobby.phase === 'waiting') {
+      if (lobby.phase === 'waiting' || lobby.phase === 'ended') {
         roleReveal.classList.remove('active');
       } else if (lobby.players[this.currentUser]) {
         const myData = lobby.players[this.currentUser];
         if (myData.role) {
           roleReveal.classList.add('active');
+          this.myRole = myData.role;
           myRoleEl.textContent = this.getRoleEmoji(myData.role) + ' ' + this.getRoleName(myData.role);
           roleDesc.textContent = this.getRoleDescription(myData.role);
+        }
+      }
+    },
+    
+    updatePlayerStatus(lobby) {
+      const myData = lobby.players[this.currentUser];
+      if (myData) {
+        this.isAlive = myData.alive;
+        if (!myData.alive && lobby.status === 'playing') {
+          document.getElementById('phaseName').textContent = '💀 Bạn đã chết - Hãy quan sát';
         }
       }
     },
@@ -598,14 +695,21 @@
       
       if (!myData) return;
       
-      // Ready button
+      // Disable controls nếu đã chết
+      if (!myData.alive && lobby.status === 'playing') {
+        btnReady.disabled = true;
+        btnStart.disabled = true;
+        btnReady.textContent = '💀 Đã chết';
+        return;
+      }
+      
+      btnReady.disabled = false;
+      
       this.isReady = myData.ready || false;
       btnReady.textContent = this.isReady ? '❌ Hủy sẵn sàng' : '✅ Sẵn sàng';
       btnReady.classList.toggle('active', this.isReady);
       
-      // Start button (chỉ host mới thấy)
       if (this.isHost && lobby.status === 'waiting') {
-        btnStart.disabled = false;
         const count = Object.keys(lobby.players).length;
         const allReady = Object.values(lobby.players).every(p => p.ready);
         if (count < 5 || count > 10) {
@@ -620,12 +724,20 @@
         }
       } else {
         btnStart.disabled = true;
-        btnStart.textContent = this.isHost ? '⏳ Đang chờ...' : '👑 Chờ chủ phòng bắt đầu';
+        btnStart.textContent = lobby.status === 'playing' ? '⏳ Đang chơi...' : (this.isHost ? '⏳ Đang chờ...' : '👑 Chờ chủ phòng bắt đầu');
       }
       
-      // Voting
+      // Ẩn nút Ready khi đang chơi
+      if (lobby.status === 'playing') {
+        btnReady.style.display = 'none';
+      } else {
+        btnReady.style.display = 'block';
+      }
+    },
+    
+    updateVoting(lobby) {
       const votingArea = document.getElementById('votingArea');
-      if (lobby.phase === 'voting' && lobby.players[this.currentUser].alive) {
+      if (lobby.phase === 'voting' && lobby.players[this.currentUser] && lobby.players[this.currentUser].alive) {
         votingArea.classList.add('active');
         this.renderVoteOptions(lobby);
       } else {
@@ -661,10 +773,230 @@
       }
     },
     
-    updateVoting(lobby) {
-      // Kiểm tra kết quả vote
-      if (lobby.phase === 'day' && lobby.votes) {
-        // Xử lý kết quả vote
+    updateNightActions(lobby) {
+      const area = document.getElementById('nightActionArea');
+      const myData = lobby.players[this.currentUser];
+      
+      if (!myData || !myData.alive || lobby.phase !== 'night') {
+        area.classList.remove('active');
+        return;
+      }
+      
+      const role = myData.role;
+      if (!role || role === 'villager') {
+        area.classList.remove('active');
+        return;
+      }
+      
+      area.classList.add('active');
+      this.renderNightActions(lobby);
+    },
+    
+    renderNightActions(lobby) {
+      const container = document.getElementById('nightActionOptions');
+      const label = document.getElementById('nightActionLabel');
+      const result = document.getElementById('nightActionResult');
+      const myData = lobby.players[this.currentUser];
+      const role = myData.role;
+      
+      container.innerHTML = '';
+      result.textContent = '';
+      
+      if (role === 'werewolf') {
+        label.textContent = '🐺 Chọn nạn nhân để giết:';
+        const aliveTargets = Object.keys(lobby.players).filter(name => 
+          name !== this.currentUser && lobby.players[name].alive && lobby.players[name].role !== 'werewolf'
+        );
+        if (aliveTargets.length === 0) {
+          container.innerHTML = '<div style="color:var(--text-muted);">Không có ai để giết</div>';
+          return;
+        }
+        container.innerHTML = aliveTargets.map(name => `
+          <button class="night-action-btn" onclick="Game.nightAction('kill', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
+            ${name}
+          </button>
+        `).join('');
+      } else if (role === 'seer') {
+        label.textContent = '🔮 Chọn người để soi:';
+        const aliveTargets = Object.keys(lobby.players).filter(name => name !== this.currentUser && lobby.players[name].alive);
+        if (aliveTargets.length === 0) {
+          container.innerHTML = '<div style="color:var(--text-muted);">Không có ai để soi</div>';
+          return;
+        }
+        container.innerHTML = aliveTargets.map(name => `
+          <button class="night-action-btn" onclick="Game.nightAction('seer', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
+            ${name}
+          </button>
+        `).join('');
+      } else if (role === 'witch') {
+        label.textContent = '🧙 Chọn hành động (mỗi loại dùng 1 lần):';
+        const aliveTargets = Object.keys(lobby.players).filter(name => name !== this.currentUser && lobby.players[name].alive);
+        const saveDisabled = lobby.witchUsedSave ? 'disabled' : '';
+        const poisonDisabled = lobby.witchUsedPoison ? 'disabled' : '';
+        container.innerHTML = `
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="night-action-btn" onclick="Game.nightAction('save', '${lobby.nightKill || ''}')" ${saveDisabled}>
+              💚 Cứu người (${lobby.nightKill || 'không ai bị giết'})
+            </button>
+            <button class="night-action-btn" onclick="Game.nightAction('poison', '')" ${poisonDisabled}>
+              ☠️ Đầu độc (chọn sau)
+            </button>
+          </div>
+          <div style="margin-top:8px;">
+            <span style="color:var(--text-muted); font-size:0.8rem;">${lobby.witchUsedSave ? '✅ Đã dùng thuốc cứu' : '💚 Còn thuốc cứu'}</span>
+            <span style="color:var(--text-muted); font-size:0.8rem; margin-left:12px;">${lobby.witchUsedPoison ? '✅ Đã dùng thuốc độc' : '☠️ Còn thuốc độc'}</span>
+          </div>
+        `;
+      } else if (role === 'guard') {
+        label.textContent = '🛡️ Chọn người để bảo vệ:';
+        const aliveTargets = Object.keys(lobby.players).filter(name => name !== this.currentUser && lobby.players[name].alive);
+        if (aliveTargets.length === 0) {
+          container.innerHTML = '<div style="color:var(--text-muted);">Không có ai để bảo vệ</div>';
+          return;
+        }
+        container.innerHTML = aliveTargets.map(name => `
+          <button class="night-action-btn" onclick="Game.nightAction('guard', '${name}')" ${this.nightActionDone ? 'disabled' : ''}>
+            ${name}
+          </button>
+        `).join('');
+      } else if (role === 'hunter') {
+        label.textContent = '🏹 Bạn là Thợ săn! Nếu bị giết, bạn có thể bắn một người.';
+        container.innerHTML = '<div style="color:var(--text-muted);">Chờ khi bị giết để sử dụng kỹ năng</div>';
+      }
+    },
+    
+    async nightAction(action, target) {
+      if (this.nightActionDone) return;
+      
+      const lobbyRef = db.ref('gameLobbies/' + this.lobbyId);
+      const snap = await lobbyRef.once('value');
+      const lobby = snap.val();
+      
+      if (!lobby || lobby.phase !== 'night') return;
+      
+      const myData = lobby.players[this.currentUser];
+      if (!myData || !myData.alive) return;
+      
+      const result = document.getElementById('nightActionResult');
+      
+      if (action === 'kill') {
+        await lobbyRef.update({
+          'nightKill': target,
+          'lastNightAction': { user: this.currentUser, action: 'kill', target: target }
+        });
+        result.textContent = `✅ Đã chọn ${target} làm nạn nhân`;
+        result.style.color = 'var(--accent-green)';
+        this.nightActionDone = true;
+        await Utils.writeLog('werewolf_kill', `${this.currentUser} đã chọn ${target} để giết`);
+      } else if (action === 'seer') {
+        const targetRole = lobby.players[target]?.role || 'unknown';
+        const isWerewolf = targetRole === 'werewolf';
+        result.textContent = `🔮 ${target} là ${isWerewolf ? '🐺 Ma Sói' : '👤 Dân Làng'}`;
+        result.style.color = isWerewolf ? 'var(--accent-red)' : 'var(--accent-green)';
+        this.nightActionDone = true;
+        await lobbyRef.update({
+          'lastNightAction': { user: this.currentUser, action: 'seer', target: target, result: targetRole }
+        });
+        await Utils.writeLog('werewolf_seer', `${this.currentUser} đã soi ${target} → ${targetRole}`);
+      } else if (action === 'save') {
+        if (lobby.witchUsedSave) {
+          result.textContent = '❌ Bạn đã dùng thuốc cứu rồi!';
+          result.style.color = 'var(--accent-red)';
+          return;
+        }
+        if (!lobby.nightKill) {
+          result.textContent = '💚 Đêm nay không có ai bị giết, không cần cứu.';
+          result.style.color = 'var(--text-muted)';
+          return;
+        }
+        await lobbyRef.update({
+          'witchUsedSave': true,
+          'nightKill': null,
+          'lastNightAction': { user: this.currentUser, action: 'save' }
+        });
+        result.textContent = `💚 Đã cứu ${lobby.nightKill}!`;
+        result.style.color = 'var(--accent-green)';
+        this.nightActionDone = true;
+        await Utils.writeLog('werewolf_save', `${this.currentUser} đã cứu ${lobby.nightKill}`);
+      } else if (action === 'poison') {
+        if (lobby.witchUsedPoison) {
+          result.textContent = '❌ Bạn đã dùng thuốc độc rồi!';
+          result.style.color = 'var(--accent-red)';
+          return;
+        }
+        // Hiển thị danh sách để chọn
+        const aliveTargets = Object.keys(lobby.players).filter(name => 
+          name !== this.currentUser && lobby.players[name].alive
+        );
+        if (aliveTargets.length === 0) {
+          result.textContent = '❌ Không có ai để đầu độc';
+          result.style.color = 'var(--accent-red)';
+          return;
+        }
+        // Tạo popup chọn
+        const targetName = prompt('☠️ Chọn người để đầu độc:\n' + aliveTargets.join(', '));
+        if (targetName && aliveTargets.includes(targetName)) {
+          await lobbyRef.update({
+            'witchUsedPoison': true,
+            'players/' + targetName + '/alive': false,
+            'lastNightAction': { user: this.currentUser, action: 'poison', target: targetName }
+          });
+          result.textContent = `☠️ Đã đầu độc ${targetName}!`;
+          result.style.color = 'var(--accent-red)';
+          this.nightActionDone = true;
+          await Utils.writeLog('werewolf_poison', `${this.currentUser} đã đầu độc ${targetName}`);
+        } else {
+          result.textContent = '❌ Đã hủy đầu độc';
+          result.style.color = 'var(--text-muted)';
+        }
+      } else if (action === 'guard') {
+        await lobbyRef.update({
+          'protectedPlayer': target,
+          'lastNightAction': { user: this.currentUser, action: 'guard', target: target }
+        });
+        result.textContent = `🛡️ Đã bảo vệ ${target}`;
+        result.style.color = 'var(--accent-green)';
+        this.nightActionDone = true;
+        await Utils.writeLog('werewolf_guard', `${this.currentUser} đã bảo vệ ${target}`);
+      }
+      
+      // Reset nightActionDone sau khi hoàn thành
+      if (this.nightActionDone) {
+        setTimeout(() => {
+          this.nightActionDone = false;
+        }, 1000);
+      }
+    },
+    
+    updateResultBanner(lobby) {
+      const banner = document.getElementById('resultBanner');
+      if (lobby.status !== 'ended') {
+        banner.classList.remove('active');
+        return;
+      }
+      
+      banner.classList.add('active');
+      const title = document.getElementById('resultTitle');
+      const detail = document.getElementById('resultDetail');
+      
+      // Kiểm tra kết quả từ gameLog
+      const log = lobby.gameLog || [];
+      const winLog = log.find(l => l.event === 'win');
+      
+      if (winLog) {
+        if (winLog.winner === 'werewolves') {
+          title.textContent = '🐺 Ma Sói chiến thắng!';
+          title.className = 'result-title lose';
+          detail.textContent = 'Ma Sói đã tiêu diệt hết Dân Làng!';
+        } else {
+          title.textContent = '👨‍🌾 Dân Làng chiến thắng!';
+          title.className = 'result-title win';
+          detail.textContent = 'Dân Làng đã tiêu diệt hết Ma Sói!';
+        }
+      } else {
+        title.textContent = '🏁 Trò chơi kết thúc';
+        title.className = 'result-title';
+        detail.textContent = 'Trò chơi đã kết thúc.';
       }
     },
     
@@ -678,8 +1010,7 @@
     
     addChatMessage(user, message, timestamp) {
       const container = document.getElementById('chatMessages');
-      // Xóa placeholder nếu có
-      if (container.querySelector('.empty-msg')) {
+      if (container.querySelector('.empty-msg') || container.querySelector('.empty-msg')) {
         container.innerHTML = '';
       }
       
@@ -751,7 +1082,6 @@
       const players = Object.keys(lobby.players);
       if (players.length < 5 || players.length > 10) return;
       
-      // Phân vai
       const roles = this.assignRoles(players.length);
       const roleAssignments = {};
       const shuffled = this.shuffleArray(players);
@@ -760,38 +1090,41 @@
         roleAssignments[name] = roles[index % roles.length];
       });
       
-      // Cập nhật vai trò
       const updates = {};
       Object.entries(roleAssignments).forEach(([name, role]) => {
         updates['players/' + name + '/role'] = role;
+        updates['players/' + name + '/ready'] = false;
       });
       
       updates.status = 'playing';
       updates.phase = 'night';
-      updates.phaseTimer = 120; // 2 phút
+      updates.phaseTimer = 120;
       updates.startedAt = Date.now();
       updates.currentRound = 1;
+      updates.nightKill = null;
+      updates.votes = {};
+      updates.witchUsedSave = false;
+      updates.witchUsedPoison = false;
+      updates.protectedPlayer = null;
       
       await lobbyRef.update(updates);
       
-      // Bắt đầu timer
+      // Ghi log bắt đầu game
+      await Utils.writeLog('game_start', `${this.currentUser} đã bắt đầu ván Ma Sói với ${players.length} người`);
+      
       this.startPhaseTimer();
     },
     
     assignRoles(playerCount) {
-      // Tối thiểu 2 sói
       let roles = [];
       const wolfCount = Math.max(2, Math.floor(playerCount / 4));
-      const villagerCount = playerCount - wolfCount - 4; // 4 role đặc biệt
+      const villagerCount = playerCount - wolfCount - 4;
       
-      // Thêm sói
       for (let i = 0; i < wolfCount; i++) roles.push('werewolf');
       
-      // Thêm role đặc biệt
       const specials = ['seer', 'witch', 'guard', 'hunter'];
       roles = roles.concat(specials);
       
-      // Thêm dân làng
       for (let i = 0; i < villagerCount; i++) roles.push('villager');
       
       return this.shuffleArray(roles);
@@ -816,7 +1149,6 @@
         let timer = snap.val() || 0;
         
         if (timer <= 0) {
-          // Chuyển phase
           await this.nextPhase();
           return;
         }
@@ -829,7 +1161,13 @@
     async nextPhase() {
       const snap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
       const lobby = snap.val();
-      if (!lobby || lobby.status !== 'playing') return;
+      if (!lobby || lobby.status !== 'playing') {
+        if (this.timerInterval) {
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+        }
+        return;
+      }
       
       const currentPhase = lobby.phase;
       let nextPhase = '';
@@ -837,55 +1175,114 @@
       
       if (currentPhase === 'night') {
         nextPhase = 'day';
-        timer = 120; // 2 phút
-        // Xử lý kết quả ban đêm
+        timer = 120;
         await this.processNightResult(lobby);
       } else if (currentPhase === 'day') {
         nextPhase = 'voting';
-        timer = 60; // 1 phút vote
+        timer = 60;
       } else if (currentPhase === 'voting') {
         nextPhase = 'night';
         timer = 120;
-        // Xử lý kết quả vote
         await this.processVoteResult(lobby);
-        // Kiểm tra điều kiện thắng
         const winner = await this.checkWinCondition(lobby);
         if (winner) {
           await db.ref('gameLobbies/' + this.lobbyId + '/status').set('ended');
           await db.ref('gameLobbies/' + this.lobbyId + '/phase').set('ended');
+          await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').set(0);
+          if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+          }
+          await this.saveGameHistory(lobby, winner);
           return;
         }
+        await db.ref('gameLobbies/' + this.lobbyId + '/currentRound').transaction((current) => (current || 0) + 1);
       }
       
       await db.ref('gameLobbies/' + this.lobbyId + '/phase').set(nextPhase);
       await db.ref('gameLobbies/' + this.lobbyId + '/phaseTimer').set(timer);
+      await db.ref('gameLobbies/' + this.lobbyId + '/votes').set({});
+      
+      // Reset night actions
+      if (nextPhase === 'night') {
+        await db.ref('gameLobbies/' + this.lobbyId + '/witchUsedSave').set(false);
+        await db.ref('gameLobbies/' + this.lobbyId + '/witchUsedPoison').set(false);
+        await db.ref('gameLobbies/' + this.lobbyId + '/protectedPlayer').set(null);
+        await db.ref('gameLobbies/' + this.lobbyId + '/nightKill').set(null);
+      }
     },
     
     async processNightResult(lobby) {
-      // Chọn nạn nhân ngẫu nhiên (tạm thời)
-      const alivePlayers = Object.keys(lobby.players).filter(name => lobby.players[name].alive);
-      const wolves = Object.keys(lobby.players).filter(name => 
-        lobby.players[name].role === 'werewolf' && lobby.players[name].alive
-      );
+      const players = lobby.players || {};
+      const killTarget = lobby.nightKill;
+      const protectedPlayer = lobby.protectedPlayer;
       
-      if (wolves.length === 0) return;
-      
-      // Sói chọn nạn nhân (tạm thời random)
-      const victims = alivePlayers.filter(name => 
-        !wolves.includes(name) && name !== lobby.host
-      );
-      
-      if (victims.length > 0) {
-        const victim = victims[Math.floor(Math.random() * victims.length)];
-        await db.ref('gameLobbies/' + this.lobbyId + '/players/' + victim + '/alive').set(false);
-        await db.ref('gameLobbies/' + this.lobbyId + '/nightKill').set(victim);
-        await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
-          round: lobby.currentRound || 1,
-          event: 'kill',
-          target: victim,
-          time: new Date().toLocaleString('vi-VN')
-        });
+      // Apply night kill (except if protected or saved)
+      let killed = null;
+      if (killTarget && killTarget !== protectedPlayer) {
+        // Check if witch saved
+        if (!lobby.witchUsedSave || lobby.witchUsedSave !== true) {
+          await db.ref('gameLobbies/' + this.lobbyId + '/players/' + killTarget + '/alive').set(false);
+          killed = killTarget;
+          await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+            round: lobby.currentRound || 1,
+            event: 'kill',
+            target: killTarget,
+            time: new Date().toLocaleString('vi-VN')
+          });
+        }
       }
+      
+      // Check witch poison
+      const lastAction = lobby.lastNightAction;
+      if (lastAction && lastAction.action === 'poison') {
+        const poisonTarget = lastAction.target;
+        if (poisonTarget && players[poisonTarget] && players[poisonTarget].alive) {
+          await db.ref('gameLobbies/' + this.lobbyId + '/players/' + poisonTarget + '/alive').set(false);
+          await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+            round: lobby.currentRound || 1,
+            event: 'poison',
+            target: poisonTarget,
+            time: new Date().toLocaleString('vi-VN')
+          });
+        }
+      }
+      
+      // Hunter revenge
+      if (killed) {
+        const hunterTarget = await this.checkHunterRevenge(killed, lobby);
+        if (hunterTarget) {
+          await db.ref('gameLobbies/' + this.lobbyId + '/players/' + hunterTarget + '/alive').set(false);
+          await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+            round: lobby.currentRound || 1,
+            event: 'hunter_shot',
+            target: hunterTarget,
+            time: new Date().toLocaleString('vi-VN')
+          });
+        }
+      }
+    },
+    
+    async checkHunterRevenge(victim, lobby) {
+      const victimData = lobby.players[victim];
+      if (!victimData || victimData.role !== 'hunter') return null;
+      
+      // Hunter can shoot one person
+      const aliveTargets = Object.keys(lobby.players).filter(name => 
+        name !== victim && lobby.players[name].alive
+      );
+      
+      if (aliveTargets.length === 0) return null;
+      
+      // Randomly shoot (in real game, hunter chooses)
+      const target = aliveTargets[Math.floor(Math.random() * aliveTargets.length)];
+      await db.ref('gameLobbies/' + this.lobbyId + '/gameLog').push({
+        round: lobby.currentRound || 1,
+        event: 'hunter_shot',
+        target: target,
+        time: new Date().toLocaleString('vi-VN')
+      });
+      return target;
     },
     
     async processVoteResult(lobby) {
@@ -915,11 +1312,6 @@
           time: new Date().toLocaleString('vi-VN')
         });
       }
-      
-      // Reset votes
-      await db.ref('gameLobbies/' + this.lobbyId + '/votes').set({});
-      // Tăng round
-      await db.ref('gameLobbies/' + this.lobbyId + '/currentRound').transaction((current) => (current || 0) + 1);
     },
     
     async checkWinCondition(lobby) {
@@ -949,6 +1341,25 @@
       return null;
     },
     
+    async saveGameHistory(lobby, winner) {
+      const historyRef = db.ref('gameHistory').push();
+      const players = {};
+      Object.entries(lobby.players).forEach(([name, data]) => {
+        players[name] = data.role || 'villager';
+      });
+      
+      await historyRef.set({
+        lobbyName: lobby.name || 'Ván chơi',
+        host: lobby.host,
+        players: players,
+        winner: winner,
+        playerCount: Object.keys(lobby.players).length,
+        startedAt: lobby.startedAt,
+        endedAt: Date.now(),
+        gameLog: lobby.gameLog || []
+      });
+    },
+    
     async castVote(target) {
       const lobbySnap = await db.ref('gameLobbies/' + this.lobbyId).once('value');
       const lobby = lobbySnap.val();
@@ -959,12 +1370,6 @@
       
       await db.ref('gameLobbies/' + this.lobbyId + '/votes/' + this.currentUser).set(target);
       document.getElementById('voteResult').textContent = `✅ Bạn đã vote cho ${target}`;
-      
-      // Cập nhật UI
-      document.querySelectorAll('.vote-btn').forEach(btn => {
-        btn.disabled = true;
-        if (btn.textContent === target) btn.classList.add('selected');
-      });
     },
     
     async sendChatMessage() {
@@ -992,7 +1397,6 @@
           if (Object.keys(lobby.players).length === 0) {
             await db.ref('gameLobbies/' + this.lobbyId).remove();
           } else {
-            // Nếu host rời, chuyển host cho người khác
             if (lobby.host === this.currentUser) {
               const newHost = Object.keys(lobby.players)[0];
               await db.ref('gameLobbies/' + this.lobbyId + '/host').set(newHost);
@@ -1002,12 +1406,16 @@
           }
         }
         
+        if (this.timerInterval) {
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+        }
+        
         window.location.href = '../dashboard.html';
       }
     }
   };
   
-  // Khởi tạo
   document.addEventListener('DOMContentLoaded', () => Game.init());
 </script>
 </body>

@@ -608,6 +608,7 @@
     isAlive: true,
     nightActionDone: false,
     isInLobby: false,
+    lobbyListener: null,
     
     init() {
       this.currentUser = sessionStorage.getItem('currentUser');
@@ -618,16 +619,13 @@
         return;
       }
       
-      // Kiểm tra URL có lobby ID không
       const params = new URLSearchParams(window.location.search);
       const lobbyId = params.get('lobby');
       
       if (lobbyId) {
-        // Đã có lobby ID trong URL, tự động join
         this.lobbyId = lobbyId;
         this.joinLobbyById();
       } else {
-        // Hiển thị màn hình chọn
         this.showLobbySelector();
       }
     },
@@ -643,7 +641,7 @@
     showCreateLobby() {
       document.getElementById('createLobbyForm').style.display = 'block';
       document.getElementById('joinLobbyForm').style.display = 'none';
-      document.getElementById('lobbyNameInput').focus();
+      setTimeout(() => document.getElementById('lobbyNameInput').focus(), 100);
     },
     
     hideCreateLobby() {
@@ -653,7 +651,7 @@
     showJoinLobby() {
       document.getElementById('joinLobbyForm').style.display = 'block';
       document.getElementById('createLobbyForm').style.display = 'none';
-      document.getElementById('lobbyIdInput').focus();
+      setTimeout(() => document.getElementById('lobbyIdInput').focus(), 100);
     },
     
     hideJoinLobby() {
@@ -670,7 +668,6 @@
     },
     
     async createLobby() {
-      // Kiểm tra đã mua game chưa (User)
       if (this.currentRole === 'user') {
         const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
         if (!snap.val()) {
@@ -683,10 +680,8 @@
       const lobbyName = document.getElementById('lobbyNameInput').value.trim() || 'Phòng của ' + this.currentUser;
       const lobbyId = this.generateLobbyId();
       
-      // Kiểm tra ID đã tồn tại chưa
       const checkSnap = await db.ref('gameLobbies/' + lobbyId).once('value');
       if (checkSnap.exists()) {
-        // Nếu trùng, tạo lại
         return this.createLobby();
       }
       
@@ -724,10 +719,8 @@
       this.isHost = true;
       this.isInLobby = true;
       
-      // Cập nhật URL
       window.history.pushState({}, '', '?lobby=' + lobbyId);
       
-      // Hiển thị game
       this.showGameContent();
       this.listenLobby();
       this.loadLobbyInfo();
@@ -744,7 +737,6 @@
         return;
       }
       
-      // Kiểm tra phòng tồn tại
       const lobbySnap = await db.ref('gameLobbies/' + lobbyId).once('value');
       if (!lobbySnap.exists()) {
         alert('Không tìm thấy phòng với mã: ' + lobbyId);
@@ -762,7 +754,6 @@
         return;
       }
       
-      // Kiểm tra đã mua game chưa (User)
       if (this.currentRole === 'user') {
         const snap = await db.ref('accounts/' + this.currentUser + '/games/werewolf').once('value');
         if (!snap.val()) {
@@ -774,7 +765,6 @@
       
       this.lobbyId = lobbyId;
       
-      // Thêm người chơi
       if (!lobby.players[this.currentUser]) {
         await db.ref('gameLobbies/' + lobbyId + '/players/' + this.currentUser).set({
           role: null,
@@ -787,17 +777,13 @@
       this.isHost = false;
       this.isInLobby = true;
       
-      // Cập nhật URL
       window.history.pushState({}, '', '?lobby=' + lobbyId);
       
-      // Hiển thị game
       this.showGameContent();
       this.listenLobby();
       this.loadLobbyInfo();
       
       document.getElementById('lobbyIdDisplay').textContent = '🆔 ' + lobbyId;
-      
-      // Ẩn form join
       this.hideJoinLobby();
     },
     
@@ -1622,18 +1608,14 @@
           const lobby = snap.val();
           
           if (lobby && lobby.players) {
-            // Xóa người chơi khỏi danh sách
             await db.ref('gameLobbies/' + this.lobbyId + '/players/' + this.currentUser).remove();
             
-            // Cập nhật lại danh sách
             const newSnap = await db.ref('gameLobbies/' + this.lobbyId + '/players').once('value');
             const remainingPlayers = newSnap.val() || {};
             
             if (Object.keys(remainingPlayers).length === 0) {
-              // Không còn ai, xóa phòng
               await db.ref('gameLobbies/' + this.lobbyId).remove();
             } else if (lobby.host === this.currentUser) {
-              // Nếu host rời, chuyển host cho người khác
               const newHost = Object.keys(remainingPlayers)[0];
               await db.ref('gameLobbies/' + this.lobbyId + '/host').set(newHost);
               await db.ref('gameLobbies/' + this.lobbyId + '/players/' + newHost + '/isHost').set(true);
@@ -1661,6 +1643,15 @@
       }
     }
   };
+  
+  // Expose functions to window for inline onclick
+  window.Game = Game;
+  window.showCreateLobby = () => Game.showCreateLobby();
+  window.hideCreateLobby = () => Game.hideCreateLobby();
+  window.showJoinLobby = () => Game.showJoinLobby();
+  window.hideJoinLobby = () => Game.hideJoinLobby();
+  window.createLobby = () => Game.createLobby();
+  window.joinLobbyById = () => Game.joinLobbyById();
   
   document.addEventListener('DOMContentLoaded', () => Game.init());
 </script>

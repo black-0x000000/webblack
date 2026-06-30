@@ -27,7 +27,22 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
+            padding: 0 16px;
+        }
+        #topBar .btn-back {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        #topBar .btn-back:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
         }
         #topBar .title { font-size: 1.1rem; font-weight: 700; color: #f8fafc; }
         #topBar .btn-logout {
@@ -374,6 +389,7 @@
             .join-row { flex-direction: column; }
             .join-row input { width: 100%; }
             .modal-box { padding: 30px 24px; }
+            #topBar .btn-back { padding: 6px 12px; font-size: 0.8rem; }
         }
     </style>
 </head>
@@ -381,6 +397,7 @@
 
 <!-- TOP BAR -->
 <div id="topBar">
+    <button class="btn-back" id="btnBack">← Thoát</button>
     <div id="timerDisplay">⏱ 00:00:00</div>
     <div class="title">🐺 Ma Sói</div>
     <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
@@ -506,6 +523,11 @@
         },
 
         bindEvents() {
+            // Nút thoát game
+            document.getElementById('btnBack').addEventListener('click', () => {
+                window.location.href = '../dashboard.html';
+            });
+
             document.getElementById('btnShowCreate').addEventListener('click', () => this.showCreateForm());
             document.getElementById('btnShowJoin').addEventListener('click', () => this.showJoinForm());
             document.getElementById('btnCancelCreate').addEventListener('click', () => this.hideCreateForm());
@@ -709,7 +731,6 @@
             this.lobbyListener = db.ref('gameLobbies/' + this.lobbyId).on('value', (snapshot) => {
                 const lobby = snapshot.val();
                 if (!lobby) {
-                    // KHÔNG HIỆN ALERT, CHUYỂN THẲNG VỀ DASHBOARD
                     this.lobbyId = null;
                     window.location.href = '../dashboard.html';
                     return;

@@ -86,6 +86,10 @@ const App = {
     await this.initDefaultAccounts();
     this.showRechargeTabForUser();
     this.loadOnyxBalance();
+    // Kiểm tra trạng thái game Ma Sói
+    if (document.getElementById('werewolfCard')) {
+      await Werewolf.checkGameStatus();
+    }
   },
 
   loadOnyxBalance() {
@@ -297,6 +301,7 @@ const Auth = {
     db.ref('accounts/systemLog').off();
     db.ref('rechargeRequests').off();
     db.ref('cards').off();
+    db.ref('gameLobbies').off();
     window.location.href = (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/games/')) ? '../index.html' : 'index.html';
   }
 };
@@ -502,7 +507,7 @@ const Admin = {
       const logs = snapshot.val();
       if (!logs) { container.innerHTML = '<div class="empty-msg">Chưa có hoạt động nào.</div>'; return; }
       const entries = Object.values(logs).reverse();
-      const badgeMap = { 'create':'create', 'delete':'delete', 'edit':'edit', 'time':'time', 'password':'pw', 'login':'login', 'recharge_request':'time', 'recharge_completed':'time', 'card_created':'create', 'card_redeemed':'time', 'buy_time':'time' };
+      const badgeMap = { 'create':'create', 'delete':'delete', 'edit':'edit', 'time':'time', 'password':'pw', 'login':'login', 'recharge_request':'time', 'recharge_completed':'time', 'card_created':'create', 'card_redeemed':'time', 'buy_time':'time', 'game_purchase':'create' };
       container.innerHTML = entries.map(l => {
         const badge = badgeMap[l.action] || 'create';
         return `<div class="log-item">
@@ -538,6 +543,7 @@ const Admin = {
     
     if (role === 'user') {
       accountData.onyx = 0;
+      accountData.games = {};
     }
 
     await db.ref('accounts/' + uname).set(accountData);
@@ -1302,6 +1308,156 @@ const Card = {
   }
 };
 
+// ===== WEREWOLF GAME MODULE =====
+const Werewolf = {
+  // Kiểm tra user đã mua game chưa
+  async hasPurchasedGame(username) {
+    const snap = await db.ref('accounts/' + username + '/games/werewolf').once('value');
+    return snap.val() || false;
+  },
+
+  // Mua game
+  async purchaseGame() {
+    if (!App.currentUser) {
+      Utils.showError('Vui lòng đăng nhập!');
+      return;
+    }
+
+    if (App.currentRole !== 'user') {
+      Utils.showError('Admin và Owner không cần mua game!');
+      return;
+    }
+
+    const userRef = db.ref('accounts/' + App.currentUser);
+    const snap = await userRef.once('value');
+    const userData = snap.val();
+
+    if (!userData) {
+      Utils.showError('Không tìm thấy tài khoản!');
+      return;
+    }
+
+    // Kiểm tra đã mua chưa
+    if (userData.games && userData.games.werewolf) {
+      Utils.showError('Bạn đã mua game Ma Sói rồi!');
+      return;
+    }
+
+    const currentOnyx = userData.onyx || 0;
+
+    if (currentOnyx < 10) {
+      Utils.showError('Bạn không đủ Onyx! Cần 10 Onyx để mua game.');
+      return;
+    }
+
+    const newOnyx = currentOnyx - 10;
+
+    await userRef.update({
+      onyx: newOnyx,
+      'games/werewolf': true
+    });
+
+    // Cập nhật số dư hiển thị
+    const balanceEl = document.getElementById('onyxBalance');
+    if (balanceEl) balanceEl.textContent = newOnyx;
+
+    const buyBalanceEl = document.getElementById('buyOnyxBalance');
+    if (buyBalanceEl) buyBalanceEl.textContent = newOnyx;
+
+    // Cập nhật UI game card
+    this.updateGameCardUI(true);
+
+    Utils.showError('✅ Mua game Ma Sói thành công!', true);
+
+    // Ghi log
+    await Utils.writeLog('game_purchase', `${App.currentUser} đã mua game Ma Sói`);
+  },
+
+  // Cập nhật UI game card
+  updateGameCardUI(purchased) {
+    const nameEl = document.getElementById('werewolfName');
+    const statusEl = document.getElementById('werewolfStatus');
+    const cardEl = document.getElementById('werewolfCard');
+
+    if (purchased) {
+      if (nameEl) nameEl.textContent = 'Ma Sói';
+      if (statusEl) {
+        statusEl.textContent = '✅ Đã mua - Click để chơi';
+        statusEl.style.color = 'var(--accent-green)';
+      }
+      if (cardEl) {
+        cardEl.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+        cardEl.onclick = () => window.location.href = 'games/werewolf.html';
+      }
+    } else {
+      if (nameEl) nameEl.textContent = 'Ma Sói - 10 Onyx';
+      if (statusEl) {
+        statusEl.textContent = '🔒 Cần 10 Onyx để mở';
+        statusEl.style.color = 'var(--text-muted)';
+      }
+      if (cardEl) {
+        cardEl.style.borderColor = 'rgba(255, 100, 100, 0.3)';
+        cardEl.onclick = () => handleWerewolfClick();
+      }
+    }
+  },
+
+  // Kiểm tra và cập nhật trạng thái game card khi vào dashboard
+  async checkGameStatus() {
+    if (!App.currentUser) return;
+
+    // Admin/Owner luôn có quyền chơi
+    if (App.currentRole === 'admin' || App.currentRole === 'owner') {
+      this.updateGameCardUI(true);
+      return;
+    }
+
+    const purchased = await this.hasPurchasedGame(App.currentUser);
+    this.updateGameCardUI(purchased);
+  }
+};
+
+// ===== HÀM XỬ LÝ CLICK GAME MA SÓI =====
+async function handleWerewolfClick() {
+  if (!App.currentUser) {
+    Utils.showError('Vui lòng đăng nhập!');
+    return;
+  }
+
+  // Admin/Owner vào thẳng game
+  if (App.currentRole === 'admin' || App.currentRole === 'owner') {
+    window.location.href = 'games/werewolf.html';
+    return;
+  }
+
+  // User kiểm tra đã mua chưa
+  const purchased = await Werewolf.hasPurchasedGame(App.currentUser);
+  
+  if (purchased) {
+    window.location.href = 'games/werewolf.html';
+  } else {
+    // Hiển thị modal xác nhận mua
+    const modal = document.getElementById('buyGameModal');
+    if (modal) {
+      const snap = await db.ref('accounts/' + App.currentUser + '/onyx').once('value');
+      document.getElementById('buyGameBalance').textContent = snap.val() || 0;
+      document.getElementById('buyGameMsg').textContent = '';
+      modal.classList.add('show');
+    }
+  }
+}
+
+async function confirmBuyGame() {
+  await Werewolf.purchaseGame();
+  document.getElementById('buyGameMsg').textContent = '✅ Mua thành công! Đang chuyển hướng...';
+  document.getElementById('buyGameMsg').style.color = '#68d391';
+  
+  setTimeout(() => {
+    Utils.closeModal('buyGameModal');
+    window.location.href = 'games/werewolf.html';
+  }, 1500);
+}
+
 // ===== FUNCTIONS FOR INLINE HTML =====
 function openRechargeModal() {
   const modal = document.getElementById('rechargeOnyxModal');
@@ -1345,6 +1501,9 @@ window.openRechargeModal = openRechargeModal;
 window.redeemCard = redeemCard;
 window.createCard = createCard;
 window.buyTimeWithOnyx = (onyxCost, seconds) => Recharge.buyTimeWithOnyx(onyxCost, seconds);
+window.handleWerewolfClick = handleWerewolfClick;
+window.confirmBuyGame = confirmBuyGame;
+window.Werewolf = Werewolf;
 
 // ===== BOOTSTRAP =====
 document.addEventListener('DOMContentLoaded', () => App.init());

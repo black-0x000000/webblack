@@ -86,7 +86,6 @@ const App = {
     await this.initDefaultAccounts();
     this.showRechargeTabForUser();
     this.loadOnyxBalance();
-    // Kiểm tra trạng thái game Ma Sói
     if (document.getElementById('werewolfCard')) {
       await Werewolf.checkGameStatus();
     }
@@ -177,6 +176,8 @@ const App = {
           if (tabLogBtn) tabLogBtn.style.display = 'inline-block';
           const tabCreateCardBtn = document.getElementById('tabCreateCardBtn');
           if (tabCreateCardBtn) tabCreateCardBtn.style.display = 'inline-block';
+          const tabGameSystemBtn = document.getElementById('tabGameSystemBtn');
+          if (tabGameSystemBtn) tabGameSystemBtn.style.display = 'inline-block';
         }
         
         const tabNotifyBtn = document.getElementById('tabNotifyBtn');
@@ -302,6 +303,7 @@ const Auth = {
     db.ref('rechargeRequests').off();
     db.ref('cards').off();
     db.ref('gameLobbies').off();
+    db.ref('gameHistory').off();
     window.location.href = (window.location.pathname.includes('/tools/') || window.location.pathname.includes('/games/')) ? '../index.html' : 'index.html';
   }
 };
@@ -784,6 +786,7 @@ const UI = {
     if (id === 'tabChangePw') Admin.renderChangePwTab();
     if (id === 'tabNotify') Recharge.renderNotifications();
     if (id === 'tabCreateCard') Card.renderCardList();
+    if (id === 'tabGameSystem') GameSystem.renderGameHistory();
   }
 };
 
@@ -1310,13 +1313,11 @@ const Card = {
 
 // ===== WEREWOLF GAME MODULE =====
 const Werewolf = {
-  // Kiểm tra user đã mua game chưa
   async hasPurchasedGame(username) {
     const snap = await db.ref('accounts/' + username + '/games/werewolf').once('value');
     return snap.val() || false;
   },
 
-  // Mua game
   async purchaseGame() {
     if (!App.currentUser) {
       Utils.showError('Vui lòng đăng nhập!');
@@ -1337,7 +1338,6 @@ const Werewolf = {
       return;
     }
 
-    // Kiểm tra đã mua chưa
     if (userData.games && userData.games.werewolf) {
       Utils.showError('Bạn đã mua game Ma Sói rồi!');
       return;
@@ -1357,23 +1357,19 @@ const Werewolf = {
       'games/werewolf': true
     });
 
-    // Cập nhật số dư hiển thị
     const balanceEl = document.getElementById('onyxBalance');
     if (balanceEl) balanceEl.textContent = newOnyx;
 
     const buyBalanceEl = document.getElementById('buyOnyxBalance');
     if (buyBalanceEl) buyBalanceEl.textContent = newOnyx;
 
-    // Cập nhật UI game card
     this.updateGameCardUI(true);
 
     Utils.showError('✅ Mua game Ma Sói thành công!', true);
 
-    // Ghi log
     await Utils.writeLog('game_purchase', `${App.currentUser} đã mua game Ma Sói`);
   },
 
-  // Cập nhật UI game card
   updateGameCardUI(purchased) {
     const nameEl = document.getElementById('werewolfName');
     const statusEl = document.getElementById('werewolfStatus');
@@ -1402,11 +1398,9 @@ const Werewolf = {
     }
   },
 
-  // Kiểm tra và cập nhật trạng thái game card khi vào dashboard
   async checkGameStatus() {
     if (!App.currentUser) return;
 
-    // Admin/Owner luôn có quyền chơi
     if (App.currentRole === 'admin' || App.currentRole === 'owner') {
       this.updateGameCardUI(true);
       return;
@@ -1417,6 +1411,73 @@ const Werewolf = {
   }
 };
 
+// ===== GAME SYSTEM MODULE (CHO OWNER) =====
+const GameSystem = {
+  renderGameHistory() {
+    const container = document.getElementById('gameHistoryList');
+    if (!container) return;
+    
+    db.ref('gameHistory').orderByChild('endedAt').limitToLast(20).on('value', (snapshot) => {
+      const games = snapshot.val() || {};
+      const entries = Object.entries(games).reverse();
+      
+      if (entries.length === 0) {
+        container.innerHTML = '<div class="empty-msg">Chưa có ván chơi nào.</div>';
+        return;
+      }
+      
+      container.innerHTML = entries.map(([key, data]) => {
+        const players = Object.entries(data.players || {}).map(([name, role]) => {
+          const roleName = getRoleName(role);
+          return `${name} - ${roleName}`;
+        }).join('<br>');
+        
+        const winnerText = data.winner === 'werewolves' ? '🐺 Ma Sói' : '👨‍🌾 Dân Làng';
+        const winnerColor = data.winner === 'werewolves' ? 'var(--accent-red)' : 'var(--accent-green)';
+        const startTime = data.startedAt ? new Date(data.startedAt).toLocaleString('vi-VN') : 'N/A';
+        const endTime = data.endedAt ? new Date(data.endedAt).toLocaleString('vi-VN') : 'N/A';
+        
+        return `
+          <div class="log-item" style="flex-direction:column; align-items:flex-start; gap:8px;">
+            <div style="display:flex; justify-content:space-between; width:100%; flex-wrap:wrap; gap:8px;">
+              <span style="font-weight:700; color:var(--accent-cyan);">${data.lobbyName || 'Ván chơi'}</span>
+              <span style="color:${winnerColor};">🏆 ${winnerText}</span>
+            </div>
+            <div style="font-size:0.85rem; color:var(--text-muted); width:100%;">
+              <div><strong>Người chơi (${data.playerCount || 0}):</strong></div>
+              <div style="padding-left:12px; font-size:0.8rem; line-height:1.6;">${players}</div>
+            </div>
+            <div style="display:flex; gap:16px; font-size:0.75rem; color:var(--text-muted); width:100%; flex-wrap:wrap;">
+              <span>🟢 Bắt đầu: ${startTime}</span>
+              <span>🔴 Kết thúc: ${endTime}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    });
+  }
+};
+
+function getRoleName(role) {
+  const map = {
+    'werewolf': 'Ma Sói',
+    'seer': 'Tiên Tri',
+    'witch': 'Phù Thủy',
+    'guard': 'Bảo Vệ',
+    'hunter': 'Thợ Săn',
+    'villager': 'Dân Làng'
+  };
+  return map[role] || role;
+}
+
+function switchGameSubTab(tab, event) {
+  document.querySelectorAll('#tabGameSystem .settings-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  if (event) event.currentTarget.classList.add('active');
+  
+  document.querySelectorAll('#tabGameSystem .tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('gameSubTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+}
+
 // ===== HÀM XỬ LÝ CLICK GAME MA SÓI =====
 async function handleWerewolfClick() {
   if (!App.currentUser) {
@@ -1424,19 +1485,16 @@ async function handleWerewolfClick() {
     return;
   }
 
-  // Admin/Owner vào thẳng game
   if (App.currentRole === 'admin' || App.currentRole === 'owner') {
     window.location.href = 'games/werewolf.html';
     return;
   }
 
-  // User kiểm tra đã mua chưa
   const purchased = await Werewolf.hasPurchasedGame(App.currentUser);
   
   if (purchased) {
     window.location.href = 'games/werewolf.html';
   } else {
-    // Hiển thị modal xác nhận mua
     const modal = document.getElementById('buyGameModal');
     if (modal) {
       const snap = await db.ref('accounts/' + App.currentUser + '/onyx').once('value');
@@ -1504,6 +1562,8 @@ window.buyTimeWithOnyx = (onyxCost, seconds) => Recharge.buyTimeWithOnyx(onyxCos
 window.handleWerewolfClick = handleWerewolfClick;
 window.confirmBuyGame = confirmBuyGame;
 window.Werewolf = Werewolf;
+window.GameSystem = GameSystem;
+window.switchGameSubTab = switchGameSubTab;
 
 // ===== BOOTSTRAP =====
 document.addEventListener('DOMContentLoaded', () => App.init());

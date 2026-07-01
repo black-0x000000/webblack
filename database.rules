@@ -1,0 +1,26 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "accounts": {
+      ".read": true,
+      ".write": true
+    },
+    "rechargeRequests": {
+      ".read": true,
+      ".write": true
+    },
+    "cards": {
+      ".read": true,
+      ".write": true
+    },
+    "gameLobbies": {
+      ".read": true,
+      ".write": true
+    },
+    "gameHistory": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
